@@ -1,0 +1,11 @@
+--- src/components/GameBoard.tsx
++++ src/components/GameBoard.tsx
+@@ -375,8 +375,6 @@
+     renderPlate(ctx, cx - 50, cy + bounce - 5, 100, 30, useGameStore.getState().equippedPlate || "plate-0", time);
+     ctx.fillStyle = '#A8E6CF'; // Minty grass top
+     drawRoundRect(ctx, cx - 50, cy + bounce - 5, 100, 30, 16);
+-        renderBlock(ctx, x, y, w, h, equippedCosmetic || "skin-0", isCenter, time);
+-    };
+ 
+     // Center Tower (Built Playful Blocks)
+     const towerLayers = Math.min(gs.builtCount, 30);

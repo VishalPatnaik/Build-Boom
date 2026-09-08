@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@layer base {
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #87CEEB; /* Sky blue base */
+    color: #333333;
+    font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.font-display {
+  font-family: 'Lilita One', 'Fredoka', cursive;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
