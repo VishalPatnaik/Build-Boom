@@ -1,0 +1,1968 @@
+{
+  "tournaments": [
+    {
+      "id": "spring-meadow-cup",
+      "title": "Spring Meadow Cup",
+      "subtitle": "Novice Championship Arena",
+      "badge": "ROOKIE OPEN",
+      "icon": "🌱",
+      "gradient": "from-emerald-500 via-green-500 to-teal-600",
+      "bannerBorder": "border-emerald-300",
+      "bgZoneId": "bg-0",
+      "worldNumber": 1,
+      "worldName": "Spring Meadow",
+      "requiredLevel": 1,
+      "seed": 104291,
+      "blockCount": 40,
+      "speedMultiplier": 1,
+      "boomChance": 0.2,
+      "modifierDesc": "Open to all builders! Standard speed and gentle drops.",
+      "startTime": 1790030485723,
+      "endTime": 1790169385723,
+      "prizes": {
+        "first": {
+          "coins": 2000,
+          "trophy": "gold",
+          "title": "Meadow Master"
+        },
+        "second": {
+          "coins": 1000,
+          "trophy": "silver",
+          "title": "Meadow Runner-Up"
+        },
+        "third": {
+          "coins": 500,
+          "trophy": "bronze",
+          "title": "Meadow Ace"
+        },
+        "top10": {
+          "coins": 250
+        },
+        "top50": {
+          "coins": 100
+        }
+      },
+      "totalParticipants": 246,
+      "entries": [
+        {
+          "id": "bot-0-VortexBuilder",
+          "playerId": "bot-player-0",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 2427,
+          "blocksBuilt": 74,
+          "maxCombo": 30,
+          "timestamp": 1790094462883
+        },
+        {
+          "id": "bot-1-NeonSamurai",
+          "playerId": "bot-player-1",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 2337,
+          "blocksBuilt": 71,
+          "maxCombo": 28,
+          "timestamp": 1790101830772
+        },
+        {
+          "id": "bot-2-KaiserStack",
+          "playerId": "bot-player-2",
+          "playerName": "KaiserStack",
+          "country": "🇩🇪",
+          "avatar": "🤺",
+          "score": 2234,
+          "blocksBuilt": 68,
+          "maxCombo": 26,
+          "timestamp": 1790112902045
+        },
+        {
+          "id": "entry-1790116890764-q66c",
+          "playerId": "test-player-w1",
+          "playerName": "MeadowChamp",
+          "score": 2100,
+          "blocksBuilt": 38,
+          "maxCombo": 15,
+          "avatar": "🌱",
+          "country": "🇺🇸",
+          "timestamp": 1790116890764
+        },
+        {
+          "id": "bot-3-SambaStriker",
+          "playerId": "bot-player-3",
+          "playerName": "SambaStriker",
+          "country": "🇧🇷",
+          "avatar": "🦀",
+          "score": 2068,
+          "blocksBuilt": 64,
+          "maxCombo": 25,
+          "timestamp": 1790112121429
+        },
+        {
+          "id": "bot-4-LondonEye",
+          "playerId": "bot-player-4",
+          "playerName": "LondonEye",
+          "country": "🇬🇧",
+          "avatar": "🦊",
+          "score": 1977,
+          "blocksBuilt": 61,
+          "maxCombo": 23,
+          "timestamp": 1790034121147
+        },
+        {
+          "id": "bot-5-SeoulSurfer",
+          "playerId": "bot-player-5",
+          "playerName": "SeoulSurfer",
+          "country": "🇰🇷",
+          "avatar": "🐧",
+          "score": 1900,
+          "blocksBuilt": 59,
+          "maxCombo": 21,
+          "timestamp": 1790046745176
+        },
+        {
+          "id": "bot-6-NordicRune",
+          "playerId": "bot-player-6",
+          "playerName": "NordicRune",
+          "country": "🇸🇪",
+          "avatar": "🌋",
+          "score": 1765,
+          "blocksBuilt": 55,
+          "maxCombo": 20,
+          "timestamp": 1790091679516
+        },
+        {
+          "id": "bot-7-MapleDrop",
+          "playerId": "bot-player-7",
+          "playerName": "MapleDrop",
+          "country": "🇨🇦",
+          "avatar": "🍂",
+          "score": 1679,
+          "blocksBuilt": 52,
+          "maxCombo": 19,
+          "timestamp": 1790038568118
+        },
+        {
+          "id": "bot-8-AussieBoomer",
+          "playerId": "bot-player-8",
+          "playerName": "AussieBoomer",
+          "country": "🇦🇺",
+          "avatar": "🛻",
+          "score": 1558,
+          "blocksBuilt": 49,
+          "maxCombo": 17,
+          "timestamp": 1790057515184
+        },
+        {
+          "id": "bot-9-TajMaster",
+          "playerId": "bot-player-9",
+          "playerName": "TajMaster",
+          "country": "🇮🇳",
+          "avatar": "🗿",
+          "score": 1436,
+          "blocksBuilt": 46,
+          "maxCombo": 16,
+          "timestamp": 1790037281893
+        },
+        {
+          "id": "bot-10-AlpineClimber",
+          "playerId": "bot-player-10",
+          "playerName": "AlpineClimber",
+          "country": "🇨🇭",
+          "avatar": "🐝",
+          "score": 1401,
+          "blocksBuilt": 45,
+          "maxCombo": 15,
+          "timestamp": 1790045843480
+        },
+        {
+          "id": "bot-11-SakuraPetal",
+          "playerId": "bot-player-11",
+          "playerName": "SakuraPetal",
+          "country": "🇯🇵",
+          "avatar": "🌸",
+          "score": 1320,
+          "blocksBuilt": 42,
+          "maxCombo": 13,
+          "timestamp": 1790045847804
+        },
+        {
+          "id": "bot-12-PixelGhost",
+          "playerId": "bot-player-12",
+          "playerName": "PixelGhost",
+          "country": "🇫🇷",
+          "avatar": "🛸",
+          "score": 1223,
+          "blocksBuilt": 39,
+          "maxCombo": 12,
+          "timestamp": 1790041243166
+        },
+        {
+          "id": "bot-13-CosmicBuilder",
+          "playerId": "bot-player-13",
+          "playerName": "CosmicBuilder",
+          "country": "🇪🇸",
+          "avatar": "🍄",
+          "score": 1141,
+          "blocksBuilt": 37,
+          "maxCombo": 11,
+          "timestamp": 1790042524122
+        },
+        {
+          "id": "bot-14-ThunderBlink",
+          "playerId": "bot-player-14",
+          "playerName": "ThunderBlink",
+          "country": "🇳🇴",
+          "avatar": "⚡",
+          "score": 1016,
+          "blocksBuilt": 34,
+          "maxCombo": 10,
+          "timestamp": 1790113495864
+        },
+        {
+          "id": "bot-15-GoldenCrown",
+          "playerId": "bot-player-15",
+          "playerName": "GoldenCrown",
+          "country": "🇮🇹",
+          "avatar": "🪙",
+          "score": 999,
+          "blocksBuilt": 33,
+          "maxCombo": 9,
+          "timestamp": 1790063107361
+        },
+        {
+          "id": "bot-16-ShadowPanda",
+          "playerId": "bot-player-16",
+          "playerName": "ShadowPanda",
+          "country": "🇨🇳",
+          "avatar": "🐼",
+          "score": 950,
+          "blocksBuilt": 32,
+          "maxCombo": 9,
+          "timestamp": 1790103730372
+        },
+        {
+          "id": "bot-17-SpeedyFox",
+          "playerId": "bot-player-17",
+          "playerName": "SpeedyFox",
+          "country": "🇲🇽",
+          "avatar": "🦊",
+          "score": 876,
+          "blocksBuilt": 30,
+          "maxCombo": 8,
+          "timestamp": 1790077661740
+        }
+      ]
+    },
+    {
+      "id": "lunar-trials",
+      "title": "Lunar Gravity Trials",
+      "subtitle": "Low-Gravity Orbital Gauntlet",
+      "badge": "WORLD 5 EXCLUSIVE",
+      "icon": "🧑‍🚀",
+      "gradient": "from-slate-700 via-indigo-800 to-blue-900",
+      "bannerBorder": "border-indigo-300",
+      "bgZoneId": "bg-4",
+      "worldNumber": 5,
+      "worldName": "Moon",
+      "requiredLevel": 41,
+      "seed": 554312,
+      "blockCount": 60,
+      "speedMultiplier": 1.15,
+      "boomChance": 0.25,
+      "modifierDesc": "Floaty swinging crane with slippery timing. World 5 required.",
+      "startTime": 1789944085723,
+      "endTime": 1790318485723,
+      "prizes": {
+        "first": {
+          "coins": 3500,
+          "trophy": "gold",
+          "title": "Lunar Pioneer"
+        },
+        "second": {
+          "coins": 1800,
+          "trophy": "silver",
+          "title": "Cosmic Pilot"
+        },
+        "third": {
+          "coins": 900,
+          "trophy": "bronze",
+          "title": "Astral Walker"
+        },
+        "top10": {
+          "coins": 400
+        },
+        "top50": {
+          "coins": 150
+        }
+      },
+      "totalParticipants": 354,
+      "entries": [
+        {
+          "id": "bot-0-VortexBuilder",
+          "playerId": "bot-player-0",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 3415,
+          "blocksBuilt": 102,
+          "maxCombo": 30,
+          "timestamp": 1790066131996
+        },
+        {
+          "id": "bot-1-NeonSamurai",
+          "playerId": "bot-player-1",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 3277,
+          "blocksBuilt": 98,
+          "maxCombo": 28,
+          "timestamp": 1790034863064
+        },
+        {
+          "id": "bot-2-KaiserStack",
+          "playerId": "bot-player-2",
+          "playerName": "KaiserStack",
+          "country": "🇩🇪",
+          "avatar": "🤺",
+          "score": 3105,
+          "blocksBuilt": 93,
+          "maxCombo": 26,
+          "timestamp": 1790072923261
+        },
+        {
+          "id": "bot-3-SambaStriker",
+          "playerId": "bot-player-3",
+          "playerName": "SambaStriker",
+          "country": "🇧🇷",
+          "avatar": "🦀",
+          "score": 2933,
+          "blocksBuilt": 88,
+          "maxCombo": 25,
+          "timestamp": 1790039884626
+        },
+        {
+          "id": "bot-4-LondonEye",
+          "playerId": "bot-player-4",
+          "playerName": "LondonEye",
+          "country": "🇬🇧",
+          "avatar": "🦊",
+          "score": 2771,
+          "blocksBuilt": 84,
+          "maxCombo": 24,
+          "timestamp": 1790042969195
+        },
+        {
+          "id": "bot-5-SeoulSurfer",
+          "playerId": "bot-player-5",
+          "playerName": "SeoulSurfer",
+          "country": "🇰🇷",
+          "avatar": "🐧",
+          "score": 2675,
+          "blocksBuilt": 81,
+          "maxCombo": 22,
+          "timestamp": 1790038508254
+        },
+        {
+          "id": "bot-6-NordicRune",
+          "playerId": "bot-player-6",
+          "playerName": "NordicRune",
+          "country": "🇸🇪",
+          "avatar": "🌋",
+          "score": 2509,
+          "blocksBuilt": 76,
+          "maxCombo": 21,
+          "timestamp": 1790101989057
+        },
+        {
+          "id": "bot-7-MapleDrop",
+          "playerId": "bot-player-7",
+          "playerName": "MapleDrop",
+          "country": "🇨🇦",
+          "avatar": "🍂",
+          "score": 2379,
+          "blocksBuilt": 72,
+          "maxCombo": 20,
+          "timestamp": 1790072837258
+        },
+        {
+          "id": "bot-8-AussieBoomer",
+          "playerId": "bot-player-8",
+          "playerName": "AussieBoomer",
+          "country": "🇦🇺",
+          "avatar": "🛻",
+          "score": 2284,
+          "blocksBuilt": 70,
+          "maxCombo": 18,
+          "timestamp": 1790115247960
+        },
+        {
+          "id": "bot-9-TajMaster",
+          "playerId": "bot-player-9",
+          "playerName": "TajMaster",
+          "country": "🇮🇳",
+          "avatar": "🗿",
+          "score": 2175,
+          "blocksBuilt": 67,
+          "maxCombo": 17,
+          "timestamp": 1790095036239
+        },
+        {
+          "id": "bot-10-AlpineClimber",
+          "playerId": "bot-player-10",
+          "playerName": "AlpineClimber",
+          "country": "🇨🇭",
+          "avatar": "🐝",
+          "score": 1991,
+          "blocksBuilt": 61,
+          "maxCombo": 16,
+          "timestamp": 1790047585139
+        },
+        {
+          "id": "bot-11-SakuraPetal",
+          "playerId": "bot-player-11",
+          "playerName": "SakuraPetal",
+          "country": "🇯🇵",
+          "avatar": "🌸",
+          "score": 1900,
+          "blocksBuilt": 59,
+          "maxCombo": 15,
+          "timestamp": 1790032322223
+        },
+        {
+          "id": "bot-12-PixelGhost",
+          "playerId": "bot-player-12",
+          "playerName": "PixelGhost",
+          "country": "🇫🇷",
+          "avatar": "🛸",
+          "score": 1820,
+          "blocksBuilt": 57,
+          "maxCombo": 14,
+          "timestamp": 1790095570949
+        },
+        {
+          "id": "bot-13-CosmicBuilder",
+          "playerId": "bot-player-13",
+          "playerName": "CosmicBuilder",
+          "country": "🇪🇸",
+          "avatar": "🍄",
+          "score": 1727,
+          "blocksBuilt": 54,
+          "maxCombo": 13,
+          "timestamp": 1790037193032
+        },
+        {
+          "id": "bot-14-ThunderBlink",
+          "playerId": "bot-player-14",
+          "playerName": "ThunderBlink",
+          "country": "🇳🇴",
+          "avatar": "⚡",
+          "score": 1630,
+          "blocksBuilt": 51,
+          "maxCombo": 12,
+          "timestamp": 1790076715330
+        },
+        {
+          "id": "bot-15-GoldenCrown",
+          "playerId": "bot-player-15",
+          "playerName": "GoldenCrown",
+          "country": "🇮🇹",
+          "avatar": "🪙",
+          "score": 1527,
+          "blocksBuilt": 48,
+          "maxCombo": 11,
+          "timestamp": 1790086770957
+        },
+        {
+          "id": "bot-16-ShadowPanda",
+          "playerId": "bot-player-16",
+          "playerName": "ShadowPanda",
+          "country": "🇨🇳",
+          "avatar": "🐼",
+          "score": 1408,
+          "blocksBuilt": 45,
+          "maxCombo": 10,
+          "timestamp": 1790088356074
+        },
+        {
+          "id": "bot-17-SpeedyFox",
+          "playerId": "bot-player-17",
+          "playerName": "SpeedyFox",
+          "country": "🇲🇽",
+          "avatar": "🦊",
+          "score": 1374,
+          "blocksBuilt": 44,
+          "maxCombo": 9,
+          "timestamp": 1790092315896
+        },
+        {
+          "id": "bot-18-DiamondHands",
+          "playerId": "bot-player-18",
+          "playerName": "DiamondHands",
+          "country": "🇸🇬",
+          "avatar": "💎",
+          "score": 1266,
+          "blocksBuilt": 41,
+          "maxCombo": 8,
+          "timestamp": 1790095962268
+        },
+        {
+          "id": "bot-19-AstroNova",
+          "playerId": "bot-player-19",
+          "playerName": "AstroNova",
+          "country": "🇳🇱",
+          "avatar": "🚀",
+          "score": 1219,
+          "blocksBuilt": 39,
+          "maxCombo": 8,
+          "timestamp": 1790070987210
+        }
+      ]
+    },
+    {
+      "id": "daily-blitz",
+      "title": "Meteor Blitz Cup",
+      "subtitle": "Fast 24-Hour Reflex Duel",
+      "badge": "WORLD 8 EXCLUSIVE",
+      "icon": "⚡",
+      "gradient": "from-rose-500 via-red-500 to-amber-500",
+      "bannerBorder": "border-red-300",
+      "bgZoneId": "bg-7",
+      "worldNumber": 8,
+      "worldName": "Volcano",
+      "requiredLevel": 71,
+      "seed": 142091,
+      "blockCount": 50,
+      "speedMultiplier": 1.35,
+      "boomChance": 0.35,
+      "modifierDesc": "Hyper speed with dense bomb hazards! World 8 required.",
+      "startTime": 1790080885723,
+      "endTime": 1790169385723,
+      "prizes": {
+        "first": {
+          "coins": 4000,
+          "trophy": "gold",
+          "title": "Blitz King"
+        },
+        "second": {
+          "coins": 2000,
+          "trophy": "silver",
+          "title": "Blitz Ace"
+        },
+        "third": {
+          "coins": 1000,
+          "trophy": "bronze",
+          "title": "Blitz Runner-Up"
+        },
+        "top10": {
+          "coins": 400
+        },
+        "top50": {
+          "coins": 150
+        }
+      },
+      "totalParticipants": 312,
+      "entries": [
+        {
+          "id": "bot-0-VortexBuilder",
+          "playerId": "bot-player-0",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 2934,
+          "blocksBuilt": 88,
+          "maxCombo": 30,
+          "timestamp": 1790072050303
+        },
+        {
+          "id": "bot-1-NeonSamurai",
+          "playerId": "bot-player-1",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 2768,
+          "blocksBuilt": 84,
+          "maxCombo": 28,
+          "timestamp": 1790043447305
+        },
+        {
+          "id": "bot-2-KaiserStack",
+          "playerId": "bot-player-2",
+          "playerName": "KaiserStack",
+          "country": "🇩🇪",
+          "avatar": "🤺",
+          "score": 2647,
+          "blocksBuilt": 80,
+          "maxCombo": 26,
+          "timestamp": 1790115997876
+        },
+        {
+          "id": "bot-3-SambaStriker",
+          "playerId": "bot-player-3",
+          "playerName": "SambaStriker",
+          "country": "🇧🇷",
+          "avatar": "🦀",
+          "score": 2573,
+          "blocksBuilt": 78,
+          "maxCombo": 25,
+          "timestamp": 1790045285028
+        },
+        {
+          "id": "bot-4-LondonEye",
+          "playerId": "bot-player-4",
+          "playerName": "LondonEye",
+          "country": "🇬🇧",
+          "avatar": "🦊",
+          "score": 2416,
+          "blocksBuilt": 74,
+          "maxCombo": 24,
+          "timestamp": 1790050449965
+        },
+        {
+          "id": "bot-5-SeoulSurfer",
+          "playerId": "bot-player-5",
+          "playerName": "SeoulSurfer",
+          "country": "🇰🇷",
+          "avatar": "🐧",
+          "score": 2277,
+          "blocksBuilt": 70,
+          "maxCombo": 22,
+          "timestamp": 1790108582918
+        },
+        {
+          "id": "bot-6-NordicRune",
+          "playerId": "bot-player-6",
+          "playerName": "NordicRune",
+          "country": "🇸🇪",
+          "avatar": "🌋",
+          "score": 2161,
+          "blocksBuilt": 66,
+          "maxCombo": 21,
+          "timestamp": 1790043412912
+        },
+        {
+          "id": "bot-7-MapleDrop",
+          "playerId": "bot-player-7",
+          "playerName": "MapleDrop",
+          "country": "🇨🇦",
+          "avatar": "🍂",
+          "score": 2094,
+          "blocksBuilt": 64,
+          "maxCombo": 20,
+          "timestamp": 1790115863273
+        },
+        {
+          "id": "bot-8-AussieBoomer",
+          "playerId": "bot-player-8",
+          "playerName": "AussieBoomer",
+          "country": "🇦🇺",
+          "avatar": "🛻",
+          "score": 1930,
+          "blocksBuilt": 60,
+          "maxCombo": 18,
+          "timestamp": 1790073228823
+        },
+        {
+          "id": "bot-9-TajMaster",
+          "playerId": "bot-player-9",
+          "playerName": "TajMaster",
+          "country": "🇮🇳",
+          "avatar": "🗿",
+          "score": 1879,
+          "blocksBuilt": 58,
+          "maxCombo": 17,
+          "timestamp": 1790083607830
+        },
+        {
+          "id": "bot-10-AlpineClimber",
+          "playerId": "bot-player-10",
+          "playerName": "AlpineClimber",
+          "country": "🇨🇭",
+          "avatar": "🐝",
+          "score": 1773,
+          "blocksBuilt": 55,
+          "maxCombo": 16,
+          "timestamp": 1790115802265
+        },
+        {
+          "id": "bot-11-SakuraPetal",
+          "playerId": "bot-player-11",
+          "playerName": "SakuraPetal",
+          "country": "🇯🇵",
+          "avatar": "🌸",
+          "score": 1649,
+          "blocksBuilt": 52,
+          "maxCombo": 15,
+          "timestamp": 1790109898919
+        },
+        {
+          "id": "bot-12-PixelGhost",
+          "playerId": "bot-player-12",
+          "playerName": "PixelGhost",
+          "country": "🇫🇷",
+          "avatar": "🛸",
+          "score": 1521,
+          "blocksBuilt": 48,
+          "maxCombo": 14,
+          "timestamp": 1790094676421
+        },
+        {
+          "id": "bot-13-CosmicBuilder",
+          "playerId": "bot-player-13",
+          "playerName": "CosmicBuilder",
+          "country": "🇪🇸",
+          "avatar": "🍄",
+          "score": 1481,
+          "blocksBuilt": 47,
+          "maxCombo": 13,
+          "timestamp": 1790032644812
+        },
+        {
+          "id": "bot-14-ThunderBlink",
+          "playerId": "bot-player-14",
+          "playerName": "ThunderBlink",
+          "country": "🇳🇴",
+          "avatar": "⚡",
+          "score": 1393,
+          "blocksBuilt": 44,
+          "maxCombo": 12,
+          "timestamp": 1790037693518
+        },
+        {
+          "id": "bot-15-GoldenCrown",
+          "playerId": "bot-player-15",
+          "playerName": "GoldenCrown",
+          "country": "🇮🇹",
+          "avatar": "🪙",
+          "score": 1304,
+          "blocksBuilt": 42,
+          "maxCombo": 11,
+          "timestamp": 1790104321540
+        },
+        {
+          "id": "bot-16-ShadowPanda",
+          "playerId": "bot-player-16",
+          "playerName": "ShadowPanda",
+          "country": "🇨🇳",
+          "avatar": "🐼",
+          "score": 1223,
+          "blocksBuilt": 39,
+          "maxCombo": 10,
+          "timestamp": 1790102108497
+        },
+        {
+          "id": "bot-17-SpeedyFox",
+          "playerId": "bot-player-17",
+          "playerName": "SpeedyFox",
+          "country": "🇲🇽",
+          "avatar": "🦊",
+          "score": 1179,
+          "blocksBuilt": 38,
+          "maxCombo": 9,
+          "timestamp": 1790077752476
+        },
+        {
+          "id": "bot-18-DiamondHands",
+          "playerId": "bot-player-18",
+          "playerName": "DiamondHands",
+          "country": "🇸🇬",
+          "avatar": "💎",
+          "score": 1131,
+          "blocksBuilt": 37,
+          "maxCombo": 8,
+          "timestamp": 1790084069185
+        },
+        {
+          "id": "bot-19-AstroNova",
+          "playerId": "bot-player-19",
+          "playerName": "AstroNova",
+          "country": "🇳🇱",
+          "avatar": "🚀",
+          "score": 1076,
+          "blocksBuilt": 35,
+          "maxCombo": 8,
+          "timestamp": 1790081887291
+        }
+      ]
+    },
+    {
+      "id": "weekly-grand-prix",
+      "title": "Skyline Grand Prix",
+      "subtitle": "Week 38 Championship Arena",
+      "badge": "WORLD 14 MAJOR",
+      "icon": "🏆",
+      "gradient": "from-amber-500 via-yellow-500 to-orange-500",
+      "bannerBorder": "border-yellow-300",
+      "bgZoneId": "bg-13",
+      "worldNumber": 14,
+      "worldName": "Golden Legend",
+      "requiredLevel": 131,
+      "seed": 884920,
+      "blockCount": 100,
+      "speedMultiplier": 1.15,
+      "boomChance": 0.28,
+      "modifierDesc": "High stakes 100-block gauntlet! 2x Combo Multiplier. World 14 required.",
+      "startTime": 1789857685723,
+      "endTime": 1790484085723,
+      "prizes": {
+        "first": {
+          "coins": 5000,
+          "trophy": "gold",
+          "title": "Grand Champion"
+        },
+        "second": {
+          "coins": 2500,
+          "trophy": "silver",
+          "title": "Grand Finalist"
+        },
+        "third": {
+          "coins": 1200,
+          "trophy": "bronze",
+          "title": "Podium Master"
+        },
+        "top10": {
+          "coins": 500
+        },
+        "top50": {
+          "coins": 200
+        }
+      },
+      "totalParticipants": 428,
+      "entries": [
+        {
+          "id": "bot-0-VortexBuilder",
+          "playerId": "bot-player-0",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 4861,
+          "blocksBuilt": 143,
+          "maxCombo": 30,
+          "timestamp": 1790113731634
+        },
+        {
+          "id": "bot-1-NeonSamurai",
+          "playerId": "bot-player-1",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 4664,
+          "blocksBuilt": 138,
+          "maxCombo": 28,
+          "timestamp": 1790061827949
+        },
+        {
+          "id": "bot-2-KaiserStack",
+          "playerId": "bot-player-2",
+          "playerName": "KaiserStack",
+          "country": "🇩🇪",
+          "avatar": "🤺",
+          "score": 4529,
+          "blocksBuilt": 134,
+          "maxCombo": 27,
+          "timestamp": 1790065081607
+        },
+        {
+          "id": "bot-3-SambaStriker",
+          "playerId": "bot-player-3",
+          "playerName": "SambaStriker",
+          "country": "🇧🇷",
+          "avatar": "🦀",
+          "score": 4332,
+          "blocksBuilt": 128,
+          "maxCombo": 26,
+          "timestamp": 1790063374680
+        },
+        {
+          "id": "bot-4-LondonEye",
+          "playerId": "bot-player-4",
+          "playerName": "LondonEye",
+          "country": "🇬🇧",
+          "avatar": "🦊",
+          "score": 4153,
+          "blocksBuilt": 123,
+          "maxCombo": 25,
+          "timestamp": 1790042818337
+        },
+        {
+          "id": "bot-5-SeoulSurfer",
+          "playerId": "bot-player-5",
+          "playerName": "SeoulSurfer",
+          "country": "🇰🇷",
+          "avatar": "🐧",
+          "score": 4005,
+          "blocksBuilt": 119,
+          "maxCombo": 24,
+          "timestamp": 1790063138429
+        },
+        {
+          "id": "bot-6-NordicRune",
+          "playerId": "bot-player-6",
+          "playerName": "NordicRune",
+          "country": "🇸🇪",
+          "avatar": "🌋",
+          "score": 3841,
+          "blocksBuilt": 114,
+          "maxCombo": 22,
+          "timestamp": 1790044536951
+        },
+        {
+          "id": "bot-7-MapleDrop",
+          "playerId": "bot-player-7",
+          "playerName": "MapleDrop",
+          "country": "🇨🇦",
+          "avatar": "🍂",
+          "score": 3723,
+          "blocksBuilt": 111,
+          "maxCombo": 21,
+          "timestamp": 1790104812127
+        },
+        {
+          "id": "bot-8-AussieBoomer",
+          "playerId": "bot-player-8",
+          "playerName": "AussieBoomer",
+          "country": "🇦🇺",
+          "avatar": "🛻",
+          "score": 3516,
+          "blocksBuilt": 105,
+          "maxCombo": 20,
+          "timestamp": 1790100608370
+        },
+        {
+          "id": "bot-9-TajMaster",
+          "playerId": "bot-player-9",
+          "playerName": "TajMaster",
+          "country": "🇮🇳",
+          "avatar": "🗿",
+          "score": 3383,
+          "blocksBuilt": 101,
+          "maxCombo": 19,
+          "timestamp": 1790033648832
+        },
+        {
+          "id": "bot-10-AlpineClimber",
+          "playerId": "bot-player-10",
+          "playerName": "AlpineClimber",
+          "country": "🇨🇭",
+          "avatar": "🐝",
+          "score": 3243,
+          "blocksBuilt": 97,
+          "maxCombo": 18,
+          "timestamp": 1790092174827
+        },
+        {
+          "id": "bot-11-SakuraPetal",
+          "playerId": "bot-player-11",
+          "playerName": "SakuraPetal",
+          "country": "🇯🇵",
+          "avatar": "🌸",
+          "score": 3121,
+          "blocksBuilt": 94,
+          "maxCombo": 17,
+          "timestamp": 1790076928611
+        },
+        {
+          "id": "bot-12-PixelGhost",
+          "playerId": "bot-player-12",
+          "playerName": "PixelGhost",
+          "country": "🇫🇷",
+          "avatar": "🛸",
+          "score": 2941,
+          "blocksBuilt": 89,
+          "maxCombo": 16,
+          "timestamp": 1790031062467
+        },
+        {
+          "id": "bot-13-CosmicBuilder",
+          "playerId": "bot-player-13",
+          "playerName": "CosmicBuilder",
+          "country": "🇪🇸",
+          "avatar": "🍄",
+          "score": 2816,
+          "blocksBuilt": 85,
+          "maxCombo": 15,
+          "timestamp": 1790059590411
+        },
+        {
+          "id": "bot-14-ThunderBlink",
+          "playerId": "bot-player-14",
+          "playerName": "ThunderBlink",
+          "country": "🇳🇴",
+          "avatar": "⚡",
+          "score": 2700,
+          "blocksBuilt": 82,
+          "maxCombo": 14,
+          "timestamp": 1790110899567
+        },
+        {
+          "id": "bot-15-GoldenCrown",
+          "playerId": "bot-player-15",
+          "playerName": "GoldenCrown",
+          "country": "🇮🇹",
+          "avatar": "🪙",
+          "score": 2538,
+          "blocksBuilt": 77,
+          "maxCombo": 14,
+          "timestamp": 1790066484304
+        },
+        {
+          "id": "bot-16-ShadowPanda",
+          "playerId": "bot-player-16",
+          "playerName": "ShadowPanda",
+          "country": "🇨🇳",
+          "avatar": "🐼",
+          "score": 2428,
+          "blocksBuilt": 74,
+          "maxCombo": 13,
+          "timestamp": 1790114685942
+        },
+        {
+          "id": "bot-17-SpeedyFox",
+          "playerId": "bot-player-17",
+          "playerName": "SpeedyFox",
+          "country": "🇲🇽",
+          "avatar": "🦊",
+          "score": 2302,
+          "blocksBuilt": 70,
+          "maxCombo": 12,
+          "timestamp": 1790108668761
+        },
+        {
+          "id": "bot-18-DiamondHands",
+          "playerId": "bot-player-18",
+          "playerName": "DiamondHands",
+          "country": "🇸🇬",
+          "avatar": "💎",
+          "score": 2212,
+          "blocksBuilt": 68,
+          "maxCombo": 11,
+          "timestamp": 1790059138886
+        },
+        {
+          "id": "bot-19-AstroNova",
+          "playerId": "bot-player-19",
+          "playerName": "AstroNova",
+          "country": "🇳🇱",
+          "avatar": "🚀",
+          "score": 2163,
+          "blocksBuilt": 66,
+          "maxCombo": 10,
+          "timestamp": 1790035017475
+        },
+        {
+          "id": "bot-20-VortexBuilder",
+          "playerId": "bot-player-20",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 1993,
+          "blocksBuilt": 61,
+          "maxCombo": 10,
+          "timestamp": 1790050665210
+        },
+        {
+          "id": "bot-21-NeonSamurai",
+          "playerId": "bot-player-21",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 1902,
+          "blocksBuilt": 59,
+          "maxCombo": 9,
+          "timestamp": 1790085476867
+        },
+        {
+          "id": "bot-22-KaiserStack",
+          "playerId": "bot-player-22",
+          "playerName": "KaiserStack",
+          "country": "🇩🇪",
+          "avatar": "🤺",
+          "score": 1837,
+          "blocksBuilt": 57,
+          "maxCombo": 9,
+          "timestamp": 1790063519227
+        },
+        {
+          "id": "bot-23-SambaStriker",
+          "playerId": "bot-player-23",
+          "playerName": "SambaStriker",
+          "country": "🇧🇷",
+          "avatar": "🦀",
+          "score": 1807,
+          "blocksBuilt": 56,
+          "maxCombo": 8,
+          "timestamp": 1790094685146
+        },
+        {
+          "id": "bot-24-LondonEye",
+          "playerId": "bot-player-24",
+          "playerName": "LondonEye",
+          "country": "🇬🇧",
+          "avatar": "🦊",
+          "score": 1758,
+          "blocksBuilt": 55,
+          "maxCombo": 8,
+          "timestamp": 1790052106034
+        }
+      ]
+    },
+    {
+      "id": "cyber-overdrive",
+      "title": "Cyber Circuit Rush",
+      "subtitle": "Neon Mirage Gauntlet",
+      "badge": "WORLD 15 MASTER",
+      "icon": "🤖",
+      "gradient": "from-cyan-500 via-blue-600 to-purple-600",
+      "bannerBorder": "border-cyan-300",
+      "bgZoneId": "bg-14",
+      "worldNumber": 15,
+      "worldName": "Cyberpunk",
+      "requiredLevel": 141,
+      "seed": 991244,
+      "blockCount": 75,
+      "speedMultiplier": 1.25,
+      "boomChance": 0.3,
+      "modifierDesc": "Deceptive ghost & blinking blocks! World 15 required.",
+      "startTime": 1790030485723,
+      "endTime": 1790318485723,
+      "prizes": {
+        "first": {
+          "coins": 4500,
+          "trophy": "gold",
+          "title": "Neon Legend"
+        },
+        "second": {
+          "coins": 2200,
+          "trophy": "silver",
+          "title": "Cyber Master"
+        },
+        "third": {
+          "coins": 1100,
+          "trophy": "bronze",
+          "title": "Glitch Hunter"
+        },
+        "top10": {
+          "coins": 450
+        },
+        "top50": {
+          "coins": 180
+        }
+      },
+      "totalParticipants": 279,
+      "entries": [
+        {
+          "id": "bot-0-VortexBuilder",
+          "playerId": "bot-player-0",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 3688,
+          "blocksBuilt": 110,
+          "maxCombo": 30,
+          "timestamp": 1790086783500
+        },
+        {
+          "id": "bot-1-NeonSamurai",
+          "playerId": "bot-player-1",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 3489,
+          "blocksBuilt": 104,
+          "maxCombo": 28,
+          "timestamp": 1790069902738
+        },
+        {
+          "id": "bot-2-KaiserStack",
+          "playerId": "bot-player-2",
+          "playerName": "KaiserStack",
+          "country": "🇩🇪",
+          "avatar": "🤺",
+          "score": 3325,
+          "blocksBuilt": 100,
+          "maxCombo": 27,
+          "timestamp": 1790084532805
+        },
+        {
+          "id": "bot-3-SambaStriker",
+          "playerId": "bot-player-3",
+          "playerName": "SambaStriker",
+          "country": "🇧🇷",
+          "avatar": "🦀",
+          "score": 3237,
+          "blocksBuilt": 97,
+          "maxCombo": 25,
+          "timestamp": 1790040903406
+        },
+        {
+          "id": "bot-4-LondonEye",
+          "playerId": "bot-player-4",
+          "playerName": "LondonEye",
+          "country": "🇬🇧",
+          "avatar": "🦊",
+          "score": 3094,
+          "blocksBuilt": 93,
+          "maxCombo": 24,
+          "timestamp": 1790079411232
+        },
+        {
+          "id": "bot-5-SeoulSurfer",
+          "playerId": "bot-player-5",
+          "playerName": "SeoulSurfer",
+          "country": "🇰🇷",
+          "avatar": "🐧",
+          "score": 2953,
+          "blocksBuilt": 89,
+          "maxCombo": 23,
+          "timestamp": 1790067546936
+        },
+        {
+          "id": "bot-6-NordicRune",
+          "playerId": "bot-player-6",
+          "playerName": "NordicRune",
+          "country": "🇸🇪",
+          "avatar": "🌋",
+          "score": 2809,
+          "blocksBuilt": 85,
+          "maxCombo": 22,
+          "timestamp": 1790064533173
+        },
+        {
+          "id": "bot-7-MapleDrop",
+          "playerId": "bot-player-7",
+          "playerName": "MapleDrop",
+          "country": "🇨🇦",
+          "avatar": "🍂",
+          "score": 2657,
+          "blocksBuilt": 80,
+          "maxCombo": 20,
+          "timestamp": 1790091723510
+        },
+        {
+          "id": "bot-8-AussieBoomer",
+          "playerId": "bot-player-8",
+          "playerName": "AussieBoomer",
+          "country": "🇦🇺",
+          "avatar": "🛻",
+          "score": 2531,
+          "blocksBuilt": 77,
+          "maxCombo": 19,
+          "timestamp": 1790114904765
+        },
+        {
+          "id": "bot-9-TajMaster",
+          "playerId": "bot-player-9",
+          "playerName": "TajMaster",
+          "country": "🇮🇳",
+          "avatar": "🗿",
+          "score": 2387,
+          "blocksBuilt": 73,
+          "maxCombo": 18,
+          "timestamp": 1790085169814
+        },
+        {
+          "id": "bot-10-AlpineClimber",
+          "playerId": "bot-player-10",
+          "playerName": "AlpineClimber",
+          "country": "🇨🇭",
+          "avatar": "🐝",
+          "score": 2256,
+          "blocksBuilt": 69,
+          "maxCombo": 17,
+          "timestamp": 1790084908022
+        },
+        {
+          "id": "bot-11-SakuraPetal",
+          "playerId": "bot-player-11",
+          "playerName": "SakuraPetal",
+          "country": "🇯🇵",
+          "avatar": "🌸",
+          "score": 2206,
+          "blocksBuilt": 68,
+          "maxCombo": 16,
+          "timestamp": 1790078044779
+        },
+        {
+          "id": "bot-12-PixelGhost",
+          "playerId": "bot-player-12",
+          "playerName": "PixelGhost",
+          "country": "🇫🇷",
+          "avatar": "🛸",
+          "score": 2031,
+          "blocksBuilt": 63,
+          "maxCombo": 15,
+          "timestamp": 1790094648008
+        },
+        {
+          "id": "bot-13-CosmicBuilder",
+          "playerId": "bot-player-13",
+          "playerName": "CosmicBuilder",
+          "country": "🇪🇸",
+          "avatar": "🍄",
+          "score": 1976,
+          "blocksBuilt": 61,
+          "maxCombo": 14,
+          "timestamp": 1790096368193
+        },
+        {
+          "id": "bot-14-ThunderBlink",
+          "playerId": "bot-player-14",
+          "playerName": "ThunderBlink",
+          "country": "🇳🇴",
+          "avatar": "⚡",
+          "score": 1878,
+          "blocksBuilt": 58,
+          "maxCombo": 13,
+          "timestamp": 1790098879121
+        },
+        {
+          "id": "bot-15-GoldenCrown",
+          "playerId": "bot-player-15",
+          "playerName": "GoldenCrown",
+          "country": "🇮🇹",
+          "avatar": "🪙",
+          "score": 1725,
+          "blocksBuilt": 54,
+          "maxCombo": 12,
+          "timestamp": 1790055069505
+        },
+        {
+          "id": "bot-16-ShadowPanda",
+          "playerId": "bot-player-16",
+          "playerName": "ShadowPanda",
+          "country": "🇨🇳",
+          "avatar": "🐼",
+          "score": 1690,
+          "blocksBuilt": 53,
+          "maxCombo": 11,
+          "timestamp": 1790031335916
+        },
+        {
+          "id": "bot-17-SpeedyFox",
+          "playerId": "bot-player-17",
+          "playerName": "SpeedyFox",
+          "country": "🇲🇽",
+          "avatar": "🦊",
+          "score": 1613,
+          "blocksBuilt": 51,
+          "maxCombo": 10,
+          "timestamp": 1790075459891
+        },
+        {
+          "id": "bot-18-DiamondHands",
+          "playerId": "bot-player-18",
+          "playerName": "DiamondHands",
+          "country": "🇸🇬",
+          "avatar": "💎",
+          "score": 1499,
+          "blocksBuilt": 47,
+          "maxCombo": 10,
+          "timestamp": 1790080993219
+        },
+        {
+          "id": "bot-19-AstroNova",
+          "playerId": "bot-player-19",
+          "playerName": "AstroNova",
+          "country": "🇳🇱",
+          "avatar": "🚀",
+          "score": 1404,
+          "blocksBuilt": 45,
+          "maxCombo": 9,
+          "timestamp": 1790084629338
+        },
+        {
+          "id": "bot-20-VortexBuilder",
+          "playerId": "bot-player-20",
+          "playerName": "VortexBuilder",
+          "country": "🇺🇸",
+          "avatar": "🧑‍🚀",
+          "score": 1333,
+          "blocksBuilt": 43,
+          "maxCombo": 8,
+          "timestamp": 1790074585309
+        },
+        {
+          "id": "bot-21-NeonSamurai",
+          "playerId": "bot-player-21",
+          "playerName": "NeonSamurai",
+          "country": "🇯🇵",
+          "avatar": "🤖",
+          "score": 1306,
+          "blocksBuilt": 42,
+          "maxCombo": 8,
+          "timestamp": 1790078392603
+        }
+      ]
+    }
+  ],
+  "globalLeaderboards": {
+    "endless": [
+      {
+        "id": "endless-1790207587871-eqci",
+        "playerId": "player_jw83m1q",
+        "playerName": "Builder_562",
+        "score": 2560,
+        "secondaryStat": "Endless Record",
+        "avatar": "🧑‍🚀",
+        "country": "🌍",
+        "timestamp": 1790207587871
+      },
+      {
+        "id": "endless-0",
+        "playerId": "bot-0",
+        "playerName": "VortexBuilder",
+        "avatar": "🧑‍🚀",
+        "country": "🇺🇸",
+        "score": 2150,
+        "secondaryStat": "Streak x25",
+        "timestamp": 1790116885723
+      },
+      {
+        "id": "endless-1",
+        "playerId": "bot-1",
+        "playerName": "NeonSamurai",
+        "avatar": "🤖",
+        "country": "🇯🇵",
+        "score": 2030,
+        "secondaryStat": "Streak x24",
+        "timestamp": 1790102885723
+      },
+      {
+        "id": "endless-2",
+        "playerId": "bot-2",
+        "playerName": "KaiserStack",
+        "avatar": "🤺",
+        "country": "🇩🇪",
+        "score": 1913,
+        "secondaryStat": "Streak x23",
+        "timestamp": 1790088885723
+      },
+      {
+        "id": "endless-3",
+        "playerId": "bot-3",
+        "playerName": "SambaStriker",
+        "avatar": "🦀",
+        "country": "🇧🇷",
+        "score": 1797,
+        "secondaryStat": "Streak x22",
+        "timestamp": 1790074885723
+      },
+      {
+        "id": "endless-4",
+        "playerId": "bot-4",
+        "playerName": "LondonEye",
+        "avatar": "🦊",
+        "country": "🇬🇧",
+        "score": 1684,
+        "secondaryStat": "Streak x21",
+        "timestamp": 1790060885723
+      },
+      {
+        "id": "endless-5",
+        "playerId": "bot-5",
+        "playerName": "SeoulSurfer",
+        "avatar": "🐧",
+        "country": "🇰🇷",
+        "score": 1572,
+        "secondaryStat": "Streak x20",
+        "timestamp": 1790046885723
+      },
+      {
+        "id": "endless-6",
+        "playerId": "bot-6",
+        "playerName": "NordicRune",
+        "avatar": "🌋",
+        "country": "🇸🇪",
+        "score": 1463,
+        "secondaryStat": "Streak x19",
+        "timestamp": 1790032885723
+      },
+      {
+        "id": "endless-7",
+        "playerId": "bot-7",
+        "playerName": "MapleDrop",
+        "avatar": "🍂",
+        "country": "🇨🇦",
+        "score": 1356,
+        "secondaryStat": "Streak x18",
+        "timestamp": 1790018885723
+      },
+      {
+        "id": "endless-8",
+        "playerId": "bot-8",
+        "playerName": "AussieBoomer",
+        "avatar": "🛻",
+        "country": "🇦🇺",
+        "score": 1252,
+        "secondaryStat": "Streak x17",
+        "timestamp": 1790004885723
+      },
+      {
+        "id": "endless-9",
+        "playerId": "bot-9",
+        "playerName": "TajMaster",
+        "avatar": "🗿",
+        "country": "🇮🇳",
+        "score": 1150,
+        "secondaryStat": "Streak x16",
+        "timestamp": 1789990885723
+      },
+      {
+        "id": "endless-10",
+        "playerId": "bot-10",
+        "playerName": "AlpineClimber",
+        "avatar": "🐝",
+        "country": "🇨🇭",
+        "score": 1051,
+        "secondaryStat": "Streak x16",
+        "timestamp": 1789976885723
+      },
+      {
+        "id": "endless-11",
+        "playerId": "bot-11",
+        "playerName": "SakuraPetal",
+        "avatar": "🌸",
+        "country": "🇯🇵",
+        "score": 955,
+        "secondaryStat": "Streak x15",
+        "timestamp": 1789962885723
+      },
+      {
+        "id": "endless-12",
+        "playerId": "bot-12",
+        "playerName": "PixelGhost",
+        "avatar": "🛸",
+        "country": "🇫🇷",
+        "score": 862,
+        "secondaryStat": "Streak x14",
+        "timestamp": 1789948885723
+      },
+      {
+        "id": "endless-13",
+        "playerId": "bot-13",
+        "playerName": "CosmicBuilder",
+        "avatar": "🍄",
+        "country": "🇪🇸",
+        "score": 772,
+        "secondaryStat": "Streak x13",
+        "timestamp": 1789934885723
+      },
+      {
+        "id": "endless-14",
+        "playerId": "bot-14",
+        "playerName": "ThunderBlink",
+        "avatar": "⚡",
+        "country": "🇳🇴",
+        "score": 686,
+        "secondaryStat": "Streak x12",
+        "timestamp": 1789920885723
+      },
+      {
+        "id": "endless-15",
+        "playerId": "bot-15",
+        "playerName": "GoldenCrown",
+        "avatar": "🪙",
+        "country": "🇮🇹",
+        "score": 605,
+        "secondaryStat": "Streak x11",
+        "timestamp": 1789906885723
+      },
+      {
+        "id": "endless-16",
+        "playerId": "bot-16",
+        "playerName": "ShadowPanda",
+        "avatar": "🐼",
+        "country": "🇨🇳",
+        "score": 528,
+        "secondaryStat": "Streak x10",
+        "timestamp": 1789892885723
+      },
+      {
+        "id": "endless-17",
+        "playerId": "bot-17",
+        "playerName": "SpeedyFox",
+        "avatar": "🦊",
+        "country": "🇲🇽",
+        "score": 457,
+        "secondaryStat": "Streak x9",
+        "timestamp": 1789878885723
+      }
+    ],
+    "campaign": [
+      {
+        "id": "campaign-0",
+        "playerId": "bot-0",
+        "playerName": "VortexBuilder",
+        "avatar": "🧑‍🚀",
+        "country": "🇺🇸",
+        "score": 198,
+        "secondaryStat": "Realm 20/20",
+        "timestamp": 1790116885723
+      },
+      {
+        "id": "campaign-1",
+        "playerId": "bot-1",
+        "playerName": "NeonSamurai",
+        "avatar": "🤖",
+        "country": "🇯🇵",
+        "score": 189,
+        "secondaryStat": "Realm 20/20",
+        "timestamp": 1790100885723
+      },
+      {
+        "id": "campaign-2",
+        "playerId": "bot-2",
+        "playerName": "KaiserStack",
+        "avatar": "🤺",
+        "country": "🇩🇪",
+        "score": 184,
+        "secondaryStat": "Realm 19/20",
+        "timestamp": 1790084885723
+      },
+      {
+        "id": "campaign-3",
+        "playerId": "bot-3",
+        "playerName": "SambaStriker",
+        "avatar": "🦀",
+        "country": "🇧🇷",
+        "score": 174,
+        "secondaryStat": "Realm 18/20",
+        "timestamp": 1790068885723
+      },
+      {
+        "id": "campaign-4",
+        "playerId": "bot-4",
+        "playerName": "LondonEye",
+        "avatar": "🦊",
+        "country": "🇬🇧",
+        "score": 168,
+        "secondaryStat": "Realm 17/20",
+        "timestamp": 1790052885723
+      },
+      {
+        "id": "campaign-5",
+        "playerId": "bot-5",
+        "playerName": "SeoulSurfer",
+        "avatar": "🐧",
+        "country": "🇰🇷",
+        "score": 160,
+        "secondaryStat": "Realm 16/20",
+        "timestamp": 1790036885723
+      },
+      {
+        "id": "campaign-6",
+        "playerId": "bot-6",
+        "playerName": "NordicRune",
+        "avatar": "🌋",
+        "country": "🇸🇪",
+        "score": 151,
+        "secondaryStat": "Realm 15/20",
+        "timestamp": 1790020885723
+      },
+      {
+        "id": "campaign-7",
+        "playerId": "bot-7",
+        "playerName": "MapleDrop",
+        "avatar": "🍂",
+        "country": "🇨🇦",
+        "score": 141,
+        "secondaryStat": "Realm 14/20",
+        "timestamp": 1790004885723
+      },
+      {
+        "id": "campaign-8",
+        "playerId": "bot-8",
+        "playerName": "AussieBoomer",
+        "avatar": "🛻",
+        "country": "🇦🇺",
+        "score": 133,
+        "secondaryStat": "Realm 13/20",
+        "timestamp": 1789988885723
+      },
+      {
+        "id": "campaign-9",
+        "playerId": "bot-9",
+        "playerName": "TajMaster",
+        "avatar": "🗿",
+        "country": "🇮🇳",
+        "score": 128,
+        "secondaryStat": "Realm 12/20",
+        "timestamp": 1789972885723
+      },
+      {
+        "id": "campaign-10",
+        "playerId": "bot-10",
+        "playerName": "AlpineClimber",
+        "avatar": "🐝",
+        "country": "🇨🇭",
+        "score": 120,
+        "secondaryStat": "Realm 11/20",
+        "timestamp": 1789956885723
+      },
+      {
+        "id": "campaign-11",
+        "playerId": "bot-11",
+        "playerName": "SakuraPetal",
+        "avatar": "🌸",
+        "country": "🇯🇵",
+        "score": 112,
+        "secondaryStat": "Realm 11/20",
+        "timestamp": 1789940885723
+      },
+      {
+        "id": "campaign-12",
+        "playerId": "bot-12",
+        "playerName": "PixelGhost",
+        "avatar": "🛸",
+        "country": "🇫🇷",
+        "score": 101,
+        "secondaryStat": "Realm 10/20",
+        "timestamp": 1789924885723
+      },
+      {
+        "id": "campaign-13",
+        "playerId": "bot-13",
+        "playerName": "CosmicBuilder",
+        "avatar": "🍄",
+        "country": "🇪🇸",
+        "score": 94,
+        "secondaryStat": "Realm 9/20",
+        "timestamp": 1789908885723
+      },
+      {
+        "id": "campaign-14",
+        "playerId": "bot-14",
+        "playerName": "ThunderBlink",
+        "avatar": "⚡",
+        "country": "🇳🇴",
+        "score": 86,
+        "secondaryStat": "Realm 8/20",
+        "timestamp": 1789892885723
+      },
+      {
+        "id": "campaign-15",
+        "playerId": "bot-15",
+        "playerName": "GoldenCrown",
+        "avatar": "🪙",
+        "country": "🇮🇹",
+        "score": 78,
+        "secondaryStat": "Realm 7/20",
+        "timestamp": 1789876885723
+      },
+      {
+        "id": "campaign-16",
+        "playerId": "bot-16",
+        "playerName": "ShadowPanda",
+        "avatar": "🐼",
+        "country": "🇨🇳",
+        "score": 71,
+        "secondaryStat": "Realm 6/20",
+        "timestamp": 1789860885723
+      },
+      {
+        "id": "campaign-17",
+        "playerId": "bot-17",
+        "playerName": "SpeedyFox",
+        "avatar": "🦊",
+        "country": "🇲🇽",
+        "score": 63,
+        "secondaryStat": "Realm 5/20",
+        "timestamp": 1789844885723
+      },
+      {
+        "id": "campaign-1790207588080-7xbp",
+        "playerId": "player_jw83m1q",
+        "playerName": "Builder_562",
+        "score": 18,
+        "secondaryStat": "Level 18/200",
+        "avatar": "🧑‍🚀",
+        "country": "🌍",
+        "timestamp": 1790207588080
+      }
+    ],
+    "tournament": [
+      {
+        "id": "tournament-0",
+        "playerId": "bot-tourney-0",
+        "playerName": "VortexBuilder",
+        "avatar": "🧑‍🚀",
+        "country": "🇺🇸",
+        "score": 5850,
+        "secondaryStat": "Grand Prix • Combo x32",
+        "timestamp": 1790214296584
+      },
+      {
+        "id": "tournament-1",
+        "playerId": "bot-tourney-1",
+        "playerName": "NeonSamurai",
+        "avatar": "🤖",
+        "country": "🇯🇵",
+        "score": 5527,
+        "secondaryStat": "Orbital Trials • Combo x27",
+        "timestamp": 1790203296584
+      },
+      {
+        "id": "tournament-2",
+        "playerId": "bot-tourney-2",
+        "playerName": "KaiserStack",
+        "avatar": "🤺",
+        "country": "🇩🇪",
+        "score": 5208,
+        "secondaryStat": "Grand Prix • Combo x30",
+        "timestamp": 1790192296584
+      },
+      {
+        "id": "tournament-3",
+        "playerId": "bot-tourney-3",
+        "playerName": "SambaStriker",
+        "avatar": "🦀",
+        "country": "🇧🇷",
+        "score": 4894,
+        "secondaryStat": "Orbital Trials • Combo x25",
+        "timestamp": 1790181296584
+      },
+      {
+        "id": "tournament-4",
+        "playerId": "bot-tourney-4",
+        "playerName": "LondonEye",
+        "avatar": "🦊",
+        "country": "🇬🇧",
+        "score": 4584,
+        "secondaryStat": "Grand Prix • Combo x28",
+        "timestamp": 1790170296584
+      },
+      {
+        "id": "tournament-5",
+        "playerId": "bot-tourney-5",
+        "playerName": "SeoulSurfer",
+        "avatar": "🐧",
+        "country": "🇰🇷",
+        "score": 4279,
+        "secondaryStat": "Orbital Trials • Combo x23",
+        "timestamp": 1790159296584
+      },
+      {
+        "id": "tournament-6",
+        "playerId": "bot-tourney-6",
+        "playerName": "NordicRune",
+        "avatar": "🌋",
+        "country": "🇸🇪",
+        "score": 3979,
+        "secondaryStat": "Grand Prix • Combo x26",
+        "timestamp": 1790148296584
+      },
+      {
+        "id": "tournament-7",
+        "playerId": "bot-tourney-7",
+        "playerName": "MapleDrop",
+        "avatar": "🍂",
+        "country": "🇨🇦",
+        "score": 3684,
+        "secondaryStat": "Orbital Trials • Combo x21",
+        "timestamp": 1790137296584
+      },
+      {
+        "id": "tournament-8",
+        "playerId": "bot-tourney-8",
+        "playerName": "AussieBoomer",
+        "avatar": "🛻",
+        "country": "🇦🇺",
+        "score": 3395,
+        "secondaryStat": "Grand Prix • Combo x24",
+        "timestamp": 1790126296584
+      },
+      {
+        "id": "tournament-9",
+        "playerId": "bot-tourney-9",
+        "playerName": "TajMaster",
+        "avatar": "🗿",
+        "country": "🇮🇳",
+        "score": 3112,
+        "secondaryStat": "Orbital Trials • Combo x19",
+        "timestamp": 1790115296584
+      },
+      {
+        "id": "tournament-10",
+        "playerId": "bot-tourney-10",
+        "playerName": "AlpineClimber",
+        "avatar": "🐝",
+        "country": "🇨🇭",
+        "score": 2836,
+        "secondaryStat": "Grand Prix • Combo x22",
+        "timestamp": 1790104296584
+      },
+      {
+        "id": "tournament-11",
+        "playerId": "bot-tourney-11",
+        "playerName": "SakuraPetal",
+        "avatar": "🌸",
+        "country": "🇯🇵",
+        "score": 2566,
+        "secondaryStat": "Orbital Trials • Combo x17",
+        "timestamp": 1790093296584
+      },
+      {
+        "id": "tournament-12",
+        "playerId": "bot-tourney-12",
+        "playerName": "PixelGhost",
+        "avatar": "🛸",
+        "country": "🇫🇷",
+        "score": 2304,
+        "secondaryStat": "Grand Prix • Combo x20",
+        "timestamp": 1790082296584
+      },
+      {
+        "id": "tournament-13",
+        "playerId": "bot-tourney-13",
+        "playerName": "CosmicBuilder",
+        "avatar": "🍄",
+        "country": "🇪🇸",
+        "score": 2049,
+        "secondaryStat": "Orbital Trials • Combo x15",
+        "timestamp": 1790071296584
+      },
+      {
+        "id": "tournament-14",
+        "playerId": "bot-tourney-14",
+        "playerName": "ThunderBlink",
+        "avatar": "⚡",
+        "country": "🇳🇴",
+        "score": 1804,
+        "secondaryStat": "Grand Prix • Combo x18",
+        "timestamp": 1790060296584
+      },
+      {
+        "id": "tournament-15",
+        "playerId": "bot-tourney-15",
+        "playerName": "GoldenCrown",
+        "avatar": "🪙",
+        "country": "🇮🇹",
+        "score": 1569,
+        "secondaryStat": "Orbital Trials • Combo x13",
+        "timestamp": 1790049296584
+      },
+      {
+        "id": "tournament-16",
+        "playerId": "bot-tourney-16",
+        "playerName": "ShadowPanda",
+        "avatar": "🐼",
+        "country": "🇨🇳",
+        "score": 1345,
+        "secondaryStat": "Grand Prix • Combo x16",
+        "timestamp": 1790038296584
+      },
+      {
+        "id": "tournament-17",
+        "playerId": "bot-tourney-17",
+        "playerName": "SpeedyFox",
+        "avatar": "🦊",
+        "country": "🇲🇽",
+        "score": 1135,
+        "secondaryStat": "Orbital Trials • Combo x11",
+        "timestamp": 1790027296584
+      }
+    ]
+  }
+}

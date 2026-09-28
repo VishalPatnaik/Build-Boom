@@ -1,47 +1,74 @@
 export const ZONE_NAMES = [
-  "Spring Meadow", "Autumn Meadow", "Winter Meadow", "Sunset Meadow", 
-  "Moon", "Mars", "Beach", "Volcano", 
-  "Castle", "Deep Space", "Enchanted Forest", "Pirate", 
-  "Candyland", "Golden Legend", "Cyberpunk"
-];export const ZONE_CONFIGS = [
+  "Spring Meadow",
+  "Lunar Surface",
+  "Martian Canyon",
+  "Deep Space Nebula",
+  "Abyssal Coral Reef",
+  "Tropical Sunset Beach",
+  "Volcanic Caldera",
+  "Ancient Citadel",
+  "Enchanted Redwood Forest",
+  "Golden Desert Oasis",
+  "Frozen Arctic Tundra",
+  "Pirate Corsair Cove",
+  "Candyland Confection",
+  "Golden El Dorado",
+  "Cyberpunk Megacity",
+  "Toxic Industrial Wasteland",
+  "Floating Sky Islands",
+  "Chrono Clockwork Realm",
+  "Sakura Blossom Shrine",
+  "The Crystalline Core"
+];
+
+export interface ZoneConfig {
+  bg: string;
+  path: string;
+  scenery: string[];
+  sceneryDensity: number;
+  particle: string;
+  ambient: string;
+}
+
+export const ZONE_CONFIGS: ZoneConfig[] = [
   // 0: Spring Meadow
-  { bg: '#3CB371', path: '#8B4513', scenery: ['tree', 'bush', 'flower'], sceneryDensity: 1.0, particle: 'leaf', ambient: '#98FB98' },
-  // 1: Autumn Falls
-  { bg: '#DAA520', path: '#5C4033', scenery: ['autumn_tree', 'rock', 'bush_red'], sceneryDensity: 1.0, particle: 'leaf_orange', ambient: '#FFD700' },
-  // 2: Frost Peaks
-  { bg: '#E0FFFF', path: '#B0E0E6', scenery: ['pine_snow', 'ice_crystal', 'snow_rock'], sceneryDensity: 0.8, particle: 'snow', ambient: '#FFFFFF' },
-  // 3: Sunset Valley
-  { bg: '#CD853F', path: '#8B4513', scenery: ['cactus', 'mesa', 'dry_bush'], sceneryDensity: 0.6, particle: 'dust', ambient: '#FF4500' },
-  // 4: Lunar Crater
-  { bg: '#696969', path: '#2F4F4F', scenery: ['crater', 'moon_rock', 'lunar_lander'], sceneryDensity: 0.7, particle: 'stardust', ambient: '#A9A9A9' },
-  // 5: Martian Dunes
-  { bg: '#B22222', path: '#800000', scenery: ['mars_rock', 'rover', 'dust_dune'], sceneryDensity: 0.7, particle: 'red_dust', ambient: '#FF6347' },
-  // 6: Crystal Cove
-  { bg: '#4B0082', path: '#9400D3', scenery: ['crystal_blue', 'crystal_magenta', 'glowing_rock'], sceneryDensity: 0.9, particle: 'sparkle', ambient: '#8A2BE2' },
-  // 7: Magma Caldera
-  { bg: '#1A0000', path: '#4A0000', scenery: ['volcano', 'lava_pool', 'charred_rock'], sceneryDensity: 0.5, particle: 'ember', ambient: '#FF0000' },
-  // 8: Royal Castle
-  { bg: '#228B22', path: '#A9A9A9', scenery: ['tower', 'wall', 'flag_pole'], sceneryDensity: 0.8, particle: 'none', ambient: '#FFD700' },
-  // 9: Nebula Core
-  { bg: '#000033', path: '#4B0082', scenery: ['star_cluster', 'nebula_cloud', 'asteroid'], sceneryDensity: 1.2, particle: 'star', ambient: '#00FFFF' },
-  // 10: Fairy Forest
-  { bg: '#2E8B57', path: '#556B2F', scenery: ['giant_mushroom', 'glowing_flower', 'magic_tree'], sceneryDensity: 1.1, particle: 'firefly', ambient: '#32CD32' },
-  // 11: Pirate's Bay
-  { bg: '#20B2AA', path: '#F4A460', scenery: ['palm_tree', 'shipwreck', 'treasure_chest'], sceneryDensity: 0.8, particle: 'bubble', ambient: '#00CED1' },
-  // 12: Sugar Hills
-  { bg: '#FFB6C1', path: '#FF69B4', scenery: ['lollipop', 'candy_cane', 'gumdrop'], sceneryDensity: 1.2, particle: 'sprinkle', ambient: '#FFC0CB' },
-  // 13: Golden Realm
-  { bg: '#B8860B', path: '#FFD700', scenery: ['gold_pillar', 'coin_stack', 'glowing_orb'], sceneryDensity: 0.7, particle: 'gold_dust', ambient: '#FFFF00' },
-  // 14: Neon City
-  { bg: '#000000', path: '#191970', scenery: ['neon_building', 'holo_sign', 'data_stream'], sceneryDensity: 1.0, particle: 'glitch', ambient: '#FF00FF' },
-  // 15: Toxic Waste
-  { bg: '#2F4F4F', path: '#006400', scenery: ['toxic_barrel', 'acid_pool', 'dead_tree'], sceneryDensity: 0.6, particle: 'toxic_fume', ambient: '#7FFF00' },
-  // 16: Abyssal Depths
-  { bg: '#00008B', path: '#0000CD', scenery: ['coral', 'deep_fish', 'trench_rock'], sceneryDensity: 0.9, particle: 'deep_bubble', ambient: '#0000FF' },
-  // 17: Sky Islands
-  { bg: '#87CEEB', path: '#FFFFFF', scenery: ['cloud', 'floating_island', 'windmill'], sceneryDensity: 0.5, particle: 'wind_line', ambient: '#E0FFFF' },
-  // 18: Clockwork
-  { bg: '#8B4513', path: '#D2691E', scenery: ['gear', 'pipe', 'steam_vent'], sceneryDensity: 1.0, particle: 'steam', ambient: '#CD853F' },
-  // 19: The Core
-  { bg: '#300000', path: '#FF4500', scenery: ['core_crystal', 'energy_beam', 'obsidian'], sceneryDensity: 0.8, particle: 'plasma', ambient: '#FFA500' }
+  { bg: '#052e16', path: '#22c55e', scenery: ['oak_tree', 'wild_flower', 'stone_boulder'], sceneryDensity: 1.0, particle: 'pollen', ambient: '#86efac' },
+  // 1: Lunar Surface
+  { bg: '#030712', path: '#94a3b8', scenery: ['lunar_crater', 'lunar_beacon', 'space_rock'], sceneryDensity: 0.8, particle: 'stardust', ambient: '#38bdf8' },
+  // 2: Martian Canyon
+  { bg: '#270a04', path: '#ea580c', scenery: ['redstone_cliff', 'canyon_arch', 'martian_rock'], sceneryDensity: 0.9, particle: 'red_dust', ambient: '#f97316' },
+  // 3: Deep Space Nebula
+  { bg: '#09021a', path: '#a855f7', scenery: ['cosmic_spire', 'stellar_cluster', 'space_rock'], sceneryDensity: 0.8, particle: 'warp_spark', ambient: '#c084fc' },
+  // 4: Abyssal Coral Reef
+  { bg: '#02182b', path: '#06b6d4', scenery: ['coral_reef', 'sea_anemone', 'kelp_pillar'], sceneryDensity: 1.0, particle: 'water_bubble', ambient: '#22d3ee' },
+  // 5: Tropical Sunset Beach
+  { bg: '#1c0a1f', path: '#f59e0b', scenery: ['palm_tree', 'driftwood', 'beach_shell'], sceneryDensity: 0.8, particle: 'sea_spray', ambient: '#fed7aa' },
+  // 6: Volcanic Caldera
+  { bg: '#1a0502', path: '#ef4444', scenery: ['volcano_vent', 'lava_crag', 'obsidian_spire'], sceneryDensity: 0.9, particle: 'ember', ambient: '#f59e0b' },
+  // 7: Ancient Citadel
+  { bg: '#0b1120', path: '#64748b', scenery: ['castle_tower', 'stone_obelisk', 'torch_post'], sceneryDensity: 0.85, particle: 'torch_spark', ambient: '#fbbf24' },
+  // 8: Enchanted Redwood Forest
+  { bg: '#032014', path: '#10b981', scenery: ['redwood_tree', 'glowing_mushroom', 'ancient_roots'], sceneryDensity: 1.1, particle: 'magic_spore', ambient: '#a7f3d0' },
+  // 9: Golden Desert Oasis
+  { bg: '#1c1303', path: '#eab308', scenery: ['sandstone_pyramid', 'desert_palm', 'sandstone_pillar'], sceneryDensity: 0.8, particle: 'gold_sand', ambient: '#fef08a' },
+  // 10: Frozen Arctic Tundra
+  { bg: '#03192e', path: '#38bdf8', scenery: ['ice_spire', 'snowy_pine', 'glacier_boulder'], sceneryDensity: 0.9, particle: 'snow_flake', ambient: '#e0f2fe' },
+  // 11: Pirate Corsair Cove
+  { bg: '#0c1524', path: '#d97706', scenery: ['sea_cliff', 'treasure_marker', 'lantern_post'], sceneryDensity: 0.8, particle: 'ocean_mist', ambient: '#fbbf24' },
+  // 12: Candyland Confection
+  { bg: '#2b0922', path: '#ec4899', scenery: ['sugar_crystal', 'glazed_lollipop', 'wafer_pillar'], sceneryDensity: 1.0, particle: 'sugar_dust', ambient: '#fbcfe8' },
+  // 13: Golden El Dorado
+  { bg: '#1c1002', path: '#f59e0b', scenery: ['golden_monolith', 'sun_temple_block', 'jungle_vine'], sceneryDensity: 0.85, particle: 'gold_mote', ambient: '#fef08a' },
+  // 14: Cyberpunk Megacity
+  { bg: '#090514', path: '#00f0ff', scenery: ['cyber_billboard', 'neon_spire', 'data_terminal'], sceneryDensity: 0.9, particle: 'neon_rain', ambient: '#f43f5e' },
+  // 15: Toxic Industrial Wasteland
+  { bg: '#091504', path: '#84cc16', scenery: ['cooling_pipe', 'hazard_cask', 'industrial_chimney'], sceneryDensity: 0.75, particle: 'toxic_vapor', ambient: '#bef264' },
+  // 16: Floating Sky Islands
+  { bg: '#071f3d', path: '#38bdf8', scenery: ['sky_island', 'cloud_wisp', 'floating_crystal'], sceneryDensity: 0.85, particle: 'cloud_mist', ambient: '#ffffff' },
+  // 17: Chrono Clockwork Realm
+  { bg: '#1a0d05', path: '#d97706', scenery: ['brass_gear', 'steam_pipe', 'pendulum_spire'], sceneryDensity: 0.95, particle: 'steam_puff', ambient: '#fbbf24' },
+  // 18: Sakura Blossom Shrine
+  { bg: '#240817', path: '#f472b6', scenery: ['sakura_tree', 'torii_gate', 'stone_lantern'], sceneryDensity: 1.0, particle: 'sakura_petal', ambient: '#fbcfe8' },
+  // 19: The Crystalline Core
+  { bg: '#0c021a', path: '#c084fc', scenery: ['amethyst_cluster', 'quartz_pillar', 'prismatic_shard'], sceneryDensity: 1.0, particle: 'crystal_flare', ambient: '#00f0ff' }
 ];

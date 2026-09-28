@@ -1,420 +1,344 @@
+// CINEMATIC TILES - REALISTIC THEMED BIOME NODES & BANNERS
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ZONE_CONFIGS, ZONE_NAMES } from './WorldDefinitions';
 
-export function CinematicTile({ zoneIdx, state }: { zoneIdx: number, state: 'locked' | 'unlocked' | 'current' }) {
-  const config = ZONE_CONFIGS[zoneIdx];
+export function CinematicTile({ zoneIdx, state }: { zoneIdx: number; state: 'locked' | 'unlocked' | 'current' }) {
+  const config = ZONE_CONFIGS[zoneIdx] || ZONE_CONFIGS[0];
   const isCurrent = state === 'current';
   const isLocked = state === 'locked';
-  const filterStyle = isLocked ? { filter: 'grayscale(100%) brightness(50%)' } : {};
+  const filterStyle = isLocked ? { filter: 'grayscale(100%) brightness(35%)' } : {};
 
-  // Particle generator specific to realm
-  const renderParticles = (color: string, count: number, speed: number, pattern: 'rise' | 'fall' | 'orbit' | 'float') => {
+  // Atmospheric particle generator specific to realm
+  const renderParticles = (color: string, count: number, speed: number) => {
     if (!isCurrent) return null;
     return Array.from({ length: count }).map((_, i) => (
       <motion.div
         key={i}
-        className="absolute rounded-full"
+        className="absolute rounded-full pointer-events-none"
         style={{
-          width: Math.random() * 4 + 2 + 'px',
-          height: Math.random() * 4 + 2 + 'px',
+          width: Math.random() * 3 + 2 + 'px',
+          height: Math.random() * 3 + 2 + 'px',
           backgroundColor: color,
-          boxShadow: `0 0 10px ${color}`,
-          left: `${10 + Math.random() * 80}%`,
+          boxShadow: `0 0 8px ${color}`,
+          left: `${15 + Math.random() * 70}%`,
           top: '50%',
           zIndex: 0
         }}
         animate={{
-          y: pattern === 'rise' ? [0, -60] : pattern === 'fall' ? [-60, 0] : pattern === 'float' ? [-20, 20, -20] : 0,
-          x: pattern === 'orbit' ? [-30, 30, -30] : (Math.random() - 0.5) * 30,
+          y: [-20, -55],
+          x: (Math.random() - 0.5) * 25,
           opacity: [0, 1, 0],
-          scale: [0.5, 1.5, 0.5]
+          scale: [0.6, 1.3, 0.6]
         }}
         transition={{
-          duration: speed + Math.random() * 2,
+          duration: speed + Math.random() * 1.5,
           repeat: Infinity,
-          delay: Math.random() * 2,
-          ease: "easeInOut"
+          delay: Math.random() * 1.5,
+          ease: 'easeOut'
         }}
       />
     ));
   };
 
   const getTileGraphic = () => {
+    const accent = config.ambient || '#22c55e';
+    const pathCol = config.path || '#16a34a';
+
     switch (zoneIdx) {
-      // 0: Spring Meadow (Grass, flowers, bouncy)
-      case 0: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-6, 6, -6], rotateZ: [-2, 2, -2] } : {}} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M20,45 Q50,90 80,45 Z" fill="#8B4513" />
-            <ellipse cx="50" cy="45" rx="35" ry="15" fill="#3CB371" />
-            {/* Flowers */}
-            <circle cx="35" cy="40" r="3" fill="#FF69B4" />
-            <circle cx="65" cy="48" r="4" fill="#FFFF00" />
-            <circle cx="50" cy="38" r="2.5" fill="#FF4500" />
-          </svg>
-        </motion.div>
-      );
-      // 1: Autumn Falls (Orange leaves, waterfall)
-      case 1: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-4, 4, -4] } : {}} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M15,45 Q50,100 85,45 Z" fill="#5C4033" />
-            <ellipse cx="50" cy="45" rx="38" ry="14" fill="#DAA520" />
-            {/* Waterfall */}
-            <motion.path d="M50,55 Q55,75 50,95" stroke="#4169E1" strokeWidth="6" fill="none" 
-              animate={isCurrent ? { strokeDasharray: ["5,5", "10,10"] } : {}} transition={{ duration: 1, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      // 2: Frost Peaks (Ice spikes, snow)
-      case 2: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { scale: [1, 1.05, 1] } : {}} transition={{ duration: 3, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <polygon points="20,50 50,90 80,50" fill="#B0E0E6" />
-            <ellipse cx="50" cy="50" rx="35" ry="12" fill="#E0FFFF" />
-            {/* Ice Spikes */}
-            <polygon points="30,50 35,20 40,50" fill="#FFFFFF" opacity="0.8" />
-            <polygon points="45,52 50,15 55,52" fill="#FFFFFF" opacity="0.9" />
-            <polygon points="60,48 65,25 70,48" fill="#FFFFFF" opacity="0.7" />
-          </svg>
-        </motion.div>
-      );
-      // 3: Sunset Valley (Mesa plateaus, cactus)
-      case 3: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-2, 2, -2] } : {}} transition={{ duration: 5, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M10,50 L20,85 L80,85 L90,50 Z" fill="#8B4513" />
-            <ellipse cx="50" cy="50" rx="42" ry="16" fill="#CD853F" />
-            {/* Plateau */}
-            <path d="M30,45 L40,25 L60,25 L70,45 Z" fill="#D2691E" />
-            <ellipse cx="50" cy="25" rx="10" ry="4" fill="#CD853F" />
-            {/* Cactus */}
-            <path d="M75,45 L75,30 M70,35 L75,35 M80,40 L75,40" stroke="#228B22" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </motion.div>
-      );
-      // 4: Lunar Crater (Grey moon surface, craters)
-      case 4: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-15, 15, -15], rotateZ: [-5, 5, -5] } : {}} transition={{ duration: 6, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="50" rx="40" ry="40" fill="#696969" />
-            <ellipse cx="50" cy="50" rx="36" ry="36" fill="#808080" />
-            <ellipse cx="30" cy="40" rx="8" ry="6" fill="#505050" />
-            <ellipse cx="65" cy="65" rx="12" ry="8" fill="#505050" />
-            <ellipse cx="70" cy="30" rx="5" ry="4" fill="#505050" />
-          </svg>
-        </motion.div>
-      );
-      // 5: Martian Dunes (Red sand dunes)
-      case 5: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { rotateX: [-10, 10, -10] } : {}} transition={{ duration: 4, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M15,50 Q50,90 85,50 Z" fill="#800000" />
-            <ellipse cx="50" cy="50" rx="38" ry="14" fill="#B22222" />
-            <path d="M20,50 Q40,30 60,50 Q75,35 90,50" fill="none" stroke="#CD5C5C" strokeWidth="2" />
-          </svg>
-        </motion.div>
-      );
-      // 6: Crystal Cove (Purple/blue crystals reflecting)
-      case 6: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-8, 8, -8] } : {}} transition={{ duration: 3, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <polygon points="30,55 50,95 70,55" fill="#4B0082" />
-            <polygon points="20,55 50,45 80,55 50,65" fill="#8A2BE2" />
-            <motion.polygon points="45,55 50,20 55,55" fill="#E0B0FF" animate={isCurrent ? { opacity: [0.5, 1, 0.5] } : {}} transition={{ duration: 1.5, repeat: Infinity }} />
-            <motion.polygon points="30,60 25,35 35,55" fill="#9370DB" animate={isCurrent ? { opacity: [0.3, 0.8, 0.3] } : {}} transition={{ duration: 2, repeat: Infinity, delay: 0.5 }} />
-            <motion.polygon points="70,60 75,40 65,55" fill="#9370DB" animate={isCurrent ? { opacity: [0.3, 0.8, 0.3] } : {}} transition={{ duration: 2, repeat: Infinity, delay: 1 }} />
-          </svg>
-        </motion.div>
-      );
-      // 7: Magma Caldera (Volcano cone, lava erupting)
-      case 7: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { scale: [1, 1.08, 1] } : {}} transition={{ duration: 1.5, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M10,60 L35,20 L65,20 L90,60 Z" fill="#1A0000" />
-            <ellipse cx="50" cy="20" rx="15" ry="6" fill="#FF4500" />
-            <motion.path d="M50,20 Q40,40 30,60 M50,20 Q50,45 50,60 M50,20 Q60,40 70,60" stroke="#FF0000" strokeWidth="3" fill="none"
-              animate={isCurrent ? { stroke: ['#FF0000', '#FFFF00', '#FF0000'] } : {}} transition={{ duration: 1, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      // 8: Royal Castle (Stone castle towers, flags)
-      case 8: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-3, 3, -3] } : {}} transition={{ duration: 4, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <rect x="25" y="40" width="50" height="40" fill="#A9A9A9" />
-            {/* Crenellations */}
-            <rect x="25" y="30" width="10" height="10" fill="#A9A9A9" />
-            <rect x="45" y="30" width="10" height="10" fill="#A9A9A9" />
-            <rect x="65" y="30" width="10" height="10" fill="#A9A9A9" />
-            {/* Gate */}
-            <path d="M40,80 L40,60 A10,10 0 0,1 60,60 L60,80 Z" fill="#333" />
-            {/* Flag */}
-            <motion.path d="M25,30 L25,10 L40,15 L25,20" fill="#FFD700"
-              animate={isCurrent ? { d: ["M25,30 L25,10 L40,15 L25,20", "M25,30 L25,10 L35,20 L25,20", "M25,30 L25,10 L40,15 L25,20"] } : {}} transition={{ duration: 1, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      // 9: Nebula Core (Swirling dark matter, stars)
-      case 9: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [0, 360], scale: [0.9, 1.1, 0.9] } : {}} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <circle cx="50" cy="50" r="35" fill="url(#nebulaGrad)" />
-            <defs>
-              <radialGradient id="nebulaGrad">
-                <stop offset="0%" stopColor="#00FFFF" />
-                <stop offset="50%" stopColor="#4B0082" />
-                <stop offset="100%" stopColor="#000033" />
-              </radialGradient>
-            </defs>
-            <path d="M20,50 Q50,20 80,50 Q50,80 20,50" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.5" />
-            <path d="M50,20 Q80,50 50,80 Q20,50 50,20" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.5" />
-          </svg>
-        </motion.div>
-      );
-      // 10: Fairy Forest (Giant mushrooms)
-      case 10: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-5, 5, -5] } : {}} transition={{ duration: 3, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="70" rx="40" ry="15" fill="#2E8B57" />
-            {/* Mushroom Stalk */}
-            <rect x="42" y="40" width="16" height="30" fill="#F5DEB3" rx="5" />
-            {/* Mushroom Cap */}
-            <path d="M20,45 Q50,10 80,45 Z" fill="#FF0000" />
-            <circle cx="40" cy="35" r="4" fill="#FFFFFF" />
-            <circle cx="60" cy="38" r="3" fill="#FFFFFF" />
-            <circle cx="50" cy="25" r="5" fill="#FFFFFF" />
-            <motion.circle cx="50" cy="45" r="15" fill="#32CD32" opacity="0.4" style={{ filter: 'blur(5px)' }}
-              animate={isCurrent ? { scale: [1, 1.5, 1], opacity: [0.2, 0.6, 0.2] } : {}} transition={{ duration: 2, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      // 11: Pirate's Bay (Ship wheel, sand, water waves)
-      case 11: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { rotateZ: [-5, 5, -5] } : {}} transition={{ duration: 4, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            {/* Sand Island */}
-            <ellipse cx="50" cy="65" rx="35" ry="12" fill="#F4A460" />
-            {/* Water */}
-            <motion.path d="M10,75 Q30,65 50,75 T90,75" stroke="#00CED1" strokeWidth="4" fill="none"
-              animate={isCurrent ? { d: ["M10,75 Q30,65 50,75 T90,75", "M10,75 Q30,85 50,75 T90,75", "M10,75 Q30,65 50,75 T90,75"] } : {}} transition={{ duration: 2, repeat: Infinity }} />
-            {/* Ship Wheel */}
-            <circle cx="50" cy="40" r="15" fill="none" stroke="#8B4513" strokeWidth="4" />
-            <line x1="30" y1="40" x2="70" y2="40" stroke="#8B4513" strokeWidth="3" />
-            <line x1="50" y1="20" x2="50" y2="60" stroke="#8B4513" strokeWidth="3" />
-            <line x1="35" y1="25" x2="65" y2="55" stroke="#8B4513" strokeWidth="3" />
-            <line x1="65" y1="25" x2="35" y2="55" stroke="#8B4513" strokeWidth="3" />
-          </svg>
-        </motion.div>
-      );
-      // 12: Sugar Hills (Candy canes, pink icing)
-      case 12: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { scale: [1, 1.1, 1] } : {}} transition={{ duration: 2, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="60" rx="40" ry="20" fill="#FFB6C1" />
-            {/* Candy Cane */}
-            <path d="M40,65 L40,30 A10,10 0 0,1 60,30 L60,35" fill="none" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
-            <path d="M40,65 L40,30 A10,10 0 0,1 60,30 L60,35" fill="none" stroke="#FF0000" strokeWidth="6" strokeLinecap="round" strokeDasharray="5 5" />
-            {/* Gumdrops */}
-            <path d="M25,60 Q30,45 35,60 Z" fill="#00FF00" />
-            <path d="M65,55 Q70,40 75,55 Z" fill="#0000FF" />
-          </svg>
-        </motion.div>
-      );
-      // 13: Golden Realm (Gold pillars, coins)
-      case 13: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-4, 4, -4] } : {}} transition={{ duration: 3, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="70" rx="45" ry="15" fill="#B8860B" />
-            {/* Gold Pillar */}
-            <rect x="35" y="25" width="30" height="45" fill="#FFD700" />
-            <rect x="30" y="20" width="40" height="5" fill="#DAA520" />
-            <rect x="30" y="70" width="40" height="5" fill="#DAA520" />
-            <motion.circle cx="50" cy="50" r="10" fill="#FFFF00" style={{ filter: 'blur(4px)' }}
-              animate={isCurrent ? { opacity: [0.5, 1, 0.5] } : {}} transition={{ duration: 1.5, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      // 14: Neon City (Cyber grid, neon buildings)
-      case 14: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { scale: [1, 1.02, 1] } : {}} transition={{ duration: 0.5, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="75" rx="45" ry="15" fill="#000000" stroke="#FF00FF" strokeWidth="2" />
-            {/* Grid */}
-            <path d="M20,65 L80,65 M30,70 L70,70 M40,75 L60,75" stroke="#00FFFF" strokeWidth="1" />
-            <path d="M50,60 L50,90 M40,62 L30,85 M60,62 L70,85" stroke="#00FFFF" strokeWidth="1" />
-            {/* Buildings */}
-            <rect x="25" y="30" width="15" height="40" fill="#191970" stroke="#00FFFF" strokeWidth="1.5" />
-            <rect x="45" y="15" width="20" height="55" fill="#191970" stroke="#FF00FF" strokeWidth="1.5" />
-            <rect x="70" y="40" width="10" height="30" fill="#191970" stroke="#FFFF00" strokeWidth="1.5" />
-          </svg>
-        </motion.div>
-      );
-      // 15: Toxic Waste (Green acid barrels, bubbles)
-      case 15: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-2, 2, -2], rotateZ: [-1, 1, -1] } : {}} transition={{ duration: 2, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="70" rx="40" ry="15" fill="#2F4F4F" />
-            {/* Acid Pool */}
-            <motion.ellipse cx="50" cy="70" rx="30" ry="10" fill="#7FFF00"
-              animate={isCurrent ? { rx: [30, 32, 30], ry: [10, 11, 10] } : {}} transition={{ duration: 1.5, repeat: Infinity }} />
-            {/* Barrel */}
-            <rect x="40" y="35" width="20" height="25" fill="#006400" rx="2" />
-            <line x1="40" y1="42" x2="60" y2="42" stroke="#2F4F4F" strokeWidth="2" />
-            <line x1="40" y1="52" x2="60" y2="52" stroke="#2F4F4F" strokeWidth="2" />
-            {/* Biohazard symbol abstract */}
-            <circle cx="50" cy="47" r="3" fill="#7FFF00" />
-          </svg>
-        </motion.div>
-      );
-      // 16: Abyssal Depths (Deep sea vents, coral)
-      case 16: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-8, 8, -8] } : {}} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M10,75 Q50,90 90,75 L80,95 L20,95 Z" fill="#00008B" />
-            {/* Trench Rock */}
-            <path d="M20,75 L30,40 L45,75 Z" fill="#0000CD" />
-            <path d="M60,75 L75,30 L85,75 Z" fill="#0000CD" />
-            {/* Bioluminescence */}
-            <motion.circle cx="50" cy="50" r="8" fill="#00FFFF" style={{ filter: 'blur(3px)' }}
-              animate={isCurrent ? { opacity: [0.2, 0.8, 0.2], r: [8, 12, 8] } : {}} transition={{ duration: 3, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      // 17: Sky Islands (Clouds, floating rocks, windmills)
-      case 17: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { y: [-20, 20, -20] } : {}} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            {/* Cloud Base */}
-            <path d="M20,60 Q30,40 50,45 Q70,30 85,55 Q95,70 80,75 Q50,85 25,75 Q10,65 20,60 Z" fill="#FFFFFF" />
-            {/* Floating Land */}
-            <path d="M30,55 Q50,70 70,55 L65,80 Q50,95 35,80 Z" fill="#87CEEB" />
-            {/* Windmill */}
-            <rect x="47" y="30" width="6" height="25" fill="#D3D3D3" />
-            <motion.g style={{ transformOrigin: '50px 30px' }} animate={isCurrent ? { rotateZ: 360 } : {}} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}>
-              <line x1="50" y1="15" x2="50" y2="45" stroke="#A9A9A9" strokeWidth="2" />
-              <line x1="35" y1="30" x2="65" y2="30" stroke="#A9A9A9" strokeWidth="2" />
-            </motion.g>
-          </svg>
-        </motion.div>
-      );
-      // 18: Clockwork (Bronze gears, steam)
-      case 18: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [-5, 5, -5] } : {}} transition={{ duration: 3, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <ellipse cx="50" cy="50" rx="40" ry="40" fill="#8B4513" />
-            {/* Giant Gear */}
-            <motion.g style={{ transformOrigin: '50px 50px' }} animate={isCurrent ? { rotateZ: 360 } : {}} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}>
-              <circle cx="50" cy="50" r="30" fill="none" stroke="#D2691E" strokeWidth="8" strokeDasharray="10 5" />
-              <circle cx="50" cy="50" r="22" fill="none" stroke="#CD853F" strokeWidth="4" />
-              <line x1="50" y1="20" x2="50" y2="80" stroke="#CD853F" strokeWidth="4" />
-              <line x1="20" y1="50" x2="80" y2="50" stroke="#CD853F" strokeWidth="4" />
-              <line x1="28.7" y1="28.7" x2="71.3" y2="71.3" stroke="#CD853F" strokeWidth="4" />
-              <line x1="28.7" y1="71.3" x2="71.3" y2="28.7" stroke="#CD853F" strokeWidth="4" />
-              <circle cx="50" cy="50" r="8" fill="#D2691E" />
-            </motion.g>
-          </svg>
-        </motion.div>
-      );
-      // 19: The Core (Eye of Sauron/energy core, intense plasma)
-      case 19: return (
-        <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.95, 1.1, 0.95] } : {}} transition={{ duration: 0.8, repeat: Infinity }}>
-          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl overflow-visible">
-            <path d="M10,50 Q50,10 90,50 Q50,90 10,50 Z" fill="#300000" />
-            {/* Plasma Ring */}
-            <motion.ellipse cx="50" cy="50" rx="30" ry="10" fill="none" stroke="#FF4500" strokeWidth="3"
-              animate={isCurrent ? { rotateX: [0, 360] } : {}} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: '50px 50px' }} />
-            {/* Core */}
-            <motion.circle cx="50" cy="50" r="15" fill="#FFA500" style={{ filter: 'blur(2px)' }}
-              animate={isCurrent ? { fill: ['#FFA500', '#FFFFFF', '#FFA500'], r: [15, 18, 15] } : {}} transition={{ duration: 1, repeat: Infinity }} />
-          </svg>
-        </motion.div>
-      );
-      default: return (
-        <div className="w-full h-full rounded-full bg-gray-500" />
-      );
+      // 0: Spring Meadow (Vibrant verdant flora & leaf)
+      case 0:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.97, 1.03, 0.97] } : {}} transition={{ duration: 2.5, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(34,197,94,0.6)] overflow-visible">
+              <path d="M50,15 C70,25 80,45 80,65 C80,80 65,85 50,85 C35,85 20,80 20,65 C20,45 30,25 50,15 Z" fill="#15803d" stroke="#22c55e" strokeWidth="2.5" />
+              <path d="M50,20 Q65,40 50,80" stroke="#86efac" strokeWidth="2" fill="none" />
+              <circle cx="50" cy="48" r="8" fill="#fbbf24" />
+              <circle cx="50" cy="48" r="4" fill="#ffffff" />
+            </svg>
+          </motion.div>
+        );
+
+      // 1: Lunar Surface (Stark craters & Apollo landing beacon)
+      case 1:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [-2, 2, -2] } : {}} transition={{ duration: 3, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(148,163,184,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="32" fill="#334155" stroke="#94a3b8" strokeWidth="2.5" />
+              <circle cx="40" cy="42" r="7" fill="#1e293b" />
+              <circle cx="62" cy="58" r="9" fill="#1e293b" />
+              <circle cx="44" cy="66" r="4" fill="#1e293b" />
+              <line x1="50" y1="20" x2="50" y2="8" stroke="#38bdf8" strokeWidth="2" />
+              <circle cx="50" cy="7" r="3" fill="#38bdf8" />
+            </svg>
+          </motion.div>
+        );
+
+      // 2: Martian Canyon (Red planet rust canyon & moons)
+      case 2:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.97, 1.03, 0.97] } : {}} transition={{ duration: 2, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(234,88,12,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="32" fill="#7c2d12" stroke="#ea580c" strokeWidth="2.5" />
+              <path d="M22,50 Q50,40 78,50 Q50,60 22,50 Z" fill="#9a3412" />
+              <circle cx="50" cy="50" r="8" fill="#f97316" />
+            </svg>
+          </motion.div>
+        );
+
+      // 3: Deep Space Nebula (Swirling stellar clouds & star)
+      case 3:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [0, 360] } : {}} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_14px_rgba(168,85,247,0.7)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#1e0b36" stroke="#a855f7" strokeWidth="2" />
+              <ellipse cx="50" cy="50" rx="42" ry="14" fill="none" stroke="#38bdf8" strokeWidth="2" transform="rotate(-25 50 50)" />
+              <circle cx="50" cy="50" r="9" fill="#ffffff" />
+            </svg>
+          </motion.div>
+        );
+
+      // 4: Abyssal Coral Reef (Ocean shell & pearl)
+      case 4:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { y: [-3, 3, -3] } : {}} transition={{ duration: 3, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(6,182,212,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#032b4f" stroke="#06b6d4" strokeWidth="2.5" />
+              <path d="M30,68 Q50,30 70,68 Z" fill="#0891b2" />
+              <circle cx="50" cy="50" r="9" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" />
+            </svg>
+          </motion.div>
+        );
+
+      // 5: Tropical Sunset Beach (Sunset sun & palm fronds)
+      case 5:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.97, 1.03, 0.97] } : {}} transition={{ duration: 2.5, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(245,158,11,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#701a75" stroke="#f59e0b" strokeWidth="2.5" />
+              <circle cx="50" cy="48" r="16" fill="#f59e0b" />
+              <path d="M22,65 Q50,60 78,65 L78,78 L22,78 Z" fill="#0f766e" />
+            </svg>
+          </motion.div>
+        );
+
+      // 6: Volcanic Caldera (Molten magma fissure)
+      case 6:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [-2, 2, -2] } : {}} transition={{ duration: 1.5, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_14px_rgba(239,68,68,0.7)] overflow-visible">
+              <polygon points="50,18 82,78 18,78" fill="#270808" stroke="#ef4444" strokeWidth="2.5" />
+              <circle cx="50" cy="56" r="14" fill="#ea580c" />
+              <circle cx="50" cy="56" r="7" fill="#fbbf24" />
+            </svg>
+          </motion.div>
+        );
+
+      // 7: Ancient Citadel (Stone fortress battlement)
+      case 7:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { y: [-2, 2, -2] } : {}} transition={{ duration: 3, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(100,116,139,0.5)] overflow-visible">
+              <rect x="25" y="32" width="50" height="46" rx="4" fill="#1e293b" stroke="#64748b" strokeWidth="2.5" />
+              <rect x="25" y="24" width="12" height="12" fill="#334155" />
+              <rect x="44" y="24" width="12" height="12" fill="#334155" />
+              <rect x="63" y="24" width="12" height="12" fill="#334155" />
+              <path d="M44,78 L44,62 Q50,56 56,62 L56,78 Z" fill="#f59e0b" />
+            </svg>
+          </motion.div>
+        );
+
+      // 8: Enchanted Redwood Forest (Towering heartwood & spore)
+      case 8:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.96, 1.04, 0.96] } : {}} transition={{ duration: 2.8, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(16,185,129,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#022c22" stroke="#10b981" strokeWidth="2.5" />
+              <path d="M42,75 L46,30 L54,30 L58,75 Z" fill="#451a03" />
+              <circle cx="50" cy="30" r="16" fill="#10b981" />
+              <circle cx="50" cy="30" r="6" fill="#a7f3d0" />
+            </svg>
+          </motion.div>
+        );
+
+      // 9: Golden Desert Oasis (Pyramid & golden sun)
+      case 9:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.97, 1.03, 0.97] } : {}} transition={{ duration: 2.5, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(234,179,8,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#451a03" stroke="#eab308" strokeWidth="2.5" />
+              <polygon points="50,25 30,68 70,68" fill="#ca8a04" stroke="#fef08a" strokeWidth="1.5" />
+              <circle cx="50" cy="38" r="6" fill="#fef08a" />
+            </svg>
+          </motion.div>
+        );
+
+      // 10: Frozen Arctic Tundra (Glacial iceberg & aurora)
+      case 10:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.96, 1.04, 0.96] } : {}} transition={{ duration: 3, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(56,189,248,0.6)] overflow-visible">
+              <polygon points="50,15 82,75 18,75" fill="#034575" stroke="#38bdf8" strokeWidth="2.5" />
+              <polygon points="50,15 65,75 50,75" fill="#7dd3fc" />
+              <circle cx="50" cy="52" r="6" fill="#ffffff" />
+            </svg>
+          </motion.div>
+        );
+
+      // 11: Pirate Corsair Cove (Galleon anchor & lantern)
+      case 11:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [-3, 3, -3] } : {}} transition={{ duration: 3, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(217,119,6,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#091b33" stroke="#d97706" strokeWidth="2.5" />
+              <circle cx="50" cy="32" r="6" fill="none" stroke="#fef08a" strokeWidth="2.5" />
+              <line x1="50" y1="38" x2="50" y2="70" stroke="#fef08a" strokeWidth="3" />
+              <path d="M30,55 Q50,72 70,55" fill="none" stroke="#fef08a" strokeWidth="3" />
+            </svg>
+          </motion.div>
+        );
+
+      // 12: Candyland Confection (Artisan ruby sugar crystal)
+      case 12:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.96, 1.04, 0.96] } : {}} transition={{ duration: 2, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_14px_rgba(236,72,153,0.7)] overflow-visible">
+              <polygon points="50,18 78,38 68,78 32,78 22,38" fill="#831843" stroke="#ec4899" strokeWidth="2.5" />
+              <circle cx="50" cy="50" r="10" fill="#fbcfe8" />
+            </svg>
+          </motion.div>
+        );
+
+      // 13: Golden El Dorado (Royal 24K Ingot Bullion)
+      case 13:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.97, 1.03, 0.97] } : {}} transition={{ duration: 2.2, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_14px_rgba(245,158,11,0.7)] overflow-visible">
+              <rect x="22" y="32" width="56" height="36" rx="6" fill="#78350f" stroke="#f59e0b" strokeWidth="2.5" />
+              <rect x="26" y="36" width="48" height="28" rx="4" fill="#eab308" />
+              <circle cx="50" cy="50" r="7" fill="#fef08a" />
+            </svg>
+          </motion.div>
+        );
+
+      // 14: Cyberpunk Megacity (Neon skyline & grid)
+      case 14:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.96, 1.04, 0.96] } : {}} transition={{ duration: 2, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_14px_rgba(0,240,255,0.7)] overflow-visible">
+              <rect x="24" y="24" width="52" height="52" rx="6" fill="#090514" stroke="#00f0ff" strokeWidth="2.5" />
+              <rect x="34" y="40" width="12" height="30" fill="#f43f5e" />
+              <rect x="52" y="32" width="14" height="38" fill="#a855f7" />
+            </svg>
+          </motion.div>
+        );
+
+      // 15: Toxic Wasteland (Industrial hazard cask)
+      case 15:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.96, 1.04, 0.96] } : {}} transition={{ duration: 2.5, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(132,204,22,0.6)] overflow-visible">
+              <rect x="26" y="24" width="48" height="52" rx="8" fill="#142a07" stroke="#84cc16" strokeWidth="2.5" />
+              <circle cx="50" cy="50" r="10" fill="#bef264" />
+            </svg>
+          </motion.div>
+        );
+
+      // 16: Floating Sky Islands (Aether floating rock)
+      case 16:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { y: [-3, 3, -3] } : {}} transition={{ duration: 3, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(56,189,248,0.6)] overflow-visible">
+              <polygon points="50,20 80,45 68,78 32,78 20,45" fill="#034575" stroke="#38bdf8" strokeWidth="2" />
+              <ellipse cx="50" cy="45" rx="25" ry="8" fill="#22c55e" />
+            </svg>
+          </motion.div>
+        );
+
+      // 17: Chrono Clockwork (Interlocking brass gear)
+      case 17:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { rotate: [0, 360] } : {}} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(217,119,6,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="28" fill="#451a03" stroke="#d97706" strokeWidth="2.5" />
+              <circle cx="50" cy="50" r="12" fill="#b45309" />
+              <circle cx="50" cy="50" r="5" fill="#fef08a" />
+            </svg>
+          </motion.div>
+        );
+
+      // 18: Sakura Shrine (Vermilion torii gate & blossom)
+      case 18:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.97, 1.03, 0.97] } : {}} transition={{ duration: 2.5, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(244,114,182,0.6)] overflow-visible">
+              <circle cx="50" cy="50" r="30" fill="#4c0519" stroke="#f472b6" strokeWidth="2.5" />
+              <rect x="30" y="35" width="40" height="5" fill="#e11d48" />
+              <rect x="36" y="40" width="5" height="32" fill="#e11d48" />
+              <rect x="59" y="40" width="5" height="32" fill="#e11d48" />
+              <circle cx="50" cy="48" r="6" fill="#fbcfe8" />
+            </svg>
+          </motion.div>
+        );
+
+      // 19: The Crystalline Core (Amethyst geode crystal cluster)
+      case 19:
+      default:
+        return (
+          <motion.div className="w-full h-full" animate={isCurrent ? { scale: [0.95, 1.05, 0.95] } : {}} transition={{ duration: 2, repeat: Infinity }}>
+            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_16px_rgba(192,132,252,0.7)] overflow-visible">
+              <polygon points="50,15 78,35 70,80 30,80 22,35" fill="#2e0854" stroke="#c084fc" strokeWidth="2.5" />
+              <polygon points="50,15 62,80 50,80" fill="#a855f7" />
+              <circle cx="50" cy="48" r="6" fill="#ffffff" />
+            </svg>
+          </motion.div>
+        );
     }
   };
-
-  // Assign specific particle systems to realms
-  const particleColor = config.ambient;
-  let particleType: 'rise' | 'fall' | 'orbit' | 'float' = 'rise';
-  let particleCount = 0;
-  
-  if (isCurrent) {
-    if ([7, 15, 19].includes(zoneIdx)) { particleType = 'rise'; particleCount = 15; } // Fire/Toxic
-    else if ([2, 17].includes(zoneIdx)) { particleType = 'fall'; particleCount = 20; } // Snow/Sky
-    else if ([4, 9, 14, 18].includes(zoneIdx)) { particleType = 'orbit'; particleCount = 10; } // Tech/Space
-    else { particleType = 'float'; particleCount = 8; } // Nature/Water
-  }
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none w-full h-full" style={filterStyle}>
       <div className="absolute w-[180%] h-[180%]">
         {getTileGraphic()}
       </div>
-      {renderParticles(particleColor, particleCount, 2, particleType)}
+      {renderParticles(config.ambient || '#22c55e', 8, 2)}
     </div>
   );
 }
 
-// Generates uniquely themed cinematic banner text animations
-export function CinematicBanner({ item }: { item: any }) {
-  const config = ZONE_CONFIGS[item.zone];
-  const zIdx = item.zone;
-
-  // Cinematic movement depending on realm type
-  let floatAnim = [-3, 3, -3];
-  let animDuration = 4;
-  let spacingAnim = ['0.1em', '0.15em', '0.1em'];
-  let glowStates = [
-    `0 0 10px ${config.ambient}, 0 4px 4px rgba(0,0,0,1)`, 
-    `0 0 20px ${config.ambient}, 0 0 40px ${config.path}, 0 4px 4px rgba(0,0,0,1)`, 
-    `0 0 10px ${config.ambient}, 0 4px 4px rgba(0,0,0,1)`
-  ];
-
-  if ([7, 15, 19].includes(zIdx)) { // Fiery / Intense
-    animDuration = 1.5;
-    floatAnim = [-2, 2, -2];
-    spacingAnim = ['0.1em', '0.2em', '0.1em'];
-    glowStates = [
-      `0 0 20px ${config.ambient}, 0 4px 4px rgba(0,0,0,1)`, 
-      `0 0 50px ${config.ambient}, 0 0 80px ${config.path}, 0 4px 4px rgba(0,0,0,1)`, 
-      `0 0 20px ${config.ambient}, 0 4px 4px rgba(0,0,0,1)`
-    ];
-  } else if ([4, 9, 10, 17].includes(zIdx)) { // Airy / Magic
-    animDuration = 6;
-    floatAnim = [-12, 12, -12];
-    spacingAnim = ['0.2em', '0.5em', '0.2em'];
-  } else if ([6, 11, 16].includes(zIdx)) { // Watery / Abyssal
-    animDuration = 4;
-    floatAnim = [-6, 6, -6];
-  }
+// Generates uniquely themed cinematic banner text with sleek HUD frames
+export function CinematicBanner({ item }: { item: any; key?: React.Key }) {
+  const config = ZONE_CONFIGS[item.zone] || ZONE_CONFIGS[0];
 
   return (
-    <div 
-      className="absolute flex justify-center pointer-events-none" 
+    <div
+      className="absolute flex justify-center pointer-events-none"
       style={{ top: item.y, left: `${item.left}%`, transform: 'translate(-50%, -50%)', zIndex: 30 }}
     >
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ margin: "-100px" }}
-        className="px-6 py-2 flex flex-col items-center whitespace-nowrap"
+        className="px-5 py-2 flex flex-col items-center whitespace-nowrap bg-slate-950/90 border border-slate-700/60 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-md"
+        style={{ borderColor: config.path || '#38bdf8' }}
       >
-        <motion.span 
-          animate={{ 
-            y: floatAnim,
-            letterSpacing: spacingAnim,
-            textShadow: glowStates
+        {/* Realm Coordinates / Badge */}
+        <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-slate-300">
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: config.ambient || '#22c55e' }} />
+          <span>WORLD {String(item.zone + 1).padStart(2, '0')} // REALM</span>
+        </div>
+
+        <motion.span
+          animate={{
+            letterSpacing: ['0.08em', '0.12em', '0.08em'],
+            textShadow: [
+              `0 0 10px ${config.ambient}, 0 2px 4px rgba(0,0,0,0.8)`,
+              `0 0 20px ${config.ambient}, 0 2px 4px rgba(0,0,0,0.8)`,
+              `0 0 10px ${config.ambient}, 0 2px 4px rgba(0,0,0,0.8)`
+            ]
           }}
-          transition={{ duration: animDuration, repeat: Infinity, ease: 'easeInOut' }}
-          className="font-black text-2xl uppercase text-center" 
-          style={{ 
-            color: '#fff',
-            WebkitTextStroke: `1px ${config.path}` 
-          }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="font-black text-sm sm:text-base uppercase text-center font-mono mt-0.5 text-white"
         >
           {item.name}
         </motion.span>

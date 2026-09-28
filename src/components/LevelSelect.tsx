@@ -4,11 +4,12 @@ import { useGameStore } from '../game/store';
 import { renderCampaignMap } from './campaign/MapRenderer';
 import { drawPlatform } from './campaign/PlatformRenderer';
 import { ZONE_NAMES, ZONE_CONFIGS } from './campaign/WorldDefinitions';
-import { ArrowLeft, Lock, Check } from 'lucide-react';
+import { ArrowLeft, Lock, Check, Sparkles, GraduationCap } from 'lucide-react';
 import { CinematicTile, CinematicBanner } from './campaign/CinematicTiles';
+import { CampaignQuickStartModal } from './campaign/CampaignQuickStartModal';
 
-const TOTAL_LEVELS = 30;
-const LEVELS_PER_ZONE = 2;
+const TOTAL_LEVELS = 200;
+const LEVELS_PER_ZONE = 10;
 const SPACING = 60;
 const ZONE_HEIGHT = 11 * SPACING;
 const TOTAL_HEIGHT = ZONE_NAMES.length * ZONE_HEIGHT + 500;
@@ -55,8 +56,9 @@ function CampaignBackground({ scrollRef }: { scrollRef: React.RefObject<HTMLDivE
 }
 
 export function LevelSelect() {
-  const { setMode, setLevel, unlockedLevels, setState } = useGameStore();
+  const { setMode, setLevel, unlockedLevels, setState, hasCompletedCampaignTutorial, startCampaignTutorial } = useGameStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showQuickStartModal, setShowQuickStartModal] = useState(!hasCompletedCampaignTutorial);
 
   const [winWidth, setWinWidth] = useState(window.innerWidth > 0 ? window.innerWidth : 400);
   useEffect(() => {
@@ -139,18 +141,36 @@ export function LevelSelect() {
       <CampaignBackground scrollRef={scrollRef} />
 
       {/* Header */}
-      <div className="flex items-center justify-between p-6 pb-4 fixed top-0 w-full z-40 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+      <div className="flex items-center justify-between p-4 sm:p-6 pb-4 fixed top-0 w-full z-40 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent pointer-events-none backdrop-blur-xs">
         <motion.button 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
           onClick={() => setMode('menu')}
-          className="p-3 bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-white shadow-lg pointer-events-auto"
+          className="p-2.5 bg-slate-900/80 hover:bg-slate-800 border-2 border-cyan-400/60 rounded-2xl text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] pointer-events-auto cursor-pointer"
         >
-          <ArrowLeft className="w-8 h-8" />
+          <ArrowLeft className="w-6 h-6" />
         </motion.button>
-        <h2 className="text-4xl font-black text-white uppercase tracking-wider drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.2)' }}>
-          CAMPAIGN
-        </h2>
+
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-mono font-bold text-cyan-400 tracking-[0.3em] uppercase">
+            WORLD EXPEDITION
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 uppercase tracking-widest font-mono drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+            CAMPAIGN
+          </h2>
+        </div>
+
+        {/* Quick Guide Trigger Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowQuickStartModal(true)}
+          className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/90 hover:bg-slate-800/90 backdrop-blur-md border border-amber-400/70 rounded-2xl text-amber-300 font-mono font-bold text-xs uppercase shadow-[0_0_12px_rgba(245,158,11,0.3)] pointer-events-auto cursor-pointer"
+          title="Architect Quick-Start Guide"
+        >
+          <GraduationCap className="w-4 h-4 fill-current shrink-0 text-amber-400" />
+          <span className="hidden sm:inline">GUIDE</span>
+        </motion.button>
       </div>
 
       {/* Scrollable Container */}
@@ -162,7 +182,7 @@ export function LevelSelect() {
         <div className="relative w-full h-full">
           <div className="relative w-full mx-auto" style={{ height: TOTAL_HEIGHT }}>
 
-            {/* SVG Path */}
+            {/* SVG Path - High-Tech Tactical Laser Conduit */}
             <svg 
               className="absolute top-0 left-0 pointer-events-none z-10" 
               width={winWidth} 
@@ -179,22 +199,36 @@ export function LevelSelect() {
                   <stop offset={1} stopColor={ZONE_CONFIGS[ZONE_CONFIGS.length - 1].path} />
                 </linearGradient>
               </defs>
+              {/* Outer Dark Channel */}
+              <path 
+                d={pathData} 
+                fill="none" 
+                stroke="#090d16" 
+                strokeWidth="20" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                style={{ filter: 'drop-shadow(0px 4px 12px rgba(0,0,0,0.8))' }}
+              />
+              {/* Tactical Laser Vector Line */}
               <path 
                 d={pathData} 
                 fill="none" 
                 stroke="url(#path-gradient)" 
-                strokeWidth="40" 
+                strokeWidth="4" 
+                strokeDasharray="8 6"
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
-                style={{ filter: 'drop-shadow(0px 10px 10px rgba(0,0,0,0.5))' }}
+                style={{ filter: 'drop-shadow(0px 0px 8px rgba(0,240,255,0.7))' }}
               />
+              {/* Core Light Filament */}
               <path 
                 d={pathData} 
                 fill="none" 
-                stroke="rgba(255,255,255,0.15)" 
-                strokeWidth="20" 
+                stroke="#ffffff" 
+                strokeWidth="1.5" 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
+                strokeOpacity="0.8"
               />
             </svg>
 
@@ -220,18 +254,22 @@ export function LevelSelect() {
                   style={{ top: item.y, left: `${item.left}%`, transform: 'translate(-50%, -50%)', zIndex: isCurrent ? 40 : 25 }}
                 >
                   <motion.button
-                    whileHover={isCurrent ? { scale: 1.1 } : {}}
-                    whileTap={isCurrent ? { scale: 0.9 } : {}}
+                    whileHover={isUnlocked ? { scale: 1.08 } : {}}
+                    whileTap={isUnlocked ? { scale: 0.92 } : {}}
                     onClick={() => {
-                      if (isCurrent) {
-                        setLevel(lvl);
-                        setState('playing');
+                      if (isUnlocked) {
+                        if (lvl === 1 && !hasCompletedCampaignTutorial) {
+                          startCampaignTutorial();
+                        } else {
+                          setLevel(lvl);
+                          setState('playing');
+                        }
                       }
                     }}
-                    disabled={!isCurrent}
+                    disabled={!isUnlocked}
                     className={`
-                      relative flex items-center justify-center font-black transition-all
-                      ${isCurrent ? 'w-24 h-24' : 'w-16 h-16'}
+                      relative flex items-center justify-center font-black transition-all cursor-pointer
+                      ${isCurrent ? 'w-24 h-24' : isUnlocked ? 'w-20 h-20' : 'w-16 h-16 opacity-75'}
                     `}
                   >
                     
@@ -243,21 +281,26 @@ export function LevelSelect() {
                     {/* Level Number */}
                     <div className="relative z-20 flex flex-col items-center justify-center pointer-events-none mt-1">
                       <span 
-                        className={`text-white drop-shadow-[0_4px_4px_rgba(0,0,0,1)] ${isCurrent ? 'text-4xl' : 'text-2xl'}`}
-                        style={{ WebkitTextStroke: '2px rgba(0,0,0,0.8)' }}
+                        className={`font-mono font-black ${
+                          isCurrent 
+                            ? 'text-3xl text-cyan-300 drop-shadow-[0_0_12px_rgba(6,182,212,0.9)]' 
+                            : isUnlocked 
+                            ? 'text-xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' 
+                            : 'text-sm text-slate-500'
+                        }`}
                       >
                         {lvl}
                       </span>
                       
-                      {/* Status Icons */}
+                      {/* Status Badges */}
                       {isPlayed && (
-                        <div className="absolute -bottom-3 -right-3 bg-green-500 rounded-full p-1.5 shadow-[0_2px_6px_rgba(0,0,0,0.8)] border border-white">
-                          <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />
+                        <div className="absolute -bottom-2.5 -right-2.5 bg-emerald-950/90 rounded-lg p-1 shadow-[0_0_8px_rgba(16,185,129,0.5)] border border-emerald-400/80">
+                          <Check className="w-3 h-3 text-emerald-400" strokeWidth={3.5} />
                         </div>
                       )}
                       {!isPlayed && !isCurrent && (
-                        <div className="absolute -bottom-3 -right-3 bg-gray-800 rounded-full p-1.5 shadow-[0_2px_6px_rgba(0,0,0,0.8)] border border-white">
-                          <Lock className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                        <div className="absolute -bottom-2.5 -right-2.5 bg-slate-950/90 rounded-lg p-1 shadow-sm border border-slate-700">
+                          <Lock className="w-2.5 h-2.5 text-slate-400" strokeWidth={2.5} />
                         </div>
                       )}
                     </div>
@@ -287,6 +330,15 @@ export function LevelSelect() {
           </div>
         </div>
       </div>
+
+      <CampaignQuickStartModal
+        isOpen={showQuickStartModal}
+        onClose={() => setShowQuickStartModal(false)}
+        onStart={() => {
+          setShowQuickStartModal(false);
+          startCampaignTutorial();
+        }}
+      />
     </motion.div>
   );
 }

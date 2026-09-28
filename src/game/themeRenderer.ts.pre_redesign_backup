@@ -1,0 +1,1539 @@
+// THEME RENDERER - REALISTIC HIGH-FIDELITY ATMOSPHERIC WORLDS & ITEMS
+// 20 Distinct, visually unique biomes with realistic depth, lighting, and textures.
+
+export interface WorldThemeColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  glow: string;
+  dark: string;
+}
+
+export const THEME_PALETTES: WorldThemeColors[] = [
+  // 0: Spring Meadow (Lush green hills, wild flora, warm golden sunlight)
+  { primary: '#22c55e', secondary: '#15803d', accent: '#fbbf24', glow: 'rgba(34, 197, 94, 0.4)', dark: '#052e16' },
+  // 1: Lunar Surface (Stark craters, grey regolith, deep velvet cosmos, earthrise)
+  { primary: '#94a3b8', secondary: '#64748b', accent: '#38bdf8', glow: 'rgba(148, 163, 184, 0.35)', dark: '#030712' },
+  // 2: Martian Canyon (Rusty red dunes, stratified redstone cliffs, dusty sun)
+  { primary: '#ea580c', secondary: '#9a3412', accent: '#f97316', glow: 'rgba(234, 88, 12, 0.4)', dark: '#270a04' },
+  // 3: Deep Space Nebula (Swirling stellar clouds of violet, magenta, and cyan)
+  { primary: '#a855f7', secondary: '#7c3aed', accent: '#38bdf8', glow: 'rgba(168, 85, 247, 0.45)', dark: '#09021a' },
+  // 4: Abyssal Coral Reef (Deep ocean blue, sunlit water caustics, vibrant coral, bubbles)
+  { primary: '#06b6d4', secondary: '#0e7490', accent: '#22d3ee', glow: 'rgba(6, 182, 212, 0.4)', dark: '#02182b' },
+  // 5: Tropical Sunset Beach (Warm amber/magenta sunset, turquoise ocean waves, palm silhouettes)
+  { primary: '#f59e0b', secondary: '#f43f5e', accent: '#2dd4bf', glow: 'rgba(245, 158, 11, 0.4)', dark: '#1c0a1f' },
+  // 6: Volcanic Caldera (Dark basalt crags, molten glowing magma fissures, fire embers)
+  { primary: '#ef4444', secondary: '#b91c1c', accent: '#fbbf24', glow: 'rgba(239, 68, 68, 0.5)', dark: '#1a0502' },
+  // 7: Ancient Stone Citadel (Gothic castle masonry, moonlit fortress towers, warm torchlight)
+  { primary: '#64748b', secondary: '#475569', accent: '#f59e0b', glow: 'rgba(100, 116, 139, 0.35)', dark: '#0b1120' },
+  // 8: Enchanted Redwood Forest (Deep mystical emerald woods, towering redwood trunks, glowing spores)
+  { primary: '#10b981', secondary: '#047857', accent: '#a7f3d0', glow: 'rgba(16, 185, 129, 0.4)', dark: '#032014' },
+  // 9: Golden Desert Oasis (Sweeping wind-rippled dunes, brilliant desert sun, oasis palms)
+  { primary: '#eab308', secondary: '#ca8a04', accent: '#38bdf8', glow: 'rgba(234, 179, 8, 0.4)', dark: '#1c1303' },
+  // 10: Frozen Arctic Tundra (Glacial icebergs, dancing green Aurora Borealis, soft snowfall)
+  { primary: '#38bdf8', secondary: '#0284c7', accent: '#86efac', glow: 'rgba(56, 189, 248, 0.4)', dark: '#03192e' },
+  // 11: Pirate Corsair Cove (Dramatic sea cliffs, moonlit ocean, galleon silhouette, lantern glow)
+  { primary: '#d97706', secondary: '#92400e', accent: '#38bdf8', glow: 'rgba(217, 119, 6, 0.35)', dark: '#0c1524' },
+  // 12: Candyland Confection (Artisan glossy sugar crystals, strawberry cream hills, swirl lollipops)
+  { primary: '#ec4899', secondary: '#db2777', accent: '#fbcfe8', glow: 'rgba(236, 72, 153, 0.4)', dark: '#2b0922' },
+  // 13: Golden El Dorado (Gilded sun-temple architecture, solid gold relics, lush jungle sunbeams)
+  { primary: '#f59e0b', secondary: '#b45309', accent: '#fef08a', glow: 'rgba(245, 158, 11, 0.45)', dark: '#1c1002' },
+  // 14: Cyberpunk Megacity (Rain-slicked skyscrapers, neon cyan/magenta signs, towering metropolis)
+  { primary: '#00f0ff', secondary: '#f43f5e', accent: '#a855f7', glow: 'rgba(0, 240, 255, 0.45)', dark: '#090514' },
+  // 15: Toxic Industrial Wasteland (Industrial steel pipes, bubbling phosphorescent green chemical lagoon)
+  { primary: '#84cc16', secondary: '#4d7c0f', accent: '#bef264', glow: 'rgba(132, 204, 22, 0.4)', dark: '#091504' },
+  // 16: Floating Sky Islands (High altitude azure sky, floating mossy islands with cascading waterfalls)
+  { primary: '#38bdf8', secondary: '#0284c7', accent: '#f8fafc', glow: 'rgba(56, 189, 248, 0.35)', dark: '#071f3d' },
+  // 17: Chrono Clockwork Realm (Interlocking brass and copper gears, escaping steam, pendulum weights)
+  { primary: '#d97706', secondary: '#78350f', accent: '#fbbf24', glow: 'rgba(217, 119, 6, 0.4)', dark: '#1a0d05' },
+  // 18: Sakura Blossom Shrine (Crimson torii gate, pagoda against Mount Fuji, fluttering pink petals)
+  { primary: '#f472b6', secondary: '#e11d48', accent: '#fbcfe8', glow: 'rgba(244, 114, 182, 0.4)', dark: '#240817' },
+  // 19: Crystalline Geode Core (Deep cavern with towering faceted glowing amethyst crystals)
+  { primary: '#c084fc', secondary: '#9333ea', accent: '#00f0ff', glow: 'rgba(192, 132, 252, 0.45)', dark: '#0c021a' },
+];
+
+// REALISTIC WORLD BACKGROUND RENDERING
+export function renderWorld(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  id: string,
+  time: number,
+  isPreview: boolean = false
+) {
+  const t = Math.abs(parseInt((id || '').replace('bg-', '').replace('campaign-', '')) || 0) % THEME_PALETTES.length;
+  ctx.save();
+
+  // Helper: Draw smooth vertical sky gradient
+  const drawSky = (c1: string, c2: string, c3?: string) => {
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, c1);
+    if (c3) {
+      grad.addColorStop(0.55, c2);
+      grad.addColorStop(1, c3);
+    } else {
+      grad.addColorStop(1, c2);
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  };
+
+  // Helper: Volumetric rolling hills / terrain layers
+  const drawLayeredHills = (
+    hills: { color: string; baseY: number; amp: number; freq: number; phase: number }[]
+  ) => {
+    hills.forEach(hill => {
+      ctx.fillStyle = hill.color;
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      ctx.lineTo(0, hill.baseY);
+      for (let x = 0; x <= w; x += 15) {
+        const y = hill.baseY + Math.sin(x * hill.freq + hill.phase) * hill.amp;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      ctx.fill();
+    });
+  };
+
+  // Helper: Stars with natural magnitude variation and subtle twinkle
+  const drawRealisticStars = (count: number, seed: number = 42) => {
+    ctx.save();
+    for (let i = 0; i < count; i++) {
+      const sx = ((i * 137.5 + seed) % 1) * w;
+      const sy = (((i * 269.3 + seed * 2) % 1) * h * 0.75);
+      const mag = (i % 7 === 0) ? 2 : (i % 3 === 0 ? 1.5 : 1);
+      const twinkle = 0.4 + 0.6 * Math.sin(time * 0.002 + i * 1.7);
+      ctx.globalAlpha = Math.max(0.2, Math.min(1, twinkle));
+      ctx.fillStyle = (i % 5 === 0) ? '#bfdbfe' : ((i % 8 === 0) ? '#fef08a' : '#ffffff');
+      ctx.beginPath();
+      ctx.arc(sx, sy, mag * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  };
+
+  // Helper: Realistic celestial body (Sun, Moon, Planet) with limb shading & atmosphere
+  const drawCelestialSphere = (
+    cx: number,
+    cy: number,
+    r: number,
+    cCore: string,
+    cEdge: string,
+    cHalo?: string
+  ) => {
+    ctx.save();
+    if (cHalo) {
+      const halo = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 2.2);
+      halo.addColorStop(0, cHalo);
+      halo.addColorStop(1, 'transparent');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const sphereGrad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+    sphereGrad.addColorStop(0, cCore);
+    sphereGrad.addColorStop(1, cEdge);
+    ctx.fillStyle = sphereGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+
+  // Helper: Realistic floating natural particles
+  const drawParticles = (
+    count: number,
+    color: string,
+    speedX: number,
+    speedY: number,
+    sizeMax: number = 3,
+    alphaMax: number = 0.7
+  ) => {
+    ctx.save();
+    ctx.fillStyle = color;
+    for (let i = 0; i < count; i++) {
+      const px = (((i * 47.9 + time * speedX) % w) + w) % w;
+      const py = (((i * 83.1 + time * speedY + Math.sin(time * 0.001 + i) * 20) % h) + h) % h;
+      const a = (0.2 + 0.8 * Math.abs(Math.sin(time * 0.002 + i))) * alphaMax;
+      ctx.globalAlpha = Math.max(0.1, Math.min(1, a));
+      ctx.beginPath();
+      ctx.arc(px, py, 1 + (i % sizeMax), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  };
+
+  switch (t) {
+    // 0: Spring Meadow
+    case 0: {
+      drawSky('#38bdf8', '#86efac', '#dcfce7');
+      // Gentle sun rays
+      ctx.save();
+      const sunGrad = ctx.createRadialGradient(w * 0.2, h * 0.2, 10, w * 0.2, h * 0.2, 180);
+      sunGrad.addColorStop(0, 'rgba(254, 240, 138, 0.6)');
+      sunGrad.addColorStop(0.5, 'rgba(253, 224, 71, 0.2)');
+      sunGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = sunGrad;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+
+      // Realistic rolling emerald meadow hills
+      drawLayeredHills([
+        { color: '#15803d', baseY: h * 0.68, amp: 28, freq: 0.004, phase: 1.2 },
+        { color: '#16a34a', baseY: h * 0.74, amp: 22, freq: 0.006, phase: 2.8 },
+        { color: '#22c55e', baseY: h * 0.82, amp: 16, freq: 0.008, phase: 0.4 },
+      ]);
+      // Floating golden dandelion pollen seeds
+      drawParticles(35, '#fef08a', 0.02, -0.015, 2.5, 0.65);
+      break;
+    }
+
+    // 1: Lunar Surface
+    case 1: {
+      drawSky('#030712', '#0f172a', '#1e293b');
+      drawRealisticStars(110);
+      // Realistic Earthrise
+      drawCelestialSphere(w * 0.78, h * 0.28, 44, '#60a5fa', '#1e40af', 'rgba(96, 165, 250, 0.3)');
+      // Earth atmosphere limb & clouds
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.beginPath();
+      ctx.arc(w * 0.76, h * 0.26, 38, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Jagged cratered lunar mountain ridges
+      drawLayeredHills([
+        { color: '#1e293b', baseY: h * 0.65, amp: 35, freq: 0.008, phase: 1.5 },
+        { color: '#334155', baseY: h * 0.73, amp: 26, freq: 0.012, phase: 3.2 },
+        { color: '#475569', baseY: h * 0.82, amp: 18, freq: 0.009, phase: 0.8 },
+      ]);
+      // Micrometeorite dust motes
+      drawParticles(25, '#e2e8f0', 0.01, -0.005, 1.8, 0.5);
+      break;
+    }
+
+    // 2: Martian Canyon
+    case 2: {
+      drawSky('#451a03', '#9a3412', '#ea580c');
+      // Distant pale sun
+      drawCelestialSphere(w * 0.3, h * 0.25, 24, '#fef08a', '#ea580c', 'rgba(249, 115, 22, 0.25)');
+      // Rugged layered redstone canyon plateaus
+      drawLayeredHills([
+        { color: '#7c2d12', baseY: h * 0.64, amp: 38, freq: 0.007, phase: 0.5 },
+        { color: '#9a3412', baseY: h * 0.72, amp: 28, freq: 0.01, phase: 2.1 },
+        { color: '#c2410c', baseY: h * 0.80, amp: 20, freq: 0.008, phase: 4.3 },
+      ]);
+      // Swirling rust-red desert wind dust
+      drawParticles(40, '#fed7aa', 0.05, 0.01, 2.5, 0.6);
+      break;
+    }
+
+    // 3: Deep Space Nebula
+    case 3: {
+      drawSky('#05010e', '#0f0524', '#1a0b3b');
+      drawRealisticStars(130);
+      // Volumetric swirling cosmic nebulae
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const neb1 = ctx.createRadialGradient(w * 0.35, h * 0.38, 20, w * 0.35, h * 0.38, w * 0.55);
+      neb1.addColorStop(0, 'rgba(192, 132, 252, 0.45)');
+      neb1.addColorStop(0.5, 'rgba(147, 51, 234, 0.25)');
+      neb1.addColorStop(1, 'transparent');
+      ctx.fillStyle = neb1;
+      ctx.fillRect(0, 0, w, h);
+
+      const neb2 = ctx.createRadialGradient(w * 0.75, h * 0.55, 10, w * 0.75, h * 0.55, w * 0.48);
+      neb2.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+      neb2.addColorStop(0.6, 'rgba(236, 72, 153, 0.2)');
+      neb2.addColorStop(1, 'transparent');
+      ctx.fillStyle = neb2;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+      // Shimmering stardust
+      drawParticles(50, '#f5d0fe', 0.015, -0.01, 2.2, 0.7);
+      break;
+    }
+
+    // 4: Abyssal Coral Reef
+    case 4: {
+      drawSky('#02182b', '#03396c', '#005b96');
+      // Sunbeams piercing water from surface
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < 5; i++) {
+        const rx = w * (0.15 + i * 0.2);
+        const rayGrad = ctx.createLinearGradient(rx, 0, rx + 40, h);
+        rayGrad.addColorStop(0, 'rgba(100, 216, 255, 0.25)');
+        rayGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = rayGrad;
+        ctx.beginPath();
+        ctx.moveTo(rx - 15, 0);
+        ctx.lineTo(rx + 25, 0);
+        ctx.lineTo(rx + 90, h);
+        ctx.lineTo(rx + 30, h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Deep sea shelf & coral silhouettes
+      drawLayeredHills([
+        { color: '#011627', baseY: h * 0.70, amp: 25, freq: 0.009, phase: 1.1 },
+        { color: '#012a4a', baseY: h * 0.78, amp: 20, freq: 0.014, phase: 3.5 },
+      ]);
+      // Translucent rising water bubbles
+      ctx.save();
+      for (let i = 0; i < 30; i++) {
+        const bx = (((i * 41.3) % w) + Math.sin(time * 0.002 + i) * 15 + w) % w;
+        const by = (((-time * 0.04 - i * 35) % h) + h) % h;
+        const br = 2 + (i % 4);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.15)';
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+      break;
+    }
+
+    // 5: Tropical Sunset Beach
+    case 5: {
+      drawSky('#4a044e', '#c026d3', '#f59e0b');
+      // Sunset solar glow
+      drawCelestialSphere(w * 0.5, h * 0.52, 50, '#fef08a', '#f97316', 'rgba(249, 115, 22, 0.45)');
+      // Ocean horizon & rhythmic shoreline waves
+      ctx.fillStyle = '#164e63';
+      ctx.fillRect(0, h * 0.65, w, h * 0.35);
+      // Specular golden sunset reflection on ocean
+      ctx.save();
+      const waterReflect = ctx.createLinearGradient(0, h * 0.65, 0, h);
+      waterReflect.addColorStop(0, 'rgba(254, 240, 138, 0.5)');
+      waterReflect.addColorStop(0.4, 'rgba(249, 115, 22, 0.3)');
+      waterReflect.addColorStop(1, 'transparent');
+      ctx.fillStyle = waterReflect;
+      ctx.fillRect(w * 0.35, h * 0.65, w * 0.3, h * 0.35);
+      ctx.restore();
+      // Silhouetted shoreline dunes
+      drawLayeredHills([
+        { color: '#083344', baseY: h * 0.82, amp: 12, freq: 0.008, phase: 0.6 },
+      ]);
+      drawParticles(25, '#fed7aa', 0.02, -0.01, 2, 0.6);
+      break;
+    }
+
+    // 6: Volcanic Caldera
+    case 6: {
+      drawSky('#180303', '#450a0a', '#7f1d1d');
+      // Basalt volcanic peaks
+      drawLayeredHills([
+        { color: '#270808', baseY: h * 0.62, amp: 45, freq: 0.008, phase: 0.8 },
+        { color: '#3f0c0c', baseY: h * 0.72, amp: 30, freq: 0.011, phase: 2.4 },
+      ]);
+      // Molten magma glow in caldera floor
+      ctx.save();
+      const lavaFloor = ctx.createLinearGradient(0, h * 0.78, 0, h);
+      lavaFloor.addColorStop(0, '#f59e0b');
+      lavaFloor.addColorStop(0.3, '#dc2626');
+      lavaFloor.addColorStop(1, '#7f1d1d');
+      ctx.fillStyle = lavaFloor;
+      ctx.fillRect(0, h * 0.78, w, h * 0.22);
+      ctx.restore();
+      // Floating glowing magma sparks & embers
+      ctx.save();
+      for (let i = 0; i < 45; i++) {
+        const ex = (((i * 29.3 + Math.sin(time * 0.003 + i) * 30) % w) + w) % w;
+        const ey = (((h - (time * 0.05 + i * 22) % h)) + h) % h;
+        const er = 1.5 + (i % 3);
+        const a = 0.4 + 0.6 * Math.sin(time * 0.005 + i);
+        ctx.fillStyle = (i % 2 === 0) ? '#fef08a' : '#f97316';
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 8;
+        ctx.globalAlpha = Math.max(0.2, a);
+        ctx.beginPath();
+        ctx.arc(ex, ey, er, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      break;
+    }
+
+    // 7: Ancient Stone Citadel
+    case 7: {
+      drawSky('#020617', '#0f172a', '#1e293b');
+      drawRealisticStars(70);
+      // Bright full moon
+      drawCelestialSphere(w * 0.82, h * 0.22, 34, '#f8fafc', '#cbd5e1', 'rgba(255, 255, 255, 0.3)');
+      // Distant mountain silhouettes
+      drawLayeredHills([
+        { color: '#0f172a', baseY: h * 0.62, amp: 32, freq: 0.006, phase: 1.8 },
+      ]);
+      // Majestic fortress parapets & battlement silhouettes
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, h * 0.76, w, h * 0.24);
+      for (let i = 0; i < 12; i++) {
+        const bx = i * (w / 11);
+        ctx.fillRect(bx, h * 0.72, w / 18, h * 0.05);
+      }
+      // Warm torchlight glow windows
+      ctx.save();
+      for (let i = 1; i <= 4; i++) {
+        const wx = (w / 5) * i;
+        const wy = h * 0.83;
+        ctx.fillStyle = '#f59e0b';
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.roundRect(wx - 8, wy - 14, 16, 28, [8, 8, 2, 2]);
+        ctx.fill();
+      }
+      ctx.restore();
+      drawParticles(25, '#fbbf24', 0.01, -0.015, 2, 0.5);
+      break;
+    }
+
+    // 8: Enchanted Redwood Forest
+    case 8: {
+      drawSky('#022c22', '#064e3b', '#047857');
+      // Towering mossy tree trunk silhouettes
+      ctx.fillStyle = '#011c14';
+      [-0.05, 0.15, 0.42, 0.7, 0.95].forEach((pos, idx) => {
+        const tx = w * pos;
+        const tw = 35 + (idx % 3) * 15;
+        ctx.fillRect(tx, 0, tw, h);
+      });
+      // Soft forest floor canopy
+      drawLayeredHills([
+        { color: '#064e3b', baseY: h * 0.75, amp: 18, freq: 0.01, phase: 0.9 },
+        { color: '#047857', baseY: h * 0.83, amp: 14, freq: 0.014, phase: 3.1 },
+      ]);
+      // Glowing mystical spores and fireflies
+      ctx.save();
+      for (let i = 0; i < 40; i++) {
+        const fx = (((i * 51.7 + Math.sin(time * 0.002 + i) * 25) % w) + w) % w;
+        const fy = (((i * 73.1 + Math.cos(time * 0.002 + i) * 20) % h) + h) % h;
+        const fr = 1.5 + (i % 3);
+        const pulse = 0.3 + 0.7 * Math.sin(time * 0.004 + i);
+        ctx.fillStyle = (i % 2 === 0) ? '#6ee7b7' : '#a7f3d0';
+        ctx.shadowColor = '#10b981';
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = pulse;
+        ctx.beginPath();
+        ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      break;
+    }
+
+    // 9: Golden Desert Oasis
+    case 9: {
+      drawSky('#78350f', '#d97706', '#f59e0b');
+      // Blazing desert sun
+      drawCelestialSphere(w * 0.5, h * 0.28, 48, '#ffffff', '#fde047', 'rgba(254, 240, 138, 0.45)');
+      // Shimmering golden dunes with wind ridges
+      drawLayeredHills([
+        { color: '#92400e', baseY: h * 0.65, amp: 30, freq: 0.005, phase: 1.4 },
+        { color: '#b45309', baseY: h * 0.73, amp: 24, freq: 0.008, phase: 3.6 },
+        { color: '#d97706', baseY: h * 0.81, amp: 16, freq: 0.01, phase: 0.7 },
+      ]);
+      // Shimmering sand grains & heat haze
+      drawParticles(35, '#fef08a', 0.04, 0.005, 2, 0.6);
+      break;
+    }
+
+    // 10: Frozen Arctic Tundra
+    case 10: {
+      drawSky('#03192e', '#073359', '#0b4a78');
+      drawRealisticStars(80);
+      // Realistic dancing Aurora Borealis ribbon curtain
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < 3; i++) {
+        const aurGrad = ctx.createLinearGradient(0, h * 0.15, 0, h * 0.55);
+        aurGrad.addColorStop(0, 'transparent');
+        aurGrad.addColorStop(0.5, i === 1 ? 'rgba(52, 211, 153, 0.45)' : 'rgba(56, 189, 248, 0.35)');
+        aurGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = aurGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.2);
+        for (let x = 0; x <= w; x += 20) {
+          const y = h * 0.3 + Math.sin(x * 0.01 + time * 0.001 + i * 2) * 45;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(w, h * 0.55);
+        ctx.lineTo(0, h * 0.55);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Crystalline glacier & iceberg ridges
+      drawLayeredHills([
+        { color: '#0369a1', baseY: h * 0.68, amp: 35, freq: 0.009, phase: 2.0 },
+        { color: '#0284c7', baseY: h * 0.76, amp: 25, freq: 0.012, phase: 0.5 },
+        { color: '#38bdf8', baseY: h * 0.84, amp: 16, freq: 0.007, phase: 3.8 },
+      ]);
+      // Soft gentle snowfall
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 50; i++) {
+        const sx = (((i * 37.9 + Math.sin(time * 0.001 + i) * 15) % w) + w) % w;
+        const sy = (((time * 0.03 + i * 27) % h) + h) % h;
+        const sr = 1 + (i % 3);
+        ctx.globalAlpha = 0.4 + 0.6 * Math.sin(time * 0.003 + i);
+        ctx.beginPath();
+        ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      break;
+    }
+
+    // 11: Pirate Corsair Cove
+    case 11: {
+      drawSky('#020b18', '#082347', '#124170');
+      drawRealisticStars(60);
+      drawCelestialSphere(w * 0.25, h * 0.24, 30, '#f8fafc', '#94a3b8', 'rgba(255, 255, 255, 0.25)');
+      // Dramatic coastal cliffs
+      drawLayeredHills([
+        { color: '#091e3a', baseY: h * 0.68, amp: 35, freq: 0.007, phase: 1.1 },
+        { color: '#051329', baseY: h * 0.78, amp: 22, freq: 0.011, phase: 4.2 },
+      ]);
+      // Distant galleon silhouette with rigged sails
+      ctx.save();
+      ctx.fillStyle = '#020617';
+      const gx = w * 0.72;
+      const gy = h * 0.74;
+      ctx.beginPath();
+      // Hull
+      ctx.moveTo(gx - 35, gy);
+      ctx.lineTo(gx + 35, gy);
+      ctx.lineTo(gx + 25, gy + 12);
+      ctx.lineTo(gx - 30, gy + 12);
+      ctx.closePath();
+      ctx.fill();
+      // Masts & sails
+      ctx.fillRect(gx - 15, gy - 35, 2.5, 35);
+      ctx.fillRect(gx + 10, gy - 40, 2.5, 40);
+      ctx.beginPath();
+      ctx.arc(gx - 15, gy - 20, 10, -Math.PI / 2, Math.PI / 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(gx + 10, gy - 22, 12, -Math.PI / 2, Math.PI / 2);
+      ctx.fill();
+      ctx.restore();
+      drawParticles(20, '#fbbf24', 0.015, -0.01, 2, 0.55);
+      break;
+    }
+
+    // 12: Candyland Confection (Artisan glossy sugar art, NOT cartoon scribble)
+    case 12: {
+      drawSky('#500724', '#9d174d', '#f43f5e');
+      // Lustrous strawberry cream & cotton sugar clouds
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const cloudGrad = ctx.createRadialGradient(w * 0.5, h * 0.35, 20, w * 0.5, h * 0.35, 140);
+      cloudGrad.addColorStop(0, 'rgba(251, 207, 232, 0.5)');
+      cloudGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = cloudGrad;
+      ctx.beginPath();
+      ctx.arc(w * 0.5, h * 0.35, 140, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Smooth glazed sugar hills with specular shine
+      drawLayeredHills([
+        { color: '#831843', baseY: h * 0.67, amp: 26, freq: 0.007, phase: 1.5 },
+        { color: '#be185d', baseY: h * 0.75, amp: 20, freq: 0.01, phase: 3.2 },
+        { color: '#f43f5e', baseY: h * 0.83, amp: 14, freq: 0.012, phase: 0.8 },
+      ]);
+      // Shimmering sugar dust crystals
+      drawParticles(40, '#fbcfe8', 0.02, -0.02, 2.2, 0.7);
+      break;
+    }
+
+    // 13: Golden El Dorado
+    case 13: {
+      drawSky('#451a03', '#92400e', '#d97706');
+      // Radiant golden sunbeams
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < 4; i++) {
+        const gx = w * (0.2 + i * 0.25);
+        const gGrad = ctx.createLinearGradient(gx, 0, gx + 30, h);
+        gGrad.addColorStop(0, 'rgba(254, 240, 138, 0.3)');
+        gGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = gGrad;
+        ctx.fillRect(gx - 20, 0, 40, h);
+      }
+      ctx.restore();
+      // Stepped Aztec gold-stone pyramid silhouette
+      ctx.fillStyle = '#291404';
+      ctx.beginPath();
+      const px = w * 0.5;
+      const py = h * 0.68;
+      ctx.moveTo(px - 90, h);
+      ctx.lineTo(px - 40, py);
+      ctx.lineTo(px + 40, py);
+      ctx.lineTo(px + 90, h);
+      ctx.closePath();
+      ctx.fill();
+      drawLayeredHills([
+        { color: '#451a03', baseY: h * 0.78, amp: 20, freq: 0.008, phase: 1.2 },
+        { color: '#78350f', baseY: h * 0.85, amp: 14, freq: 0.012, phase: 3.4 },
+      ]);
+      drawParticles(45, '#fef08a', 0.025, -0.015, 2.5, 0.75);
+      break;
+    }
+
+    // 14: Cyberpunk Megacity
+    case 14: {
+      drawSky('#090514', '#1f0d3d', '#3b0764');
+      // Neon holographic rain & grid reflections
+      drawRealisticStars(50);
+      // Towering skyscraper silhouettes with glowing neon window rows
+      ctx.fillStyle = '#05020a';
+      const towers = [
+        { x: w * 0.05, w: w * 0.18, h: h * 0.42 },
+        { x: w * 0.28, w: w * 0.22, h: h * 0.52 },
+        { x: w * 0.54, w: w * 0.16, h: h * 0.38 },
+        { x: w * 0.74, w: w * 0.24, h: h * 0.48 },
+      ];
+      towers.forEach(t => {
+        ctx.fillRect(t.x, h - t.h, t.w, t.h);
+        // Window dots
+        ctx.save();
+        for (let wy = h - t.h + 20; wy < h - 40; wy += 14) {
+          for (let wx = t.x + 8; wx < t.x + t.w - 8; wx += 10) {
+            if (Math.sin(wx * 2 + wy * 3) > 0.1) {
+              ctx.fillStyle = Math.sin(wx) > 0 ? '#00f0ff' : '#f43f5e';
+              ctx.globalAlpha = 0.7;
+              ctx.fillRect(wx, wy, 4, 6);
+            }
+          }
+        }
+        ctx.restore();
+      });
+      // Neon cyan / magenta rain streaks
+      drawParticles(45, '#00f0ff', 0.01, 0.08, 1.5, 0.6);
+      break;
+    }
+
+    // 15: Toxic Industrial Wasteland
+    case 15: {
+      drawSky('#091404', '#193309', '#365314');
+      // Distant cooling towers & factory chimneys
+      ctx.fillStyle = '#050c02';
+      ctx.fillRect(w * 0.2, h * 0.55, 30, h * 0.25);
+      ctx.fillRect(w * 0.65, h * 0.52, 35, h * 0.28);
+      // Phosphorescent green chemical mist
+      drawLayeredHills([
+        { color: '#142a07', baseY: h * 0.72, amp: 24, freq: 0.009, phase: 1.0 },
+        { color: '#1a3a09', baseY: h * 0.80, amp: 16, freq: 0.012, phase: 3.5 },
+      ]);
+      // Glowing green radioactive vapors
+      drawParticles(35, '#bef264', 0.02, -0.03, 3, 0.6);
+      break;
+    }
+
+    // 16: Floating Sky Islands
+    case 16: {
+      drawSky('#0369a1', '#38bdf8', '#bae6fd');
+      // Fluffy cumulus cloud banks below
+      ctx.save();
+      for (let i = 0; i < 6; i++) {
+        const cx = (w / 5) * i;
+        const cy = h * 0.72 + Math.sin(i) * 15;
+        const cGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 80);
+        cGrad.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
+        cGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = cGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      // Floating rock islands with moss
+      ctx.save();
+      ctx.fillStyle = '#334155';
+      const isX = w * 0.5;
+      const isY = h * 0.58;
+      ctx.beginPath();
+      ctx.ellipse(isX, isY, 80, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Bottom cone
+      ctx.beginPath();
+      ctx.moveTo(isX - 75, isY);
+      ctx.lineTo(isX + 75, isY);
+      ctx.lineTo(isX, isY + 65);
+      ctx.closePath();
+      ctx.fill();
+      // Green moss cap
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.ellipse(isX, isY - 4, 78, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      drawParticles(30, '#ffffff', 0.025, -0.01, 2, 0.55);
+      break;
+    }
+
+    // 17: Chrono Clockwork Realm
+    case 17: {
+      drawSky('#1a0d05', '#381c0b', '#5c2d12');
+      // Large interlocking brass gear silhouettes in background
+      ctx.save();
+      const drawGearSilhouette = (gx: number, gy: number, gr: number, teeth: number, rot: number) => {
+        ctx.fillStyle = 'rgba(120, 53, 15, 0.4)';
+        ctx.beginPath();
+        for (let i = 0; i < teeth; i++) {
+          const ang = (i / teeth) * Math.PI * 2 + rot;
+          const rOut = gr * 1.15;
+          const rIn = gr * 0.85;
+          ctx.lineTo(gx + Math.cos(ang - 0.08) * rIn, gy + Math.sin(ang - 0.08) * rIn);
+          ctx.lineTo(gx + Math.cos(ang - 0.05) * rOut, gy + Math.sin(ang - 0.05) * rOut);
+          ctx.lineTo(gx + Math.cos(ang + 0.05) * rOut, gy + Math.sin(ang + 0.05) * rOut);
+          ctx.lineTo(gx + Math.cos(ang + 0.08) * rIn, gy + Math.sin(ang + 0.08) * rIn);
+        }
+        ctx.closePath();
+        ctx.fill();
+      };
+      drawGearSilhouette(w * 0.25, h * 0.45, 70, 16, time * 0.0005);
+      drawGearSilhouette(w * 0.72, h * 0.55, 90, 20, -time * 0.0004);
+      ctx.restore();
+      // Heavy iron & copper structural framework
+      drawLayeredHills([
+        { color: '#291404', baseY: h * 0.76, amp: 18, freq: 0.01, phase: 1.3 },
+      ]);
+      drawParticles(35, '#fbbf24', 0.02, -0.025, 2, 0.65);
+      break;
+    }
+
+    // 18: Sakura Blossom Shrine
+    case 18: {
+      drawSky('#3b0724', '#831843', '#fbcfe8');
+      // Mount Fuji silhouette in twilight
+      ctx.save();
+      ctx.fillStyle = '#4c0519';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.15, h * 0.75);
+      ctx.lineTo(w * 0.5, h * 0.42);
+      ctx.lineTo(w * 0.85, h * 0.75);
+      ctx.closePath();
+      ctx.fill();
+      // Snowcap
+      ctx.fillStyle = '#ffe4e6';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.43, h * 0.48);
+      ctx.lineTo(w * 0.5, h * 0.42);
+      ctx.lineTo(w * 0.57, h * 0.48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      // Hill slopes with cherry trees
+      drawLayeredHills([
+        { color: '#500724', baseY: h * 0.74, amp: 22, freq: 0.008, phase: 1.6 },
+        { color: '#831843', baseY: h * 0.82, amp: 14, freq: 0.012, phase: 3.5 },
+      ]);
+      // Fluttering organic cherry blossom petals
+      ctx.save();
+      for (let i = 0; i < 40; i++) {
+        const px = (((i * 43.1 + time * 0.035) % w) + w) % w;
+        const py = (((i * 61.9 + time * 0.025 + Math.sin(time * 0.002 + i) * 15) % h) + h) % h;
+        const rot = time * 0.003 + i;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(rot);
+        ctx.fillStyle = '#fbcfe8';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 5, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+      break;
+    }
+
+    // 19: Crystalline Geode Core
+    case 19:
+    default: {
+      drawSky('#070214', '#150630', '#2e0854');
+      // Subterranean crystal cavern ceiling & ground stalagmites
+      drawLayeredHills([
+        { color: '#130429', baseY: h * 0.65, amp: 40, freq: 0.012, phase: 1.4 },
+        { color: '#24074d', baseY: h * 0.76, amp: 26, freq: 0.015, phase: 3.8 },
+      ]);
+      // Glowing amethyst crystal cluster shards in cavern
+      ctx.save();
+      const crystalPositions = [w * 0.2, w * 0.45, w * 0.75];
+      crystalPositions.forEach((cx, idx) => {
+        const cy = h * 0.76;
+        const ch = 55 + (idx % 2) * 25;
+        const cGrad = ctx.createLinearGradient(cx - 15, cy, cx + 15, cy - ch);
+        cGrad.addColorStop(0, '#7e22ce');
+        cGrad.addColorStop(0.6, '#c084fc');
+        cGrad.addColorStop(1, '#ffffff');
+        ctx.fillStyle = cGrad;
+        ctx.shadowColor = '#c084fc';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.moveTo(cx - 12, cy);
+        ctx.lineTo(cx, cy - ch);
+        ctx.lineTo(cx + 12, cy);
+        ctx.closePath();
+        ctx.fill();
+      });
+      ctx.restore();
+      drawParticles(40, '#e9d5ff', 0.015, -0.02, 2.5, 0.7);
+      break;
+    }
+  }
+
+  // Cinematic Vignette Frame (Smooth atmospheric focus)
+  const vig = ctx.createRadialGradient(
+    w * 0.5,
+    h * 0.5,
+    Math.min(w, h) * 0.45,
+    w * 0.5,
+    h * 0.5,
+    Math.max(w, h) * 0.85
+  );
+  vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  vig.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.restore();
+}
+
+// REALISTIC HIGH-FIDELITY BLOCK RENDERING
+// Each theme block has authentic material rendering, textures, bevels, and light highlights.
+export function renderBlock(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  id: string,
+  isCenter: boolean,
+  time: number,
+  archetype?: string
+) {
+  const t = Math.abs(parseInt((id || '').replace('skin-', '')) || 0) % THEME_PALETTES.length;
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+
+  // Subtle natural idle breath
+  const bounce = Math.sin(time / 220) * 2.5;
+  const squash = 1 + Math.sin(time / 160) * 0.03;
+  ctx.translate(0, bounce);
+  ctx.scale(1 / squash, squash);
+
+  const hw = w / 2;
+  const hh = h / 2;
+
+  // Render specific realistic material block by theme index:
+  switch (t) {
+    // 0: Meadow: Amber Honeycomb Gemstone
+    case 0: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#fef08a');
+      grad.addColorStop(0.4, '#eab308');
+      grad.addColorStop(1, '#854d0e');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#eab308';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Honeycomb cell facets
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.8)';
+      ctx.lineWidth = 1.2;
+      const r = w * 0.22;
+      ctx.beginPath();
+      for (let a = 0; a < 6; a++) {
+        const ang = (a * Math.PI) / 3;
+        const px = Math.cos(ang) * r;
+        const py = Math.sin(ang) * r;
+        if (a === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      // Internal amber glow
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-hw * 0.3, -hh * 0.3, 3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 1: Lunar Surface: Sculpted Cratered Regolith Basalt
+    case 1: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#e2e8f0');
+      grad.addColorStop(0.5, '#94a3b8');
+      grad.addColorStop(1, '#334155');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      // Textured craters with cast shadows
+      const craters = [
+        { x: -hw * 0.35, y: -hh * 0.3, r: 6 },
+        { x: hw * 0.25, y: hh * 0.2, r: 8 },
+        { x: -hw * 0.1, y: hh * 0.35, r: 4.5 },
+      ];
+      craters.forEach(c => {
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(c.x - 1, c.y - 1, c.r, Math.PI * 0.7, Math.PI * 1.8);
+        ctx.stroke();
+      });
+      break;
+    }
+
+    // 2: Martian Canyon: Weathered Red Hematite Stone
+    case 2: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#f97316');
+      grad.addColorStop(0.5, '#c2410c');
+      grad.addColorStop(1, '#451a03');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Geological sediment strata lines
+      ctx.strokeStyle = '#fdba74';
+      ctx.lineWidth = 1.5;
+      [-hh * 0.4, 0, hh * 0.4].forEach(ly => {
+        ctx.beginPath();
+        ctx.moveTo(-hw + 3, ly);
+        ctx.lineTo(hw - 3, ly + 2);
+        ctx.stroke();
+      });
+      break;
+    }
+
+    // 3: Deep Space: Celestial Meteorite with Galaxy Swirl
+    case 3: {
+      const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, hw);
+      grad.addColorStop(0, '#c084fc');
+      grad.addColorStop(0.5, '#581c87');
+      grad.addColorStop(1, '#0f051d');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#c084fc';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Embedded stardust dots
+      ctx.fillStyle = '#ffffff';
+      [[-hw * 0.4, -hh * 0.2], [hw * 0.3, hh * 0.3], [0, -hh * 0.4], [hw * 0.2, -hh * 0.2]].forEach(([px, py]) => {
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      break;
+    }
+
+    // 4: Ocean: Iridescent Abalone Shell / Pearl
+    case 4: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#cffafe');
+      grad.addColorStop(0.3, '#38bdf8');
+      grad.addColorStop(0.7, '#0891b2');
+      grad.addColorStop(1, '#0e7490');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#22d3ee';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Lustrous sea-pearl center orb
+      const pearlGrad = ctx.createRadialGradient(-3, -3, 1, 0, 0, 10);
+      pearlGrad.addColorStop(0, '#ffffff');
+      pearlGrad.addColorStop(0.5, '#e0f2fe');
+      pearlGrad.addColorStop(1, '#0284c7');
+      ctx.fillStyle = pearlGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 5: Beach: Tumbled Ocean Jade & Gold Sandstone
+    case 5: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#5eead4');
+      grad.addColorStop(0.5, '#0d9488');
+      grad.addColorStop(1, '#115e59');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 7);
+      ctx.fill();
+
+      // Golden sand trim
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
+      break;
+    }
+
+    // 6: Volcano: Obsidian Rock with Molten Magma Fissures
+    case 6: {
+      ctx.fillStyle = '#0f0505';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      // Glowing magma fissure branching
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(-hw + 4, -hh + 4);
+      ctx.lineTo(-4, -2);
+      ctx.lineTo(6, 6);
+      ctx.lineTo(hw - 4, hh - 4);
+      ctx.moveTo(-4, -2);
+      ctx.lineTo(hw * 0.4, -hh * 0.5);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      break;
+    }
+
+    // 7: Castle: Chiseled Ashlar Granite with Iron Rivets
+    case 7: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#94a3b8');
+      grad.addColorStop(0.6, '#475569');
+      grad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 4);
+      ctx.fill();
+
+      // Iron bracket border & rivets
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
+      ctx.fillStyle = '#f59e0b';
+      [[-hw + 5, -hh + 5], [hw - 5, -hh + 5], [-hw + 5, hh - 5], [hw - 5, hh - 5]].forEach(([rx, ry]) => {
+        ctx.fillRect(rx - 1.5, ry - 1.5, 3, 3);
+      });
+      break;
+    }
+
+    // 8: Enchanted Forest: Petrified Redwood Heartwood
+    case 8: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#15803d');
+      grad.addColorStop(0.5, '#166534');
+      grad.addColorStop(1, '#14532d');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#22c55e';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Glowing emerald heart-rune
+      ctx.strokeStyle = '#86efac';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 9: Desert: Carved Sandstone Hieroglyphic Brick
+    case 9: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#fef08a');
+      grad.addColorStop(0.5, '#eab308');
+      grad.addColorStop(1, '#92400e');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      // Carved sun icon relief
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let a = 0; a < 8; a++) {
+        const ang = (a * Math.PI) / 4;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(ang) * 8, Math.sin(ang) * 8);
+        ctx.lineTo(Math.cos(ang) * 11, Math.sin(ang) * 11);
+        ctx.stroke();
+      }
+      break;
+    }
+
+    // 10: Frozen Tundra: Glacial Crystalline Ice
+    case 10: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#f0f9ff');
+      grad.addColorStop(0.4, '#7dd3fc');
+      grad.addColorStop(1, '#0284c7');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Crystalline frost fracture facets
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-hw * 0.6, -hh * 0.5);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(hw * 0.7, hh * 0.6);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(hw * 0.5, -hh * 0.4);
+      ctx.stroke();
+      break;
+    }
+
+    // 11: Pirate Cove: Nautical Oak Plank with Brass Corner Brackets
+    case 11: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#a16207');
+      grad.addColorStop(0.6, '#713f12');
+      grad.addColorStop(1, '#3c1d06');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      // Forged brass skull/anchor emblem
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(0, -2, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(-2, 2, 4, 7);
+      break;
+    }
+
+    // 12: Candyland: Translucent Ruby Sugar Crystal Gem
+    case 12: {
+      const grad = ctx.createRadialGradient(-hw * 0.2, -hh * 0.2, 2, 0, 0, hw);
+      grad.addColorStop(0, '#fbcfe8');
+      grad.addColorStop(0.3, '#f43f5e');
+      grad.addColorStop(0.8, '#be185d');
+      grad.addColorStop(1, '#831843');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#f43f5e';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Glossy glass specular shine
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      ctx.ellipse(-hw * 0.35, -hh * 0.35, 7, 3, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 13: Golden Legend: 24K Minted Gold Bullion
+    case 13: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#fef9c3');
+      grad.addColorStop(0.4, '#eab308');
+      grad.addColorStop(1, '#854d0e');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#eab308';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
+
+      ctx.fillStyle = '#713f12';
+      ctx.font = `bold ${Math.round(w * 0.26)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('999.9', 0, 0);
+      break;
+    }
+
+    // 14: Cyberpunk: Holographic Tempered Glass Module
+    case 14: {
+      ctx.fillStyle = '#090d16';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+
+      // Cyan / Magenta microcircuit traces
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-hw + 5, 0);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(hw * 0.4, hh * 0.5);
+      ctx.stroke();
+      ctx.fillStyle = '#00f0ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 15: Toxic Hazard: Heavy Titanium Isotope Cask
+    case 15: {
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      // Hazard chevrons
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(-hw + 2, -hh + 2, w - 4, 4);
+      ctx.fillRect(-hw + 2, hh - 6, w - 4, 4);
+
+      // Glowing green isotope chamber
+      ctx.fillStyle = '#84cc16';
+      ctx.shadowColor = '#84cc16';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 16: Sky Islands: Aether Floating Aerolite
+    case 16: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#f0fdf4');
+      grad.addColorStop(0.5, '#86efac');
+      grad.addColorStop(1, '#3b82f6');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 7);
+      ctx.fill();
+
+      // Cloud aura swirls
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI);
+      ctx.stroke();
+      break;
+    }
+
+    // 17: Clockwork: Solid Brass & Copper Escapement Gear
+    case 17: {
+      const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, hw);
+      grad.addColorStop(0, '#fef08a');
+      grad.addColorStop(0.6, '#b45309');
+      grad.addColorStop(1, '#78350f');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+
+      // Brass gear teeth ring
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.stroke();
+      // Center steel pivot
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 18: Sakura: Lacquered Imperial Rosewood
+    case 18: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#9f1239');
+      grad.addColorStop(0.6, '#4c0519');
+      grad.addColorStop(1, '#1f020a');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#f43f5e';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Inlaid mother-of-pearl cherry petal crest
+      ctx.fillStyle = '#fbcfe8';
+      for (let p = 0; p < 5; p++) {
+        const ang = (p * Math.PI * 2) / 5;
+        const px = Math.cos(ang) * 6;
+        const py = Math.sin(ang) * 6;
+        ctx.beginPath();
+        ctx.ellipse(px, py, 3, 1.8, ang, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 19: The Core: Prismatic Amethyst Geode Cluster
+    case 19:
+    default: {
+      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      grad.addColorStop(0, '#f3e8ff');
+      grad.addColorStop(0.4, '#a855f7');
+      grad.addColorStop(1, '#3b0764');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = '#c084fc';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Crystal facet facets
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -hh + 3);
+      ctx.lineTo(hw - 3, 0);
+      ctx.lineTo(0, hh - 3);
+      ctx.lineTo(-hw + 3, 0);
+      ctx.closePath();
+      ctx.stroke();
+      break;
+    }
+  }
+
+  // Polished edge highlight
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-hw + 1, -hh + 1, w - 2, h - 2);
+
+  ctx.restore();
+}
+
+// REALISTIC THEMED LANDING PLATFORMS
+export function renderPlate(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  id: string,
+  time: number
+) {
+  const t = Math.abs(parseInt((id || '').replace('plate-', '')) || 0) % THEME_PALETTES.length;
+  const pal = THEME_PALETTES[t] || THEME_PALETTES[0];
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+
+  const hw = w / 2;
+  const hh = h / 2;
+
+  // Soft bottom shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.beginPath();
+  ctx.ellipse(0, hh + 2, hw * 0.95, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw biome-authentic platform materials:
+  switch (t) {
+    // 0: Meadow: Verdant Carved Moss Stone Ledger
+    case 0: {
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+      // Lush moss layer on top
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.roundRect(-hw + 2, -hh, w - 4, hh + 2, [5, 5, 2, 2]);
+      ctx.fill();
+      // Wild floral dot
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(-hw + 8, -hh + 2, 3, 3);
+      ctx.fillRect(hw - 11, -hh + 2, 3, 3);
+      break;
+    }
+
+    // 1: Lunar: Gold Foil Thermal Landing Pad
+    case 1: {
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.fill();
+      // Gold thermal foil
+      ctx.fillStyle = '#eab308';
+      ctx.fillRect(-hw + 3, -hh + 3, w - 6, h - 6);
+      ctx.strokeStyle = '#fef08a';
+      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
+      break;
+    }
+
+    // 6: Volcano: Basalt Magma Slab
+    case 6: {
+      ctx.fillStyle = '#1c0a07';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+      // Glowing heat channel
+      ctx.fillStyle = '#ef4444';
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 8;
+      ctx.fillRect(-hw + 6, 0, w - 12, 3);
+      break;
+    }
+
+    // 10: Tundra: Glacial Permafrost Ice Shelf
+    case 10: {
+      const iceGrad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      iceGrad.addColorStop(0, '#f0f9ff');
+      iceGrad.addColorStop(1, '#0284c7');
+      ctx.fillStyle = iceGrad;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+      break;
+    }
+
+    // 13: El Dorado: Solid Gilded Dais
+    case 13: {
+      const goldGrad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      goldGrad.addColorStop(0, '#fef08a');
+      goldGrad.addColorStop(0.5, '#eab308');
+      goldGrad.addColorStop(1, '#78350f');
+      ctx.fillStyle = goldGrad;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+      break;
+    }
+
+    // Default & other biomes: High-grade beveled alloy / thematic dock
+    default: {
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.fill();
+
+      // Themed metallic perimeter rim
+      ctx.strokeStyle = pal.primary;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Top surface inset
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.roundRect(-hw + 3, -hh + 3, w - 6, h - 6, 4);
+      ctx.fill();
+
+      // Accent docking status LED
+      ctx.fillStyle = pal.accent;
+      ctx.beginPath();
+      ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+  }
+
+  ctx.restore();
+}
+
+// REALISTIC BOOM BURST PARTICLES
+export function getBoomColor(id: string) {
+  const t = Math.abs(parseInt((id || '').replace('boom-', '')) || 0) % THEME_PALETTES.length;
+  return THEME_PALETTES[t]?.accent || '#ef4444';
+}
+
+export function renderBoomParticle(ctx: CanvasRenderingContext2D, p: any, time: number, id: string) {
+  const t = Math.abs(parseInt((id || '').replace('boom-', '')) || 0) % THEME_PALETTES.length;
+  const pal = THEME_PALETTES[t] || THEME_PALETTES[0];
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(p.rotation);
+  ctx.globalAlpha *= Math.max(0, p.life);
+  const scale = 1 + (1 - p.life) * 0.4;
+  ctx.scale(scale, scale);
+
+  const r = Math.max(5, p.size || 12);
+
+  if (p.type === 'ring') {
+    // Shockwave expansion wave
+    ctx.strokeStyle = p.color || pal.primary;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = pal.primary;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (p.type === 'impact') {
+    // Intense energy core detonation
+    const coreGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, r * 1.4);
+    coreGrad.addColorStop(0, '#ffffff');
+    coreGrad.addColorStop(0.4, pal.accent);
+    coreGrad.addColorStop(0.8, pal.primary);
+    coreGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 1.4, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Thematic flying fragment / projectile
+    ctx.fillStyle = pal.primary;
+    ctx.shadowColor = pal.accent;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.65, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-1, -1, r * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}

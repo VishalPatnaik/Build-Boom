@@ -16,24 +16,30 @@ export function RemoveAdsOverlay() {
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-[100] p-4 backdrop-blur-sm"
-      >
+      <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden flex flex-col justify-end items-center sm:p-4">
+        {/* Backdrop Overlay */}
+        <div 
+          onClick={() => setShowRemoveAds(false)}
+          className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto cursor-pointer"
+        />
+
+        {/* Bottom Center Modal Sheet */}
         <motion.div 
-          initial={{ scale: 0.9, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.9, y: 20 }}
-          className="bg-[#190E2D] p-6 rounded-3xl max-w-sm w-full border-4 border-red-500 shadow-[0_10px_25px_rgba(239,68,68,0.3)] relative"
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-md bg-[#190E2D] p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl border-t-4 sm:border-4 border-red-500 shadow-[0_-12px_45px_rgba(239,68,68,0.35)] pointer-events-auto z-10 touch-pan-y flex flex-col justify-between max-h-[85vh] overflow-y-auto"
         >
+          {/* Top Grab Handle */}
+          <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mb-2 shrink-0 cursor-pointer" onClick={() => setShowRemoveAds(false)} />
           {/* Close Button */}
           <button 
             onClick={() => setShowRemoveAds(false)}
-            className="absolute -top-4 -right-4 p-2 bg-gray-500 rounded-full border-2 border-white shadow-md text-white hover:bg-gray-600 transition-colors"
+            className="absolute top-3.5 right-3.5 sm:-top-3 sm:-right-3 p-2 bg-gray-500 rounded-full border-2 border-white shadow-md text-white hover:bg-gray-600 transition-colors z-20 cursor-pointer"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Header */}
@@ -65,7 +71,7 @@ export function RemoveAdsOverlay() {
             </p>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </AnimatePresence>
   );
 }
