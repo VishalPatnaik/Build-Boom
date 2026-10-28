@@ -115,7 +115,7 @@ export function TacticalRechargeModal({
           <div className="text-center mb-3 pr-8 sm:pr-0">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[10px] font-mono font-black uppercase tracking-widest mb-1.5">
               <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-              <span>GET MORE POWER-UPS</span>
+              <span>TACTICAL ARSENAL RE-ARM</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white drop-shadow">
               Field Power-Ups
@@ -296,7 +296,7 @@ export function TacticalRechargeModal({
             >
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-cyan-400" />
-                <span>See Upgrades</span>
+                <span>Upgrade Perks in Shift Lab</span>
               </div>
               <ChevronRight className="w-4 h-4" />
             </button>

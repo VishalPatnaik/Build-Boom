@@ -365,14 +365,14 @@ export function applyBlockImpact(
     // Titan anchors cancel the sway outright (the stack's balance still matters afterwards)
     state.tiltAngle = 0;
     state.angularVelocity = 0;
-    message = 'ANCHOR BLOCK: TOWER STEADIED!';
+    message = 'TITAN ANCHOR LOCKED!';
   } else if (archetype === 'gold_ingot') {
     bonusCoins += Math.round(50 * (1 + midasTier * 0.25));
-    message = 'GOLD BLOCK! +50 COINS';
+    message = '+50 GOLD INGOT!';
   } else if (archetype === 'prism') {
     state.prismSurgeRemaining = 5;
     bonusCoins += Math.round(100 * (1 + midasTier * 0.25));
-    message = 'CRYSTAL: 3X POINTS!';
+    message = '3X PRISM SURGE!';
   }
 
   if (state.prismSurgeRemaining > 0) {
@@ -381,7 +381,7 @@ export function applyBlockImpact(
   }
 
   if (isPerfect) {
-    message = archetype === 'titan' ? 'PERFECT ANCHOR!' : 'PERFECT!';
+    message = archetype === 'titan' ? 'PERFECT! TITAN ANCHOR LOCKED!' : 'PERFECT!';
     scoreMultiplier *= opticsTier >= 2 ? 2.0 : 1.5;
 
     // Perfect hit damps existing sway (it cannot fix an off-centre stack)

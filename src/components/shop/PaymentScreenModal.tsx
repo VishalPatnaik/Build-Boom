@@ -348,7 +348,7 @@ function PaymentScreenModalContent({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-cyan-300 font-mono text-xs font-bold uppercase tracking-wider">
                       <Lock className="w-3.5 h-3.5" />
-                      <span>CARD</span>
+                      <span>SECURE ARCHITECT CARD</span>
                     </div>
                     <span className="font-mono font-black text-sm text-white/80">VISA / MASTERCARD</span>
                   </div>

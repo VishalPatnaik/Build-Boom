@@ -38,7 +38,7 @@ console.log('--- 1. PHYSICS ADVERSARIAL REGRESSION ---');
   const resCentered = applyBlockImpact(phys1, 0, 0, 'titan', {});
   assert(phys1.tiltAngle === 0, 'Centered Titan hit resets tiltAngle to exactly 0°');
   assert(phys1.angularVelocity === 0, 'Centered Titan hit resets angularVelocity to exactly 0');
-  assert(resCentered.message.includes('ANCHOR'), 'Centered Titan announces anchor in message');
+  assert(resCentered.message.includes('TITAN ANCHOR'), 'Centered Titan announces anchor in message');
 
   // 1.2 Extreme Off-Center Titan Hit (timingOffset = 14)
   const phys2 = createInitialPhysicsState({});
@@ -47,7 +47,7 @@ console.log('--- 1. PHYSICS ADVERSARIAL REGRESSION ---');
   const resOffCenter = applyBlockImpact(phys2, 14, Math.PI / 4, 'titan', {});
   assert(phys2.tiltAngle === 0, 'Off-center Titan hit locks tiltAngle to 0° without off-center torque distortion');
   assert(phys2.angularVelocity === 0, 'Off-center Titan hit locks angularVelocity to 0');
-  assert(resOffCenter.message === 'ANCHOR BLOCK: TOWER STEADIED!', 'Off-center Titan hit maintains anchor lock status');
+  assert(resOffCenter.message === 'TITAN ANCHOR LOCKED!', 'Off-center Titan hit maintains anchor lock status');
 
   // 1.3 Rapid Repeated Titan Impacts
   for (let i = 0; i < 5; i++) {

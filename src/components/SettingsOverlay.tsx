@@ -1028,12 +1028,12 @@ export function SettingsOverlay() {
                     <button
                       onClick={() => {
                         haptics.blockPlaced('titan');
-                        setHapticTestFeedback('Anchor block');
+                        setHapticTestFeedback('Titan Anchor');
                         setTimeout(() => setHapticTestFeedback(null), 1200);
                       }}
                       className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold uppercase cursor-pointer"
                     >
-                      Test Anchor
+                      Test Titan
                     </button>
                   </div>
                   {hapticTestFeedback && (
@@ -1128,7 +1128,7 @@ export function SettingsOverlay() {
                   <div className="flex items-center gap-2 mb-3">
                     <User className="w-4 h-4 text-emerald-400" />
                     <span className="text-xs font-black text-white uppercase tracking-wider">
-                      Player name
+                      Architect Operative Callsign
                     </span>
                   </div>
 
@@ -1182,7 +1182,7 @@ export function SettingsOverlay() {
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-3">
                   <div>
                     <div className="text-xs font-black text-white uppercase tracking-wider font-mono">
-                      Campaign Quick-Start Guide
+                      Shift Odyssey Quick-Start Guide
                     </div>
                     <div className="text-[11px] text-slate-400 font-sans mt-0.5">
                       Reset onboarding prompts to experience block timing fundamentals

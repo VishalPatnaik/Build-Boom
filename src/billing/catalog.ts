@@ -8,7 +8,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_100',
     name: 'Starter Coins',
-    subtitle: '100 Coins',
+    subtitle: '100 Architectural Credits',
     description: 'Instant pocket cache of coins for quick powerup replenishment and basic cosmetic unlocks.',
     type: 'coin_pack',
     rarity: 'common',
@@ -21,7 +21,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_500',
     name: 'Value Pack',
-    subtitle: '500 Coins',
+    subtitle: '500 Architectural Credits',
     description: 'Great boost for unlocking high-tier cosmetic skins, plates, and specialized tech tree perks.',
     type: 'coin_pack',
     rarity: 'rare',
@@ -36,7 +36,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_1200',
     name: 'Mega Pack',
-    subtitle: '1,200 Coins',
+    subtitle: '1,200 Architectural Credits',
     description: 'Substantial resource depot providing full freedom in the cosmetic shop and workshop.',
     type: 'coin_pack',
     rarity: 'epic',
@@ -49,7 +49,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_2500',
     name: 'Ultra Pack',
-    subtitle: '2,500 Coins',
+    subtitle: '2,500 Architectural Credits',
     description: 'Massive balance expansion. Dominate tournament rankings and unlock entire biome themes.',
     type: 'coin_pack',
     rarity: 'epic',
@@ -64,7 +64,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_5000',
     name: 'Legend Pack',
-    subtitle: '5,000 Coins',
+    subtitle: '5,000 Architectural Credits',
     description: 'The ultimate royal treasury for elite master architects and competitive tower builders.',
     type: 'coin_pack',
     rarity: 'legendary',
@@ -82,9 +82,9 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   // ==========================================
   {
     id: 'powerup_stasis_10',
-    name: 'Slow-Mo Pack',
-    subtitle: '10 Slow-Mo',
-    description: '10 Slow-Mo power-ups. Each slows the game down for a few seconds so you can line up your taps.',
+    name: 'Stasis Pack',
+    subtitle: '10 Chrono Stasis Charges',
+    description: '10 Stasis field activations to slow temporal velocity during frantic multi-angle block descents.',
     type: 'powerup_pack',
     rarity: 'rare',
     rewards: {
@@ -97,9 +97,9 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   },
   {
     id: 'powerup_emp_10',
-    name: 'Bomb Clear Pack',
-    subtitle: '10 Bomb Clear',
-    description: '10 Bomb Clear power-ups. Each removes the nearest incoming bomb and pays you coins.',
+    name: 'EMP Pack',
+    subtitle: '10 EMP Shockwave Charges',
+    description: '10 Electromagnetic pulses to vaporize hazardous boom blocks before they impact the tower.',
     type: 'powerup_pack',
     rarity: 'rare',
     rewards: {
@@ -113,8 +113,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'powerup_shield_10',
     name: 'Shield Pack',
-    subtitle: '10 Shields',
-    description: '10 Shields. Each one catches a single mistake: a toppling tower, a tapped bomb or an early tap.',
+    subtitle: '10 Kinetic Blast Shields',
+    description: '10 Aegis shield deployments. Each one absorbs a single fatal mistake: a toppling tower, a bomb tap or a premature tap.',
     type: 'powerup_pack',
     rarity: 'rare',
     rewards: {
@@ -127,9 +127,9 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   },
   {
     id: 'powerup_tactical_pack',
-    name: 'Power-up Pack',
-    subtitle: '5 Slow-Mo • 5 Bomb Clear • 5 Shields',
-    description: '5 of each power-up: Slow-Mo, Bomb Clear and Shield.',
+    name: 'Tactical Arsenal Pack',
+    subtitle: '5 Stasis • 5 EMP • 5 Shields',
+    description: 'Balanced tactical loadout providing five deployments of every core defensive mechanism.',
     type: 'powerup_pack',
     rarity: 'epic',
     rewards: {
@@ -142,7 +142,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
     defaultPricePlaceholder: '$2.99',
     iconType: 'tactical',
     popular: true,
-    badge: 'POWER-UPS',
+    badge: 'TACTICAL',
   },
 
   // ==========================================
@@ -150,9 +150,9 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   // ==========================================
   {
     id: 'bundle_starter_architect',
-    name: 'Starter Pack',
-    subtitle: '350 Coins + 15 Power-ups + Lunar Regolith Skin',
-    description: '350 coins, 5 Slow-Mo, 5 Bomb Clear, 5 Shields and the Lunar Regolith block skin.',
+    name: 'Starter Architect Pack',
+    subtitle: '350 Coins + 15 Powerup Charges + Lunar Regolith Skin',
+    description: 'Everything an aspiring architect needs: 350 Coins, 5 Stasis, 5 EMP, 5 Shields, and the Lunar Regolith Block Skin.',
     type: 'bundle',
     rarity: 'rare',
     badge: 'STARTER BUNDLE',
@@ -171,9 +171,9 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   },
   {
     id: 'bundle_tactical_architect',
-    name: 'Big Pack',
-    subtitle: '1,000 Coins + 36 Power-ups + Deep Space Skin',
-    description: '1,000 coins, 12 Slow-Mo, 12 Bomb Clear, 12 Shields and the Deep Space Nebula block skin.',
+    name: 'Tactical Architect Pack',
+    subtitle: '1,000 Coins + 36 Tactical Charges + Deep Space Skin',
+    description: 'Advanced engineering arsenal: 1,000 Coins, 12 Stasis, 12 EMP, 12 Kinetic Shields, and the Deep Space Nebula Skin.',
     type: 'bundle',
     rarity: 'epic',
     badge: 'BEST SELLER',
@@ -193,12 +193,12 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   },
   {
     id: 'bundle_legend_architect',
-    name: 'Legend Pack',
-    subtitle: '3,500 Coins + 75 Power-ups + 2 Premium Skins',
-    description: '3,500 coins, 25 Slow-Mo, 25 Bomb Clear, 25 Shields, plus the Golden El Dorado and Cyberpunk Neon Skyscraper skins.',
+    name: 'Legend Architect Pack',
+    subtitle: '3,500 Coins + 75 Tactical Charges + 2 Master Skins',
+    description: 'The pinnacle grand package: 3,500 Coins, 25 Stasis, 25 EMP, 25 Shields, plus Golden El Dorado & Cyberpunk Neon Skyscraper Skins.',
     type: 'bundle',
     rarity: 'legendary',
-    badge: 'BEST VALUE',
+    badge: 'MASTER ARCHITECT',
     featured: true,
     rewards: {
       coins: 3500,
@@ -219,9 +219,9 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   // ==========================================
   {
     id: 'remove_ads',
-    name: 'Remove Ads',
-    subtitle: 'Permanent, one-time purchase',
-    description: 'Removes pop-up ads for good, and anything you would normally watch an ad for is given instantly.',
+    name: 'Ad Blocker VIP Pass',
+    subtitle: 'Permanent Interstitial Removal',
+    description: 'Permanently removes all interstitial and random ads, and enables VIP Instant Unlocks for rewarded shop bonuses without ads!',
     type: 'utility',
     rarity: 'epic',
     rewards: {

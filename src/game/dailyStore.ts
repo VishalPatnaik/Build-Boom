@@ -71,7 +71,7 @@ export const MYSTERY_CHESTS: Record<'day3' | 'day7', MysteryChestDefinition> = {
     guaranteedCosmetic: true,
     description: 'Pressurized tactical pod containing a guaranteed random cosmetic block skin, stasis coolant, and bonus coins.',
     lore: 'Atmospheric drop capsule recovered with encrypted architect tower skin schematics.',
-    perks: ['🎁 Guaranteed Random Cosmetic Skin', '150 - 300 Bonus Coins', '+1 Slow-Mo', '1.5x Multiplier Boost']
+    perks: ['🎁 Guaranteed Random Cosmetic Skin', '150 - 300 Bonus Coins', '+1 Stasis Freeze Charge', '1.5x Multiplier Boost']
   },
   day7: {
     id: 'chest-day7',
@@ -220,7 +220,7 @@ export const STREAK_TIERS: StreakTier[] = [
   { day: 4, multiplier: 1.75, baseReward: 60, badge: 'VETERAN', perkDescription: '+75% Coin Multiplier' },
   { day: 5, multiplier: 2.0, baseReward: 85, badge: 'COMMANDER', perkDescription: '2.0x Double Coins' },
   { day: 6, multiplier: 2.5, baseReward: 120, badge: 'WARLORD', perkDescription: '2.5x Hyper Multiplier' },
-  { day: 7, multiplier: 3.0, baseReward: 250, badge: 'DAY 7 JACKPOT', perkDescription: '3.0x Maximum Jackpot' },
+  { day: 7, multiplier: 3.0, baseReward: 250, badge: 'APEX ARCHITECT', perkDescription: '3.0x Maximum Jackpot' },
 ];
 
 export const getStreakTier = (streakDay: number): StreakTier => {

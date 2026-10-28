@@ -51,7 +51,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'stack_150',
-    title: 'Megacity',
+    title: 'Megacity Titan',
     description: 'Stack 150 blocks in total across all games',
     badgeIcon: '🏗️',
     tier: 'gold',
@@ -105,7 +105,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'combo_10',
-    title: 'Speed Builder',
+    title: 'Architect Velocity',
     description: 'Reach a 10x combo streak in a single session',
     badgeIcon: '⚡',
     tier: 'diamond',
@@ -118,7 +118,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'bomb_defuser',
     title: 'Bomb Defuser',
-    description: 'Get rid of a bomb with Bomb Clear or a Shield',
+    description: 'Neutralize or absorb a bomb block with EMP or shield',
     badgeIcon: '💣',
     tier: 'bronze',
     target: 1,
@@ -138,7 +138,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: 'stasis_3',
     title: 'Time Bender',
-    description: 'Use Slow-Mo 3 times',
+    description: 'Activate Chrono Stasis time slow-down 3 times',
     badgeIcon: '⏳',
     tier: 'silver',
     target: 3,
@@ -159,7 +159,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'campaign_15',
-    title: 'Master Builder',
+    title: 'Master Architect',
     description: 'Reach Level 15 in Campaign mode',
     badgeIcon: '👑',
     tier: 'gold',

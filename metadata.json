@@ -1,6 +1,6 @@
 {
   "name": "TOWER//SHIFT",
-  "description": "TOWER//SHIFT — a physics tower-stacking game. Tap to land each block, keep your tower balanced against gravity and wind, and let the bombs fly past.",
+  "description": "TOWER//SHIFT — Precision physics tower stacking and deflection. BUILD. BALANCE. DEFLECT. ASCEND.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

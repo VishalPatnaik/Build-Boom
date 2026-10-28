@@ -10,19 +10,19 @@ const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 // Products sold through Stripe Checkout. Prices live only on the server.
 const CHECKOUT_PRODUCTS: Record<string, { name: string; description?: string; unitAmount: number }> = {
-  coins_100: { name: "100 Coins", unitAmount: 99 },
-  coins_500: { name: "500 Coins", unitAmount: 399 },
-  coins_1200: { name: "1,200 Coins", unitAmount: 799 },
-  coins_2500: { name: "2,500 Coins", unitAmount: 1499 },
-  coins_5000: { name: "5,000 Coins", unitAmount: 2499 },
-  remove_ads: { name: "Remove Ads (Permanent)", description: "No more ads, and rewards you would watch an ad for are given instantly.", unitAmount: 499 },
-  powerup_tactical_pack: { name: "Power-up Pack (5 Slow-Mo • 5 Bomb Clear • 5 Shields)", unitAmount: 299 },
-  powerup_stasis_10: { name: "Slow-Mo Pack (10)", unitAmount: 199 },
-  powerup_emp_10: { name: "Bomb Clear Pack (10)", unitAmount: 199 },
-  powerup_shield_10: { name: "Shield Pack (10)", unitAmount: 199 },
-  bundle_starter_architect: { name: "Starter Pack (350 Coins + 15 Power-ups + Lunar Regolith Skin)", unitAmount: 499 },
-  bundle_tactical_architect: { name: "Big Pack (1,000 Coins + 36 Power-ups + Deep Space Skin)", unitAmount: 999 },
-  bundle_legend_architect: { name: "Legend Pack (3,500 Coins + 75 Power-ups + 2 Premium Skins)", unitAmount: 1999 },
+  coins_100: { name: "100 Architectural Credits", unitAmount: 99 },
+  coins_500: { name: "500 Architectural Credits (Value Pack)", unitAmount: 399 },
+  coins_1200: { name: "1,200 Architectural Credits (Mega Pack)", unitAmount: 799 },
+  coins_2500: { name: "2,500 Architectural Credits (Ultra Pack)", unitAmount: 1499 },
+  coins_5000: { name: "5,000 Architectural Credits (Legend Pack)", unitAmount: 2499 },
+  remove_ads: { name: "Ad Blocker VIP Pass (Permanent)", description: "Permanent ad removal & VIP instant claim rewards.", unitAmount: 499 },
+  powerup_tactical_pack: { name: "Tactical Arsenal Pack (5 Stasis • 5 EMP • 5 Shields)", unitAmount: 299 },
+  powerup_stasis_10: { name: "Tactical Powerup Munitions Pack (Stasis)", unitAmount: 199 },
+  powerup_emp_10: { name: "Tactical Powerup Munitions Pack (EMP)", unitAmount: 199 },
+  powerup_shield_10: { name: "Tactical Powerup Munitions Pack (Shield)", unitAmount: 199 },
+  bundle_starter_architect: { name: "Starter Architect Pack (350 Coins + 15 Powerups + Lunar Skin)", unitAmount: 499 },
+  bundle_tactical_architect: { name: "Tactical Architect Pack (1,000 Coins + 36 Powerups + Nebula Skin)", unitAmount: 999 },
+  bundle_legend_architect: { name: "Legend Architect Pack (3,500 Coins + 75 Powerups + 2 Master Skins)", unitAmount: 1999 },
 };
 
 // Checkout sessions that have already been redeemed, so a success link can't be replayed
@@ -251,7 +251,7 @@ async function startServer() {
               currency: "usd",
               product_data: {
                 name: product.name,
-                description: product.description || "Coins and power-ups for TOWER//SHIFT.",
+                description: product.description || "Architectural credits and tactical powerups.",
               },
               unit_amount: product.unitAmount,
             },

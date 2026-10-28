@@ -111,7 +111,7 @@ export function DailyMissions() {
     if (coins > 0) {
       setRewardReveal({
         title: title,
-        subtitle: 'Challenge complete! Coins added.',
+        subtitle: 'Mission objective accomplished! Tactical funds credited to your vault.',
         coins,
         bonusTag: 'DIRECTIVE REWARD',
         type: 'mission'
@@ -209,11 +209,11 @@ export function DailyMissions() {
           </motion.button>
           <div>
             <div className="text-[10px] font-bold text-cyan-400 tracking-[0.25em] uppercase flex items-center gap-1.5">
-              <span>EVERY DAY</span>
+              <span>PROTOCOL OPS</span>
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 uppercase tracking-wider drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] font-mono">
-              DAILY CHALLENGE
+              DAILY SHIFT
             </h2>
           </div>
         </div>

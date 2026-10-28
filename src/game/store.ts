@@ -691,7 +691,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     saveProgress({ coins: newCoins, powerups: current });
     set({ coins: newCoins, powerups: current });
-    get().triggerAssetTransition(`Buying ${config.name}...`, 450);
+    get().triggerAssetTransition(`Acquiring Tactical ${config.name}...`, 450);
     return true;
   },
 
@@ -1126,7 +1126,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const s = get();
     if (s.adsRemoved) {
       s.rewardPowerupWithAd(type);
-      s.triggerAssetTransition('Ad-free power-ups granted!', 450);
+      s.triggerAssetTransition('VIP Ad-Free Munitions Granted!', 450);
       return;
     }
     set({ adState: 'rewarded-powerup', pendingPowerupType: type });
