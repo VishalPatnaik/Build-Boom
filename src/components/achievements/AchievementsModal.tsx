@@ -78,7 +78,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
               </div>
               <div>
                 <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2 drop-shadow font-mono">
-                  <span>Shift Archive</span>
+                  <span>Achievements</span>
                 </h2>
                 <div className="text-xs text-amber-300 font-bold flex items-center gap-1.5 font-mono">
                   <span>{unlockedCount} of {totalAchievements} Unlocked</span>
@@ -106,7 +106,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
           {/* Overall Progress Bar */}
           <div className="px-5 pt-3 pb-2 shrink-0 z-10">
             <div className="flex justify-between items-center text-[11px] font-mono font-bold text-white/70 mb-1">
-              <span>ARCHITECT MASTERY</span>
+              <span>PROGRESS</span>
               <span>{Math.round((unlockedCount / totalAchievements) * 100)}%</span>
             </div>
             <div className="w-full h-3 bg-black/60 rounded-full overflow-hidden border border-white/15 p-0.5 shadow-inner">

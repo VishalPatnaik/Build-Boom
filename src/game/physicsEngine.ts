@@ -28,6 +28,33 @@ export const MAX_SLIP = 26;
 export interface StackedBlock {
   x: number; // horizontal offset from the foundation centre, tower-space px
   mass: number;
+  halfWidth: number; // footprint the block above can rest on
+  archetype?: string;
+}
+
+/**
+ * Real block sizes. Heavy anchor blocks are wide (a stable base), gold is
+ * small but dense, crystal is light and narrow (easy to knock off balance).
+ */
+export function blockHalfWidth(archetype?: string): number {
+  switch (archetype) {
+    case 'titan':
+      return 40;
+    case 'gold_ingot':
+      return 24;
+    case 'prism':
+      return 22;
+    default:
+      return BLOCK_HALF_WIDTH;
+  }
+}
+
+/** Wind: gusts that push the tower sideways. `force` is -1 (left) .. 1 (right). */
+export interface WindState {
+  force: number;
+  target: number;
+  clock: number; // seconds of game time
+  nextChange: number;
 }
 
 export interface TowerPhysicsState {
@@ -50,6 +77,7 @@ export interface TowerPhysicsState {
   /** Lowest level that is closest to tipping, and how close (0..1+). */
   weakestLevel: number;
   weakestRatio: number;
+  wind: WindState;
 }
 
 export function createInitialPhysicsState(
@@ -84,6 +112,7 @@ export function createInitialPhysicsState(
     comOffset: 0,
     weakestLevel: -1,
     weakestRatio: 0,
+    wind: { force: 0, target: 0, clock: 0, nextChange: 4 },
   };
 }
 
@@ -140,7 +169,7 @@ export function findToppleLevel(state: TowerPhysicsState): number {
     moment += s[i].mass * ex[i];
     const com = moment / mass;
     const support = i === 0 ? 0 : ex[i - 1];
-    const half = i === 0 ? BASE_HALF_WIDTH : BLOCK_HALF_WIDTH;
+    const half = i === 0 ? BASE_HALF_WIDTH : s[i - 1].halfWidth || BLOCK_HALF_WIDTH;
     const ratio = Math.abs(com - support) / half;
     if (ratio > state.weakestRatio) {
       state.weakestRatio = ratio;
@@ -195,7 +224,7 @@ export function placeBlock(
   const base = supportX(state);
   if (opts.forgiving) slip = Math.max(-BLOCK_HALF_WIDTH * 0.6, Math.min(BLOCK_HALF_WIDTH * 0.6, slip));
 
-  state.stack.push({ x: base + slip, mass: opts.mass });
+  state.stack.push({ x: base + slip, mass: opts.mass, halfWidth: blockHalfWidth(opts.archetype), archetype: opts.archetype });
 
   // Landing off-centre rocks the tower towards the overhang
   const massMomentum = Math.sqrt(Math.max(0.2, opts.mass));
@@ -222,15 +251,51 @@ export function rebraceTower(state: TowerPhysicsState) {
   for (const b of state.stack) b.x *= 0.25;
   state.tiltAngle = 0;
   state.angularVelocity = 0;
+  state.wind.force = 0;
+  state.wind.target = 0;
+  state.wind.nextChange = state.wind.clock + 4;
   recomputeCom(state);
   findToppleLevel(state);
+}
+
+/**
+ * How windy a run is (0 = calm, 1 = strongest). Wind starts in world 3 of the
+ * campaign and once an endless tower gets tall.
+ */
+export function windStrengthFor(mode: string, level: number, towerHeight: number): number {
+  if (mode === 'campaign') return Math.max(0, Math.min(1, (level - 20) / 120));
+  if (mode === 'endless') return Math.max(0, Math.min(1, (towerHeight - 15) / 50));
+  if (mode === 'daily') return 0.3;
+  if (mode === 'tournament') return 0.4;
+  return 0;
+}
+
+function updateWind(state: TowerPhysicsState, dt: number, strength: number) {
+  const w = state.wind;
+  w.clock += dt;
+  if (strength <= 0) {
+    w.target = 0;
+  } else if (w.clock >= w.nextChange) {
+    const gusting = w.target === 0;
+    if (gusting) {
+      // New gust from a random side, lasting 2-4 s
+      w.target = (Math.random() < 0.5 ? -1 : 1) * strength * (0.6 + Math.random() * 0.4);
+      w.nextChange = w.clock + 2 + Math.random() * 2;
+    } else {
+      // Calm spell of 3-6 s, shorter when it is windier
+      w.target = 0;
+      w.nextChange = w.clock + (3 + Math.random() * 3) * (1.2 - strength * 0.5);
+    }
+  }
+  // Gusts build up and die down smoothly
+  w.force += (w.target - w.force) * Math.min(1, dt * 1.5);
 }
 
 export function updateTowerPhysics(
   state: TowerPhysicsState,
   dtMs: number,
   perks: Record<string, number>,
-  opts: { forgiving?: boolean } = {}
+  opts: { forgiving?: boolean; wind?: number } = {}
 ): { collapsed: boolean; warningAlert: boolean; toppleLevel: number } {
   // Clamp delta time to avoid large physics steps on mobile frame hitches or tab resumption
   const dt = Math.min(0.064, Math.max(0.001, (Number.isFinite(dtMs) ? dtMs : 16.67) / 1000));
@@ -247,7 +312,11 @@ export function updateTowerPhysics(
   const heightFactor = 1 + n / 22;
   const gravityTorque = 10 * (state.comOffset / BLOCK_HALF_WIDTH) * heightFactor;
 
-  state.angularVelocity += (gravityTorque - state.tiltAngle * spring) * dt;
+  // Wind pushes harder on a taller tower (more surface to catch it)
+  updateWind(state, dt, opts.forgiving ? 0 : opts.wind || 0);
+  const windTorque = state.wind.force * 3.5 * Math.min(2, n / 15);
+
+  state.angularVelocity += (gravityTorque + windTorque - state.tiltAngle * spring) * dt;
   state.angularVelocity *= Math.pow(dampFactor, dt * 60);
   state.tiltAngle += state.angularVelocity * dt * 20;
 
@@ -296,14 +365,14 @@ export function applyBlockImpact(
     // Titan anchors cancel the sway outright (the stack's balance still matters afterwards)
     state.tiltAngle = 0;
     state.angularVelocity = 0;
-    message = 'TITAN ANCHOR LOCKED!';
+    message = 'ANCHOR BLOCK: TOWER STEADIED!';
   } else if (archetype === 'gold_ingot') {
     bonusCoins += Math.round(50 * (1 + midasTier * 0.25));
-    message = '+50 GOLD INGOT!';
+    message = 'GOLD BLOCK! +50 COINS';
   } else if (archetype === 'prism') {
     state.prismSurgeRemaining = 5;
     bonusCoins += Math.round(100 * (1 + midasTier * 0.25));
-    message = '3X PRISM SURGE!';
+    message = 'CRYSTAL: 3X POINTS!';
   }
 
   if (state.prismSurgeRemaining > 0) {
@@ -312,7 +381,7 @@ export function applyBlockImpact(
   }
 
   if (isPerfect) {
-    message = archetype === 'titan' ? 'PERFECT! TITAN ANCHOR LOCKED!' : 'PERFECT!';
+    message = archetype === 'titan' ? 'PERFECT ANCHOR!' : 'PERFECT!';
     scoreMultiplier *= opticsTier >= 2 ? 2.0 : 1.5;
 
     // Perfect hit damps existing sway (it cannot fix an off-centre stack)

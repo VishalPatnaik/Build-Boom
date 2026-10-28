@@ -203,7 +203,7 @@ export function LevelSelect() {
             className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase transition-colors"
             style={{ color: themePalette.accent }}
           >
-            WORLD EXPEDITION
+            200 LEVELS • 20 WORLDS
           </span>
           <h2 
             className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text uppercase tracking-widest font-mono transition-all"
@@ -212,7 +212,7 @@ export function LevelSelect() {
               filter: `drop-shadow(0 0 15px ${themePalette.glow})`,
             }}
           >
-            SHIFT ODYSSEY
+            CAMPAIGN
           </h2>
         </div>
 
@@ -227,7 +227,7 @@ export function LevelSelect() {
             boxShadow: `0 0 12px ${themePalette.glow}`,
             color: themePalette.accent,
           }}
-          title="Architect Quick-Start Guide"
+          title="Quick-Start Guide"
         >
           <GraduationCap className="w-4 h-4 fill-current shrink-0" style={{ color: themePalette.accent }} />
           <span className="hidden sm:inline">GUIDE</span>

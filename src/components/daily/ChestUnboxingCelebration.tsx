@@ -129,13 +129,13 @@ export const ChestUnboxingCelebration: React.FC<ChestUnboxingCelebrationProps> =
     switch (type) {
       case 'stasis':
         return {
-          title: 'Stasis Coolant',
+          title: 'Slow-Mo',
           icon: <Snowflake className="w-5 h-5 text-cyan-400" />,
           desc: 'Freezes tower block oscillation for 8 seconds'
         };
       case 'emp':
         return {
-          title: 'EMP Disruptor',
+          title: 'Bomb Clear',
           icon: <Zap className="w-5 h-5 text-purple-400" />,
           desc: 'Instantly resets explosive kinetic hazards'
         };

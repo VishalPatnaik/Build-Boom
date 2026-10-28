@@ -278,7 +278,7 @@ export function TournamentHub() {
             useGameStore.getState().setShowIAP(true);
           }}
           className="flex items-center gap-1.5 bg-gradient-to-r from-amber-950/70 via-black/80 to-amber-950/70 hover:from-amber-900/80 hover:to-amber-900/80 px-3 py-1.5 rounded-2xl border-2 border-yellow-400/50 hover:border-yellow-400 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] cursor-pointer active:scale-95 transition-all"
-          title="Architect Store - Buy Coins & Packages"
+          title="Shop - buy coins & packs"
         >
           <Coins className="w-4 h-4 text-[#FFD700] fill-[#FFD700] drop-shadow-sm" />
           <span className="font-black text-sm text-[#FFD700] tabular-nums">{coins.toLocaleString()}</span>
@@ -292,7 +292,7 @@ export function TournamentHub() {
           className="text-4xl md:text-5xl font-black uppercase text-[#FFD700] drop-shadow-[0_4px_0_#B8860B] leading-none tracking-wide font-mono"
           style={{ WebkitTextStroke: '1.5px #8B4513' }}
         >
-          SHIFT ARENA
+          TOURNAMENTS
         </h1>
         <p className="text-white/80 font-bold text-xs uppercase tracking-wider mt-0.5 font-mono">
           Compete Globally • Win Exclusive Trophies & Coin Prizes
@@ -602,7 +602,7 @@ export function TournamentHub() {
                             className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-2 border-white text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_4px_0_#1e3a8a] flex items-center gap-1.5 cursor-pointer active:translate-y-1 active:shadow-none"
                           >
                             <Lock className="w-3.5 h-3.5 text-yellow-300" />
-                            <span>Unlock in Shift Odyssey</span>
+                            <span>Unlock in the Campaign</span>
                           </motion.button>
                         )}
                       </div>
@@ -658,7 +658,7 @@ export function TournamentHub() {
                 }`}
               >
                 <span>♾️</span>
-                <span className="truncate">Orbital Shift</span>
+                <span className="truncate">Endless</span>
               </button>
 
               <button
@@ -673,7 +673,7 @@ export function TournamentHub() {
                 }`}
               >
                 <span>🏆</span>
-                <span className="truncate">Shift Arena</span>
+                <span className="truncate">Tournaments</span>
               </button>
 
               <button
@@ -688,7 +688,7 @@ export function TournamentHub() {
                 }`}
               >
                 <span>🗺️</span>
-                <span className="truncate">Shift Odyssey</span>
+                <span className="truncate">Campaign</span>
               </button>
             </div>
 
@@ -964,7 +964,7 @@ export function TournamentHub() {
                           <span className="text-xs">{playerCountry}</span>
                           {isInTop10 ? (
                             <span className="bg-emerald-400 text-black font-black text-[9px] px-2 py-0.5 rounded-full uppercase shadow-xs">
-                              TOP 10 ARCHITECT 👑
+                              TOP 10 PLAYER 👑
                             </span>
                           ) : (
                             <span className="bg-white/10 text-yellow-300 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase border border-yellow-400/30">

@@ -272,7 +272,8 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
       ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 10);
       ctx.rotate(layerTilt);
 
-      renderBlock(ctx, -30, -15, 60, 30, replay.equippedCosmetic || 'skin-0', true, time, undefined);
+      const rhw = currentFrame.physics.stackW?.[i] || 30;
+      renderBlock(ctx, -rhw, -15, rhw * 2, 30, replay.equippedCosmetic || 'skin-0', true, time, undefined);
       ctx.restore();
     }
 
@@ -364,7 +365,7 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
               <div className="min-w-0">
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                   <span className="text-[11px] sm:text-sm font-black text-white uppercase tracking-wider font-mono truncate">
-                    SHIFT REPLAY
+                    REPLAY
                   </span>
                   <span className="px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase font-mono bg-cyan-950 border border-cyan-400 text-cyan-300 shrink-0">
                     LAST 10s

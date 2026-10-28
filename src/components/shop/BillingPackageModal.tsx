@@ -265,7 +265,7 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                 }`}
               >
                 <Shield className="w-3.5 h-3.5" />
-                <span>Tactical</span>
+                <span>Power-ups</span>
               </button>
 
               <button

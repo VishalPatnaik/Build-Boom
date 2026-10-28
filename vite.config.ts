@@ -16,7 +16,7 @@ export default defineConfig(() => {
           id: '/',
           name: 'TOWER//SHIFT',
           short_name: 'TOWER//SHIFT',
-          description: 'TOWER//SHIFT — Precision physics tower stacking and deflection. BUILD. BALANCE. DEFLECT. ASCEND.',
+          description: 'TOWER//SHIFT — a physics tower-stacking game. Tap to land each block, keep your tower balanced against gravity and wind, and let the bombs fly past.',
           theme_color: '#030712',
           background_color: '#030712',
           display: 'standalone',

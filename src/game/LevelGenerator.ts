@@ -57,6 +57,8 @@ export interface SandboxOptions {
   allowBlinks: boolean;
   allowFakes: boolean;
   allowSpecialBlocks: boolean;
+  /** Wind gust strength 0 (calm) to 1 (strong) */
+  wind?: number;
 }
 
 const ANGLES = [0, Math.PI/4, Math.PI/2, Math.PI*3/4, Math.PI, Math.PI*5/4, Math.PI*3/2, Math.PI*7/4];

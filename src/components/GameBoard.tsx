@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass } from '../game/LevelGenerator';
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, BLOCK_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { audio } from '../audio/AudioEngine';
@@ -49,6 +49,8 @@ interface Particle {
 
 // A block that has physically fallen off the tower (rendered with gravity + spin)
 interface Debris {
+  halfWidth: number;
+  archetype?: string;
   x: number;
   y: number;
   vx: number;
@@ -242,6 +244,8 @@ export function GameBoard() {
     lastWarningTime: 0,
     lastUiUpdateTime: 0,
     debris: [] as Debris[],
+    freeStasisLeft: 0,
+    freeEmpLeft: 0,
   });
 
   const initGame = (customLevel?: number) => {
@@ -308,15 +312,21 @@ export function GameBoard() {
     const initialMsg = isTutorialMode
       ? 'QUICK-START: STACK 3 BLOCKS'
       : mode === 'campaign' 
-      ? (activeLevel % 10 === 0 ? `TITAN SIEGE • LVL ${activeLevel}` : `LEVEL ${activeLevel}`)
+      ? (activeLevel % 10 === 0 ? `BOSS LEVEL ${activeLevel}` : `LEVEL ${activeLevel}`)
       : mode === 'tournament'
       ? (useGameStore.getState().activeTournament?.title || 'TOURNAMENT')
       : mode === 'workshop'
-      ? 'BLUEPRINT SIMULATION'
+      ? 'PRACTICE GAME'
       : mode.toUpperCase();
     setMessage(initialMsg);
 
     const initialPhys = createInitialPhysicsState(unlockedPerks, useGameStore.getState().powerups);
+    // Upgrades give free power-ups every run: Slow-Mo and Bomb Clear 1/2/3 per tier, Shield starts switched on
+    const freeStasis = isTutorialMode ? 0 : unlockedPerks['chrono_stasis'] || 0;
+    const freeEmp = isTutorialMode ? 0 : unlockedPerks['emp_defuser'] || 0;
+    initialPhys.stasisCharges += freeStasis;
+    initialPhys.empCharges += freeEmp;
+    if (!isTutorialMode && (unlockedPerks['aegis_shield'] || 0) >= 1) initialPhys.shieldActive = true;
     setTacticalCharges({
       stasis: initialPhys.stasisCharges,
       emp: initialPhys.empCharges,
@@ -347,6 +357,8 @@ export function GameBoard() {
       lastWarningTime: 0,
       lastUiUpdateTime: 0,
       debris: [],
+      freeStasisLeft: freeStasis,
+      freeEmpLeft: freeEmp,
     };
     
     setTimeout(() => setMessage(''), 1500);
@@ -377,8 +389,27 @@ export function GameBoard() {
       emp: gs.physics.empCharges,
       shield: gs.physics.shieldActive,
     });
-    setMessage('AIRDROP DELIVERED!');
+    setMessage('POWER-UPS ADDED!');
     setTimeout(() => setMessage(''), 1200);
+  };
+
+  // Coin Bonus upgrade: end-of-run rewards +15% / +30% / +50%
+  const withCoinBonus = (coins: number) => {
+    const tier = unlockedPerks['midas_foundation'] || 0;
+    const bonus = tier >= 3 ? 1.5 : tier === 2 ? 1.3 : tier === 1 ? 1.15 : 1;
+    return Math.round(coins * bonus);
+  };
+
+  // Shield upgrade tier 3: when the shield breaks it gives 2 s of slow-mo and clears nearby bombs
+  const onShieldBroken = () => {
+    if ((unlockedPerks['aegis_shield'] || 0) < 3) return;
+    const gs = gameStateRef.current;
+    gs.physics.stasisActive = true;
+    gs.physics.stasisEndTime = performance.now() + 2000;
+    for (const b of gs.blocks) {
+      if (!b.handled && b.type === 'boom' && b.distance < 60) b.handled = true;
+    }
+    audio.playStasisSound(true);
   };
 
   const triggerStasis = () => {
@@ -386,7 +417,7 @@ export function GameBoard() {
     const gs = gameStateRef.current;
     if (gs.physics.stasisCharges <= 0) {
       audio.playTiltWarning();
-      setMessage('NO STASIS CHARGES! (TAP HUD TO RE-ARM)');
+      setMessage('NO SLOW-MOS LEFT (GET MORE IN THE SHOP)');
       setTimeout(() => setMessage(''), 900);
       return;
     }
@@ -394,14 +425,15 @@ export function GameBoard() {
 
     const stasisDuration = (unlockedPerks['chrono_stasis'] >= 2 ? 5.0 : 3.5) * 1000;
     gs.physics.stasisCharges--;
-    useGameStore.getState().consumePowerup('stasis');
+    if (gs.freeStasisLeft > 0) gs.freeStasisLeft--;
+    else useGameStore.getState().consumePowerup('stasis');
     useGameStore.getState().recordAchievementProgress('stasisUsed', 1);
     gs.physics.stasisActive = true;
     gs.physics.stasisEndTime = performance.now() + stasisDuration;
     setTacticalCharges((c) => ({ ...c, stasis: gs.physics.stasisCharges }));
     audio.playStasisSound(true);
     haptics.stasisActivated();
-    setMessage('CHRONO STASIS!');
+    setMessage('SLOW-MO!');
     setTimeout(() => setMessage(''), 1000);
   };
 
@@ -410,13 +442,14 @@ export function GameBoard() {
     const gs = gameStateRef.current;
     if (gs.physics.empCharges <= 0) {
       audio.playTiltWarning();
-      setMessage('NO EMP CHARGES! (TAP HUD TO RE-ARM)');
+      setMessage('NO BOMB CLEARS LEFT (GET MORE IN THE SHOP)');
       setTimeout(() => setMessage(''), 900);
       return;
     }
 
     gs.physics.empCharges--;
-    useGameStore.getState().consumePowerup('emp');
+    if (gs.freeEmpLeft > 0) gs.freeEmpLeft--;
+    else useGameStore.getState().consumePowerup('emp');
     setTacticalCharges((c) => ({ ...c, emp: gs.physics.empCharges }));
     audio.playEmpBlast();
     triggerHapticVibrate([32, 28, 50]);
@@ -445,7 +478,7 @@ export function GameBoard() {
     if (defusedCount > 0) {
       useGameStore.getState().recordAchievementProgress('bombsDefused', defusedCount);
     }
-    setMessage(`EMP DEFUSED! +${coinReward} COINS`);
+    setMessage(`BOMBS CLEARED! +${coinReward} COINS`);
     setTimeout(() => setMessage(''), 1100);
   };
 
@@ -562,6 +595,7 @@ export function GameBoard() {
       if (gs.physics.shieldActive) {
         targetBlock.handled = true;
         gs.physics.shieldActive = false;
+        onShieldBroken();
         useGameStore.getState().recordAchievementProgress('shieldUsed', 1);
         setTacticalCharges((c) => ({ ...c, shield: false }));
         gs.combo = 0;
@@ -570,9 +604,9 @@ export function GameBoard() {
         audio.playShieldBreak();
         triggerHapticVibrate([40, 30, 75]);
         haptics.bombAbsorbedByShield();
-        recorderRef.current.logEvent('shield', 'AEGIS SHIELD ABSORBED MISCLICK', '#38bdf8');
+        recorderRef.current.logEvent('shield', 'SHIELD SAVED EARLY TAP', '#38bdf8');
         createExplosionAtDistance(targetBlock, gameRadius, w, h, '#38bdf8');
-        setMessage('AEGIS SHIELD ABSORBED MISCLICK!');
+        setMessage('SHIELD SAVED AN EARLY TAP!');
         setTimeout(() => setMessage(''), 1000);
         return;
       }
@@ -591,6 +625,7 @@ export function GameBoard() {
       if (targetBlock.type === 'boom') {
         if (gs.physics.shieldActive) {
           gs.physics.shieldActive = false;
+          onShieldBroken();
           useGameStore.getState().recordAchievementProgress('shieldUsed', 1);
           useGameStore.getState().recordAchievementProgress('bombsDefused', 1);
           setTacticalCharges((c) => ({ ...c, shield: false }));
@@ -600,9 +635,9 @@ export function GameBoard() {
           audio.playShieldBreak();
           triggerHapticVibrate([45, 35, 85]);
           haptics.bombAbsorbedByShield();
-          recorderRef.current.logEvent('shield', 'AEGIS SHIELD ABSORBED BOMB', '#38bdf8');
+          recorderRef.current.logEvent('shield', 'SHIELD BLOCKED BOMB', '#38bdf8');
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#38bdf8');
-          setMessage('AEGIS SHIELD ABSORBED BOMB!');
+          setMessage('SHIELD BLOCKED THE BOMB!');
           setTimeout(() => setMessage(''), 1000);
           return;
         }
@@ -627,7 +662,7 @@ export function GameBoard() {
             setMessage('EXCELLENT ALIGNMENT 2/3! 🎯');
           } else if (currentStep >= 3) {
             useGameStore.getState().setTutorialStep(4);
-            setMessage('3/3 STACKED! ARCHITECT CERTIFIED! 🏆');
+            setMessage('3/3 STACKED! YOU GOT IT 🏆');
             setTimeout(() => {
               setTutorialCompletedSheet(true);
             }, 600);
@@ -670,13 +705,14 @@ export function GameBoard() {
           if (placement.outcome === 'collapsed') {
             // Aegis shield catches the toppling section; the rest of the tower stands
             gs.physics.shieldActive = false;
+            onShieldBroken();
             gs.physics.angularVelocity *= 0.3;
             useGameStore.getState().recordAchievementProgress('shieldUsed', 1);
             setTacticalCharges((c) => ({ ...c, shield: false }));
             audio.playShieldBreak();
             haptics.bombAbsorbedByShield();
-            recorderRef.current.logEvent('shield', 'AEGIS SHIELD CAUGHT TOPPLE', '#38bdf8');
-            setMessage(`AEGIS SHIELD CAUGHT THE FALL! -${placement.fallen.length} BLOCKS`);
+            recorderRef.current.logEvent('shield', 'SHIELD CAUGHT TOPPLE', '#38bdf8');
+            setMessage(`SHIELD CAUGHT THE FALL! LOST ${placement.fallen.length} BLOCKS`);
           } else {
             audio.playCollisionSound(targetMass, { type: 'glance' });
             triggerHapticVibrate([30, 25, 45]);
@@ -761,7 +797,13 @@ export function GameBoard() {
         const previousScore = useGameStore.getState().score;
         const basePoints = gs.builtCount * 10 * gs.combo;
         const multiplierBoost = currentMultiplier >= 2 ? currentMultiplier : 1;
-        const totalPoints = Math.round(basePoints * impact.scoreMultiplier * multiplierBoost);
+        // Aim Assist tier 3: double points while your combo is 10 or more
+        const comboBoost = (unlockedPerks['precision_optics'] || 0) >= 3 && gs.combo >= 10 ? 2 : 1;
+        if (comboBoost > 1 && gs.combo === 10) {
+          setMessage('10 COMBO: DOUBLE POINTS!');
+          setTimeout(() => setMessage(''), 900);
+        }
+        const totalPoints = Math.round(basePoints * impact.scoreMultiplier * multiplierBoost * comboBoost);
         setScore(totalPoints);
         const deltaPoints = Math.max(10, totalPoints - previousScore);
 
@@ -871,11 +913,11 @@ export function GameBoard() {
           impact.isPerfect
             ? 'PERFECT ALIGNMENT'
             : targetBlock.archetype === 'titan'
-            ? 'TITAN ANCHOR'
+            ? 'ANCHOR BLOCK'
             : targetBlock.archetype === 'gold_ingot'
             ? '+50 GOLD INGOT'
             : targetBlock.archetype === 'prism'
-            ? '3X PRISM SURGE'
+            ? 'CRYSTAL 3X POINTS'
             : 'BLOCK STACKED',
           targetBlock.archetype === 'titan'
             ? '#f59e0b'
@@ -890,16 +932,16 @@ export function GameBoard() {
         if (targetBlock.archetype === 'titan') {
           audio.playTitanAnchor();
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#f59e0b');
-          setMessage('TITAN ANCHOR LOCKED!');
+          setMessage('ANCHOR BLOCK: TOWER STEADIED!');
           setTimeout(() => setMessage(''), 800);
         } else if (targetBlock.archetype === 'gold_ingot') {
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#eab308');
-          setMessage('+50 GOLD BULLION!');
+          setMessage('GOLD BLOCK! +50 COINS');
           setTimeout(() => setMessage(''), 800);
         } else if (targetBlock.archetype === 'prism') {
           audio.playComboSurge(3);
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe');
-          setMessage('3X PRISM SURGE!');
+          setMessage('CRYSTAL: 3X POINTS FOR 5 BLOCKS!');
           setTimeout(() => setMessage(''), 800);
         } else if (impact.isPerfect) {
           if (gs.rapidPerfectStreak < 2) {
@@ -916,7 +958,7 @@ export function GameBoard() {
           if (unlockedPerks['aegis_shield'] >= 2 && gs.combo % 20 === 0 && !gs.physics.shieldActive) {
             gs.physics.shieldActive = true;
             setTacticalCharges((c) => ({ ...c, shield: true }));
-            setMessage('AEGIS SHIELD RECHARGED!');
+            setMessage('FREE SHIELD EARNED!');
           }
         } else {
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00ffcc');
@@ -946,6 +988,8 @@ export function GameBoard() {
       const visible = Math.max(0, level - firstVisible);
       const overhang = Math.sign(b.x - (level > 0 ? (gs.physics.stack[level - 1]?.x ?? b.x) : 0)) || lean;
       gs.debris.push({
+        halfWidth: b.halfWidth || BLOCK_HALF_WIDTH,
+        archetype: b.archetype,
         x: cx + b.x + flexOffset(gs.physics.tiltAngle, level, total),
         y: cy - 10 - visible * LAYER_HEIGHT,
         vx: overhang * (1.5 + Math.random() * 2.5) + k * 0.15 * overhang,
@@ -1058,7 +1102,7 @@ export function GameBoard() {
               else if (data.rank === 3) useGameStore.getState().addTrophy('bronze');
 
               const earned = Math.max(15, Math.floor(blocksBuilt * 2));
-              useGameStore.getState().setPendingCoins(earned);
+              useGameStore.getState().setPendingCoins(withCoinBonus(earned));
             } else {
               // Local fallback rank calculation
               const total = activeT.totalParticipants || 250;
@@ -1070,7 +1114,7 @@ export function GameBoard() {
                 totalParticipants: total + 1,
               });
               const earned = Math.max(15, Math.floor(blocksBuilt * 2));
-              useGameStore.getState().setPendingCoins(earned);
+              useGameStore.getState().setPendingCoins(withCoinBonus(earned));
             }
           })
           .catch(err => {
@@ -1083,7 +1127,7 @@ export function GameBoard() {
               totalParticipants: total + 1,
             });
             const earned = Math.max(15, Math.floor(blocksBuilt * 2));
-            useGameStore.getState().setPendingCoins(earned);
+            useGameStore.getState().setPendingCoins(withCoinBonus(earned));
           });
       }
     }
@@ -1104,7 +1148,7 @@ export function GameBoard() {
         const baseCoins = 50 + (level * 10);
         const performanceCoins = gameStateRef.current.builtCount * 5;
         const totalCoins = baseCoins + performanceCoins;
-        useGameStore.getState().setPendingCoins(totalCoins);
+        useGameStore.getState().setPendingCoins(withCoinBonus(totalCoins));
 
         // Compute performance metrics for EndOfLevelSummary
         const gs = gameStateRef.current;
@@ -1155,7 +1199,7 @@ export function GameBoard() {
         updateHighScore(mode, gameStateRef.current.builtCount * 10);
         // Reward endless/daily based on performance
         const endlessCoins = Math.floor(gameStateRef.current.builtCount * 2);
-        useGameStore.getState().setPendingCoins(endlessCoins);
+        useGameStore.getState().setPendingCoins(withCoinBonus(endlessCoins));
       }
       
       if (gameOverTimeoutRef.current) clearTimeout(gameOverTimeoutRef.current);
@@ -1274,7 +1318,10 @@ export function GameBoard() {
     // Update Tower Tilt & Equilibrium
     // Dev-only hook so automated playtests can read the live game state
     if (import.meta.env.DEV) (window as any).__gs = gs;
-    const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks, { forgiving: isTutorialActive });
+    const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks, {
+      forgiving: isTutorialActive,
+      wind: mode === 'workshop' ? Math.max(0, Math.min(1, sandboxOptions?.wind ?? 0)) : windStrengthFor(mode, level, gs.physics.stack.length),
+    });
     if (physResult.warningAlert && time - gs.lastWarningTime > 1100) {
       gs.lastWarningTime = time;
       audio.playTiltWarning();
@@ -1292,6 +1339,7 @@ export function GameBoard() {
         const fallen = gs.physics.stack.splice(physResult.toppleLevel);
         spawnDebris(fallen, physResult.toppleLevel, cw, ch);
         gs.physics.shieldActive = false;
+        onShieldBroken();
         gs.physics.angularVelocity = 0;
         gs.physics.tiltAngle *= 0.4;
         rebraceTower(gs.physics);
@@ -1299,9 +1347,9 @@ export function GameBoard() {
         setTacticalCharges((c) => ({ ...c, shield: false }));
         audio.playShieldBreak();
         haptics.bombAbsorbedByShield();
-        recorderRef.current.logEvent('shield', 'AEGIS SHIELD CAUGHT TOPPLE', '#38bdf8');
+        recorderRef.current.logEvent('shield', 'SHIELD CAUGHT TOPPLE', '#38bdf8');
         useGameStore.getState().setTowerHeight(gs.physics.stack.length);
-        setMessage(`AEGIS SHIELD CAUGHT THE FALL! -${fallen.length} BLOCKS`);
+        setMessage(`SHIELD CAUGHT THE FALL! LOST ${fallen.length} BLOCKS`);
         setTimeout(() => setMessage(''), 1100);
       } else {
         // Everything above the failed joint (or the whole tower if it flexed too far) comes down
@@ -1313,7 +1361,7 @@ export function GameBoard() {
         triggerHapticVibrate([70, 35, 95, 45, 140]);
         haptics.towerCollapsed();
         recorderRef.current.logEvent('collapse', 'TOWER COLLAPSED', '#ef4444');
-        gameOver(false, physResult.toppleLevel >= 0 ? 'TOWER TOPPLED! KEEP IT CENTRED' : 'EQUILIBRIUM LOST! TOWER COLLAPSED');
+        gameOver(false, physResult.toppleLevel >= 0 ? 'TOWER TOPPLED! KEEP IT CENTRED' : 'TOWER LEANED TOO FAR AND FELL');
         return;
       }
     }
@@ -1562,7 +1610,7 @@ export function GameBoard() {
         borderColor = '#ffffff';
         glowColor = 'rgba(255, 0, 51, 0.9)';
         pulseSpeed = 0.038;
-        statusText = '🚨 BOOM HAZARD!';
+        statusText = '🚨 BOMB CLOSE!';
       } else if (isCaution) {
         primaryColor = '#ffff00';
         borderColor = '#ffffff';
@@ -1582,13 +1630,13 @@ export function GameBoard() {
         borderColor = '#f87171';
         glowColor = 'rgba(239, 68, 68, 0.95)';
         pulseSpeed = 0.038; // ~18 Hz rapid emergency pulse
-        statusText = '🚨 BOOM HAZARD!';
+        statusText = '🚨 BOMB CLOSE!';
       } else if (isCaution) {
         primaryColor = '#f59e0b';
         borderColor = '#fbbf24';
         glowColor = 'rgba(245, 158, 11, 0.75)';
         pulseSpeed = 0.016; // ~7 Hz warning pulse
-        statusText = '⚠️ PROX CAUTION';
+        statusText = '⚠️ BOMB NEARBY';
       } else {
         primaryColor = '#10b981';
         borderColor = '#34d399';
@@ -1968,7 +2016,9 @@ export function GameBoard() {
     for (let i = 0; i < towerLayers; i++) {
         const progress = (i + 1) / Math.max(1, towerLayers);
         const layerTilt = tiltRad * progress;
-        const blockX = stack[firstVisibleLayer + i]?.x ?? 0;
+        const layerBlock = stack[firstVisibleLayer + i];
+        const blockX = layerBlock?.x ?? 0;
+        const hw = layerBlock?.halfWidth || BLOCK_HALF_WIDTH;
         const layerOffsetX = blockX + Math.sin(layerTilt) * (i * 20);
         const layerOffsetY = - (i * 20) * Math.cos(layerTilt);
 
@@ -1979,14 +2029,14 @@ export function GameBoard() {
         ctx.rotate(layerTilt);
         ctx.scale(1 / squash, squash);
         
-        renderBlock(ctx, -30, -15, 60, 30, activeSkin, true, time, undefined);
+        renderBlock(ctx, -hw, -15, hw * 2, 30, activeSkin, true, time, layerBlock?.archetype);
 
         // Glow the joint that is closest to giving way
         if (firstVisibleLayer + i === weakLevel && !gs.isGameOver) {
           const danger = Math.min(1, (gs.physics.weakestRatio - 0.7) / 0.3);
           ctx.strokeStyle = `rgba(255, ${Math.round(160 - danger * 120)}, 40, ${0.45 + 0.5 * Math.abs(Math.sin(time / 90))})`;
           ctx.lineWidth = 3;
-          ctx.strokeRect(-31, -16, 62, 32);
+          ctx.strokeRect(-hw - 1, -16, hw * 2 + 2, 32);
         }
         
         ctx.restore();
@@ -2001,7 +2051,8 @@ export function GameBoard() {
       const gy = cy + bounce - (topI * 20) * Math.cos(guideTilt) - 10;
       const inWindow = guideTarget.distance <= HIT_WINDOW;
       const slip = guideTarget.archetype === 'titan' ? 0 : landingSlip(Math.min(HIT_WINDOW, guideTarget.distance), guideTarget.angle, unlockedPerks['precision_optics'] || 0);
-      const risk = Math.abs(slip) / BLOCK_HALF_WIDTH;
+      const topHalf = stack.length ? stack[stack.length - 1].halfWidth || BLOCK_HALF_WIDTH : BLOCK_HALF_WIDTH;
+      const risk = Math.abs(slip) / topHalf;
       const col = risk < 0.35 ? '0, 255, 204' : risk < 0.7 ? '250, 204, 21' : '255, 64, 64';
       ctx.save();
       ctx.translate(baseX, gy);
@@ -2020,8 +2071,42 @@ export function GameBoard() {
       ctx.strokeStyle = `rgb(${col})`;
       ctx.fillStyle = `rgba(${col}, 0.12)`;
       ctx.lineWidth = 2;
-      ctx.fillRect(slip - 30, -15, 60, 30);
-      ctx.strokeRect(slip - 30, -15, 60, 30);
+      const ghw = blockHalfWidth(guideTarget.archetype);
+      ctx.fillRect(slip - ghw, -15, ghw * 2, 30);
+      ctx.strokeRect(slip - ghw, -15, ghw * 2, 30);
+      ctx.restore();
+    }
+
+    // Wind: streaks blowing across the screen plus a labelled arrow
+    const windForce = gs.physics.wind.force;
+    if (Math.abs(windForce) > 0.04) {
+      const dir = windForce > 0 ? 1 : -1;
+      const strength = Math.min(1, Math.abs(windForce));
+      ctx.save();
+      ctx.strokeStyle = `rgba(255,255,255,${0.12 + strength * 0.25})`;
+      ctx.lineWidth = 1.5;
+      for (let k = 0; k < 14; k++) {
+        const speed = 0.25 + strength * 0.9;
+        const span = w + 200;
+        const px = ((k * 137 + time * speed * (0.8 + (k % 3) * 0.2)) % span) - 100;
+        const sx = dir > 0 ? px : w - px;
+        const sy = h * 0.12 + ((k * 89) % Math.max(1, Math.floor(h * 0.7)));
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - dir * (24 + strength * 50), sy);
+        ctx.stroke();
+      }
+      // label
+      const label = `WIND ${dir > 0 ? '→' : '←'} ${strength > 0.66 ? 'STRONG' : strength > 0.33 ? 'MEDIUM' : 'LIGHT'}`;
+      ctx.font = 'bold 13px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      const lw = ctx.measureText(label).width + 20;
+      ctx.fillStyle = 'rgba(2,6,23,0.6)';
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - lw / 2, h * 0.16 - 14, lw, 24, 12);
+      ctx.fill();
+      ctx.fillStyle = strength > 0.66 ? '#fca5a5' : strength > 0.33 ? '#fde68a' : '#e2e8f0';
+      ctx.fillText(label, w / 2, h * 0.16 + 3);
       ctx.restore();
     }
 
@@ -2040,7 +2125,7 @@ export function GameBoard() {
       ctx.save();
       ctx.translate(d.x, d.y + bounce);
       ctx.rotate(d.rot);
-      renderBlock(ctx, -30, -15, 60, 30, activeSkin, true, time, undefined);
+      renderBlock(ctx, -d.halfWidth, -15, d.halfWidth * 2, 30, activeSkin, true, time, d.archetype);
       ctx.restore();
     }
 
@@ -2097,11 +2182,14 @@ export function GameBoard() {
       let apparentType = b.type;
       let opacity = 1.0;
 
-      // Deceptive Modifiers
-      if (b.modifier === 'fake-boom' && b.distance > 65) apparentType = 'boom';
-      if (b.modifier === 'fake-build' && b.distance > 65) apparentType = 'build';
-      if (b.modifier === 'ghost' && b.distance < 80 && b.distance > 20) opacity = 0.05;
-      if (b.modifier === 'blink' && Math.floor(time / 80) % 2 === 0) opacity = 0.1;
+      // Disguised blocks (Slow-Mo tier 3 shows them as they really are while slow-mo is on)
+      const trueSight = gs.physics.stasisActive && (unlockedPerks['chrono_stasis'] || 0) >= 3;
+      if (!trueSight) {
+        if (b.modifier === 'fake-boom' && b.distance > 65) apparentType = 'boom';
+        if (b.modifier === 'fake-build' && b.distance > 65) apparentType = 'build';
+        if (b.modifier === 'ghost' && b.distance < 80 && b.distance > 20) opacity = 0.05;
+        if (b.modifier === 'blink' && Math.floor(time / 80) % 2 === 0) opacity = 0.1;
+      }
       
       // Fade out passed bombs as they fly away
       if (b.handled && apparentType === 'boom') {
@@ -2406,7 +2494,7 @@ export function GameBoard() {
           {isBossLevel && (
             <div className="mb-1.5 px-3 py-1 rounded-xl bg-red-950/80 border border-red-500/50 backdrop-blur-md text-center shadow-lg animate-pulse">
               <div className="text-[9px] font-mono font-black tracking-widest text-red-400 uppercase flex items-center justify-center gap-1">
-                <span>⚡ TITAN SIEGE • BOSS LVL {level}</span>
+                <span>⚡ BOSS LEVEL {level}</span>
               </div>
               <div className="w-36 sm:w-44 h-2 bg-black/60 rounded-full mt-1 overflow-hidden border border-red-500/30">
                 <div 
@@ -2430,9 +2518,12 @@ export function GameBoard() {
               style={{ color: activePalette.accent }}
             >
               <Compass className="w-3 h-3" style={{ color: activePalette.accent }} />
-              <span>GYRO STABILITY</span>
-              <span className={`font-black tabular-nums ${stressDisplay > 70 ? 'text-rose-400 animate-ping' : stressDisplay > 40 ? 'text-amber-300' : 'text-emerald-400'}`}>
-                {tiltDisplay > 0 ? `+${tiltDisplay.toFixed(1)}°` : `${tiltDisplay.toFixed(1)}°`}
+              <span>BALANCE</span>
+              <span className={`font-black ${stressDisplay > 70 ? 'text-rose-400 animate-pulse' : stressDisplay > 40 ? 'text-amber-300' : 'text-emerald-400'}`}>
+                {stressDisplay > 70 ? 'ABOUT TO FALL' : stressDisplay > 40 ? 'WOBBLY' : 'STEADY'}
+              </span>
+              <span className="tabular-nums text-white/60">
+                {tiltDisplay > 0 ? `+${tiltDisplay.toFixed(0)}°` : `${tiltDisplay.toFixed(0)}°`}
               </span>
             </div>
 
@@ -2480,7 +2571,7 @@ export function GameBoard() {
                 {useGameStore.getState().activeTournament?.title || 'TOURNAMENT'}
               </span>
             ) : mode === 'workshop' ? (
-              <span className="text-sky-300 font-mono text-xs">SHIFT FORGE</span>
+              <span className="text-sky-300 font-mono text-xs">PRACTICE</span>
             ) : mode === 'campaign' ? (
               `LEVEL ${level}`
             ) : (
@@ -2539,13 +2630,13 @@ export function GameBoard() {
                   ? 'bg-black/50 hover:bg-cyan-950/60 border-cyan-500/40 text-white'
                   : 'bg-cyan-950/40 hover:bg-cyan-900/60 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
               }`}
-              title="Chrono Stasis (Hotkey: Q)"
+              title="Slow-Mo: slows everything down for a few seconds (Q)"
             >
               <div className="w-7 h-7 rounded-xl bg-cyan-500/20 flex items-center justify-center text-sm font-black text-cyan-400">
                 ⏳
               </div>
               <div className="hidden sm:block text-left leading-tight">
-                <div className="text-[9px] font-mono text-cyan-300 font-bold uppercase">STASIS [Q]</div>
+                <div className="text-[9px] font-mono text-cyan-300 font-bold uppercase">SLOW-MO [Q]</div>
                 <div className="text-xs font-black text-white tabular-nums flex items-center gap-1">
                   {tacticalCharges.stasis > 0 ? (
                     `${tacticalCharges.stasis} Left`
@@ -2575,13 +2666,13 @@ export function GameBoard() {
                   ? 'bg-black/50 hover:bg-amber-950/60 border-amber-500/40 text-white'
                   : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-500/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
               }`}
-              title="EMP Defuser (Hotkey: W)"
+              title="Bomb Clear: removes incoming bombs (W)"
             >
               <div className="w-7 h-7 rounded-xl bg-amber-500/20 flex items-center justify-center text-sm font-black text-amber-400">
                 ⚡
               </div>
               <div className="hidden sm:block text-left leading-tight">
-                <div className="text-[9px] font-mono text-amber-300 font-bold uppercase">EMP [W]</div>
+                <div className="text-[9px] font-mono text-amber-300 font-bold uppercase">BOMB CLEAR [W]</div>
                 <div className="text-xs font-black text-white tabular-nums flex items-center gap-1">
                   {tacticalCharges.emp > 0 ? (
                     `${tacticalCharges.emp} Left`
@@ -2612,7 +2703,7 @@ export function GameBoard() {
               onClick={(e) => {
                 e.stopPropagation();
                 if (tacticalCharges.shield) {
-                  setMessage('AEGIS BARRIER ACTIVE');
+                  setMessage('SHIELD ALREADY ON');
                   setTimeout(() => setMessage(''), 800);
                   return;
                 }
@@ -2624,11 +2715,11 @@ export function GameBoard() {
                   setTacticalCharges((c) => ({ ...c, shield: true }));
                   audio.playBuildSound(1.5);
                   haptics.shieldActivated();
-                  setMessage('AEGIS BARRIER ENGAGED!');
+                  setMessage('SHIELD ON: IT WILL CATCH ONE FALL OR BOMB');
                   setTimeout(() => setMessage(''), 1000);
                 } else {
                   audio.playTiltWarning();
-                  setMessage('NO SHIELD CHARGES IN INVENTORY');
+                  setMessage('NO SHIELDS LEFT (GET MORE IN THE SHOP)');
                   setTimeout(() => setMessage(''), 900);
                 }
               }}
@@ -2639,17 +2730,17 @@ export function GameBoard() {
                   ? 'bg-sky-500/20 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.4)] text-sky-300'
                   : 'bg-sky-950/40 hover:bg-sky-900/60 border-sky-500/50 text-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
               }`}
-              title="Aegis Barrier"
+              title="Shield: catches one collapse, bomb or early tap"
             >
               <Shield className={`w-4 h-4 ${tacticalCharges.shield ? 'text-sky-400' : 'text-sky-300'}`} />
               <div className="text-left leading-tight">
-                <div className="text-[9px] font-mono uppercase font-bold text-sky-300">AEGIS BARRIER</div>
+                <div className="text-[9px] font-mono uppercase font-bold text-sky-300">SHIELD</div>
                 <div className="text-xs font-black text-white flex items-center gap-1">
                   {tacticalCharges.shield ? (
-                    'ACTIVE'
+                    'ON'
                   ) : (
                     <span className="text-sky-300 font-mono text-[10px]">
-                      OFFLINE
+                      TAP TO USE
                     </span>
                   )}
                 </div>
@@ -2740,7 +2831,7 @@ export function GameBoard() {
               {/* Status and Skip option */}
               <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/10">
                 <span className="text-[10px] text-amber-200/80 font-mono">
-                  {tutorialEmergencyHold ? '⚡ Stasis locked! Tap to place' : '🛡️ Safety dampeners active'}
+                  {tutorialEmergencyHold ? '⚡ Paused for you! Tap to place' : '🛡️ Practice mode: you can\'t lose yet'}
                 </span>
                 <button
                   onClick={(e) => {
@@ -3090,7 +3181,7 @@ export function GameBoard() {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Award className="w-8 h-8 text-[#FFD700] fill-[#FFD700]/30" />
                 <h3 className="text-2xl font-black text-white uppercase tracking-wide drop-shadow text-center">
-                  ARCHITECT CERTIFIED!
+                  YOU'VE GOT IT!
                 </h3>
               </div>
 

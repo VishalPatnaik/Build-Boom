@@ -7,11 +7,11 @@ import { audio } from '../../audio/AudioEngine';
 import { screenFadeSlideVariants } from '../../utils/screenTransitions';
 
 const CATEGORIES: { id: PerkCategory | 'all'; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'all', label: 'All Disciplines', icon: Sparkles },
-  { id: 'tactical', label: 'Tactical Arsenal', icon: Zap },
-  { id: 'engineering', label: 'Structural Gyro', icon: Compass },
-  { id: 'precision', label: 'Optics & Guidance', icon: Shield },
-  { id: 'economics', label: 'Midas Economics', icon: Coins },
+  { id: 'all', label: 'All', icon: Sparkles },
+  { id: 'tactical', label: 'Power-ups', icon: Zap },
+  { id: 'engineering', label: 'Stability', icon: Compass },
+  { id: 'precision', label: 'Aim', icon: Shield },
+  { id: 'economics', label: 'Coins', icon: Coins },
 ];
 
 export function TechAcademy() {
@@ -87,12 +87,12 @@ export function TechAcademy() {
           </button>
           <div className="min-w-0">
             <div className="text-[9px] sm:text-[10px] font-mono tracking-widest text-cyan-400 uppercase truncate">
-              R&D DIVISION • SPEC V3.4
+              SPEND COINS TO IMPROVE YOUR TOWER
             </div>
             <h1 className="text-base sm:text-xl font-black tracking-tight text-white uppercase flex items-center gap-1.5 sm:gap-2 truncate font-mono">
-              <span className="truncate">Shift Lab</span>
+              <span className="truncate">Upgrades</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30 shrink-0">
-                TECH MATRIX
+                PERMANENT
               </span>
             </h1>
           </div>
@@ -107,7 +107,7 @@ export function TechAcademy() {
               useGameStore.getState().setShowIAP(true);
             }}
             className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-xl bg-[#141b2d] hover:bg-[#1a233a] border border-amber-500/40 shadow-inner cursor-pointer active:scale-95 transition-all"
-            title="Get Coins - Architect Store"
+            title="Get coins"
           >
             <span className="text-sm sm:text-base">🪙</span>
             <span className="font-mono font-black text-amber-300 tabular-nums text-xs sm:text-sm">
@@ -153,7 +153,7 @@ export function TechAcademy() {
               : 'bg-white/5 text-white/50'
           }`}
         >
-          Tech List ({perks.length})
+          All upgrades ({perks.length})
         </button>
         <button
           onClick={() => setMobileTab('detail')}
@@ -265,7 +265,7 @@ export function TechAcademy() {
                 onClick={() => setMobileTab('list')}
                 className="text-xs font-mono text-cyan-300 hover:text-cyan-200 flex items-center gap-1 cursor-pointer py-1"
               >
-                ← Back to Tech List
+                ← Back to upgrades
               </button>
             </div>
 
@@ -387,7 +387,7 @@ export function TechAcademy() {
                   className="w-full sm:w-auto px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-[0_4px_0_#0369a1] active:translate-y-1 active:shadow-none transition-all cursor-pointer"
                 >
                   <Video className="w-3.5 h-3.5" />
-                  <span>Research via Ad (Free)</span>
+                  <span>Unlock free with an ad</span>
                 </button>
               </div>
             ) : (

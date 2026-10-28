@@ -1,5 +1,5 @@
 // Comprehensive Adversarial Regression Test Suite for TOWER//SHIFT
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH } from './src/game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor } from './src/game/physicsEngine';
 import { ALL_COSMETICS, COLLECTIONS } from './src/game/collections';
 import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider } from './src/billing/BillingService';
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
@@ -38,7 +38,7 @@ console.log('--- 1. PHYSICS ADVERSARIAL REGRESSION ---');
   const resCentered = applyBlockImpact(phys1, 0, 0, 'titan', {});
   assert(phys1.tiltAngle === 0, 'Centered Titan hit resets tiltAngle to exactly 0°');
   assert(phys1.angularVelocity === 0, 'Centered Titan hit resets angularVelocity to exactly 0');
-  assert(resCentered.message.includes('TITAN ANCHOR'), 'Centered Titan announces anchor in message');
+  assert(resCentered.message.includes('ANCHOR'), 'Centered Titan announces anchor in message');
 
   // 1.2 Extreme Off-Center Titan Hit (timingOffset = 14)
   const phys2 = createInitialPhysicsState({});
@@ -47,7 +47,7 @@ console.log('--- 1. PHYSICS ADVERSARIAL REGRESSION ---');
   const resOffCenter = applyBlockImpact(phys2, 14, Math.PI / 4, 'titan', {});
   assert(phys2.tiltAngle === 0, 'Off-center Titan hit locks tiltAngle to 0° without off-center torque distortion');
   assert(phys2.angularVelocity === 0, 'Off-center Titan hit locks angularVelocity to 0');
-  assert(resOffCenter.message === 'TITAN ANCHOR LOCKED!', 'Off-center Titan hit maintains anchor lock status');
+  assert(resOffCenter.message === 'ANCHOR BLOCK: TOWER STEADIED!', 'Off-center Titan hit maintains anchor lock status');
 
   // 1.3 Rapid Repeated Titan Impacts
   for (let i = 0; i < 5; i++) {
@@ -410,6 +410,24 @@ console.log('\n--- 7. STACKING PHYSICS ---');
   placeBlock(light, { distance: 12, angle: 0, mass: 1, isPerfect: false, perks });
   placeBlock(heavy, { distance: 12, angle: 0, mass: 2.4, isPerfect: false, perks });
   assert(heavy.comOffset > light.comOffset && heavy.comOffset < BLOCK_HALF_WIDTH, 'Heavier block shifts the centre of mass further');
+
+  // Block sizes: a narrow crystal gives a smaller footprint than a wide anchor
+  assert(blockHalfWidth('titan') > blockHalfWidth('standard') && blockHalfWidth('prism') < blockHalfWidth('standard'), 'Anchors are wide, crystals are narrow');
+  const onNarrow = createInitialPhysicsState(perks);
+  const onWide = createInitialPhysicsState(perks);
+  placeBlock(onNarrow, { distance: 0, angle: 0, mass: 0.6, archetype: 'prism', isPerfect: true, perks });
+  placeBlock(onWide, { distance: 0, angle: 0, mass: 3, archetype: 'titan', isPerfect: true, perks });
+  const narrowRes = placeBlock(onNarrow, { distance: 14, angle: 0, mass: 1, isPerfect: false, perks });
+  const wideRes = placeBlock(onWide, { distance: 14, angle: 0, mass: 1, isPerfect: false, perks });
+  assert(narrowRes.outcome !== 'stacked' && wideRes.outcome === 'stacked', 'Same overhang falls off a narrow crystal but holds on a wide anchor');
+
+  // Wind pushes a centred tower over time, and is calm in early levels
+  assert(windStrengthFor('campaign', 5, 10) === 0 && windStrengthFor('campaign', 150, 10) > 0.9, 'Wind is off in early campaign levels and strong late on');
+  const windy = createInitialPhysicsState(perks);
+  for (let i = 0; i < 20; i++) placeBlock(windy, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks });
+  let peakLean = 0;
+  for (let f = 0; f < 60 * 12; f++) { updateTowerPhysics(windy, 16.7, perks, { wind: 1 }); peakLean = Math.max(peakLean, Math.abs(windy.tiltAngle)); }
+  assert(peakLean > 2, 'Wind gusts lean a centred tower');
 }
 
 console.log('\n=====================================================');

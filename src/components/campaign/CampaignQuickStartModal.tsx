@@ -80,7 +80,7 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
 
           {/* Core Briefing */}
           <p className="text-xs text-white/80 leading-relaxed mb-3.5">
-            Stack your <strong className="text-amber-300">first 3 blocks</strong> with active safety dampeners. Then gravity is real: keep the tower centred, because a stack that hangs past its edge topples.
+            Stack your <strong className="text-amber-300">first 3 blocks</strong> with active safety dampeners. Then gravity is real: keep the tower centred, because a stack that hangs past its edge topples. Never tap a bomb, just let it fly past.
           </p>
 
           {/* 3 Step Interactive Visual Cards */}

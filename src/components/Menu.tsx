@@ -170,7 +170,7 @@ export function Menu() {
             </motion.h1>
           </div>
           <p className="text-cyan-400/90 text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] font-black mt-1.5 drop-shadow">
-            BUILD. BALANCE. DEFLECT. ASCEND.
+            STACK. BALANCE. AVOID THE BOMBS.
           </p>
         </div>
 
@@ -218,10 +218,10 @@ export function Menu() {
             {/* Shift Odyssey Campaign Action Pill */}
             <div className="relative bg-gradient-to-r from-slate-950 via-cyan-950 to-slate-950 px-8 py-2.5 rounded-2xl border-2 border-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] z-30 transform group-hover:scale-105 transition-all -mt-3 text-center">
               <span className="text-xl font-black text-cyan-300 tracking-widest uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] font-mono">
-                SHIFT ODYSSEY
+                CAMPAIGN
               </span>
               <div className="text-[10px] font-bold text-cyan-200/80 uppercase tracking-widest font-mono">
-                WORLD EXPEDITION • LEVEL {unlockedLevels} / 200
+                200 LEVELS • YOU'RE ON LEVEL {unlockedLevels}
               </div>
             </div>
           </motion.button>
@@ -251,14 +251,14 @@ export function Menu() {
               <div className="text-left leading-tight">
                 <div className="flex items-center gap-2">
                   <span className="font-black text-sm text-white uppercase tracking-wider drop-shadow-md">
-                    SHIFT ARENA
+                    TOURNAMENTS
                   </span>
                   <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse border border-white/40 shadow-xs">
-                    LIVE
+                    ONLINE
                   </span>
                 </div>
                 <span className="text-[10px] font-black text-amber-950/90 uppercase tracking-tight font-mono">
-                  Global Ranked Arena • Cups & Rewards
+                  Compete on the leaderboard for cups & coins
                 </span>
               </div>
             </div>
@@ -291,13 +291,13 @@ export function Menu() {
             </div>
             <div className="min-w-0 text-left">
               <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-cyan-300 uppercase">
-                <span>TACTICAL ARSENAL</span>
-                <span className="text-amber-300">• MUNITIONS</span>
+                <span>POWER-UPS</span>
+                <span className="text-amber-300">• USE DURING A RUN</span>
               </div>
               <div className="text-xs font-black text-white truncate flex items-center gap-2.5 mt-0.5 font-mono">
-                <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">⏳ {powerups.stasis}</span>
-                <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">⚡ {powerups.emp}</span>
-                <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">🛡️ {powerups.shield}</span>
+                <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">⏳ Slow-Mo {powerups.stasis}</span>
+                <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">⚡ Bomb Clear {powerups.emp}</span>
+                <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">🛡️ Shield {powerups.shield}</span>
               </div>
             </div>
           </div>
@@ -309,7 +309,7 @@ export function Menu() {
             className="relative z-10 px-3 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-amber-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-[0_2px_0_#b45309] flex items-center gap-1.5 shrink-0 active:scale-95 transition-all border border-amber-200 cursor-pointer"
           >
             <Coins className="w-3.5 h-3.5 fill-current" />
-            <span>Recharge</span>
+            <span>Get more</span>
           </button>
         </motion.div>
 
@@ -340,7 +340,7 @@ export function Menu() {
               <div className="text-left leading-tight min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-black text-xs sm:text-sm text-white uppercase tracking-wider drop-shadow font-mono">
-                    SHIFT REPLAY
+                    REPLAY
                   </span>
                   <span className="bg-cyan-500/30 text-cyan-300 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border border-cyan-400/40 font-mono">
                     LAST 10s
@@ -395,7 +395,7 @@ export function Menu() {
               setMode('academy');
             }}
             className="relative p-3 rounded-2xl bg-gradient-to-br from-[#0c1938] via-[#0f244c] to-[#0c1938] border-2 border-cyan-400/80 shadow-[0_4px_0_#0369a1,0_6px_15px_rgba(0,0,0,0.5)] text-left cursor-pointer flex items-center gap-2.5 select-none active:translate-y-1 active:shadow-none transition-all overflow-hidden"
-            aria-label="Shift Lab"
+            aria-label="Upgrades"
           >
             {/* Blueprint Grid Texture */}
             <div className="absolute inset-0 bg-blueprint-grid opacity-15 pointer-events-none" />
@@ -405,11 +405,11 @@ export function Menu() {
             </div>
             <div className="min-w-0 relative z-10">
               <div className="text-[9px] font-mono text-cyan-300 font-bold tracking-wider uppercase flex items-center gap-1">
-                <span>TECH MATRIX</span>
+                <span>SPEND COINS</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               </div>
               <div className="text-xs font-black text-white uppercase tracking-tight truncate">
-                Shift Lab
+                Upgrades
               </div>
             </div>
           </motion.button>
@@ -429,11 +429,11 @@ export function Menu() {
             </div>
             <div className="min-w-0 relative z-10">
               <div className="text-[9px] font-mono text-fuchsia-300 font-bold tracking-wider uppercase flex items-center gap-1">
-                <span>SANDBOX</span>
+                <span>CUSTOM GAME</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
               </div>
               <div className="text-xs font-black text-white uppercase tracking-tight truncate">
-                Shift Forge
+                Practice
               </div>
             </div>
           </motion.button>
@@ -467,7 +467,7 @@ export function Menu() {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-black text-xs text-white uppercase tracking-wider group-hover:text-yellow-300 transition-colors drop-shadow">
-                      Shift Archive
+                      Achievements
                     </span>
                     {unclaimedCount > 0 && (
                       <span className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase animate-pulse border border-emerald-300">
@@ -488,7 +488,7 @@ export function Menu() {
                 }}
                 className="flex items-center gap-0.5 text-xs font-bold text-amber-300 hover:text-amber-200 transition-colors uppercase font-mono px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg cursor-pointer border border-amber-400/30"
               >
-                <span>View Vault</span>
+                <span>View all</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -579,7 +579,7 @@ export function Menu() {
             <div className="min-w-0 relative z-10">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-black text-white uppercase tracking-tight truncate drop-shadow">
-                  Daily Ops
+                  Daily Challenge
                 </span>
                 <span className="px-1 py-0.2 rounded bg-amber-400/30 text-amber-200 border border-amber-300/40 text-[8px] font-black">
                   {activeMultiplier.toFixed(2)}x
@@ -612,7 +612,7 @@ export function Menu() {
             <div className="absolute inset-0 bg-tactical-dots opacity-10 pointer-events-none" />
             <ShoppingBag className="w-5 h-5 text-amber-950 relative z-10" />
             <span className="font-black text-xs md:text-sm text-amber-950 uppercase tracking-wider relative z-10 font-mono">
-              Locker & Shop
+              Shop
             </span>
           </motion.button>
 

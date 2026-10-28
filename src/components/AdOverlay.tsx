@@ -419,7 +419,7 @@ export function AdOverlay() {
             const item = POWERUP_CONFIG[pendingPowerupType];
             return isPlayingPowerupAd ? (
               <SponsorAdViewer
-                rewardLabel={item?.name || 'Tactical Munitions'}
+                rewardLabel={item?.name || 'Power-ups'}
                 onComplete={() => {
                   setIsPlayingPowerupAd(false);
                   acceptPowerupAd();
@@ -489,12 +489,12 @@ export function AdOverlay() {
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-fuchsia-400 to-purple-600" />
                 
                 <div className="text-4xl mb-2">{perk?.icon || '⚡'}</div>
-                <h2 className="text-2xl font-black mb-1">R&D SPONSORSHIP</h2>
+                <h2 className="text-2xl font-black mb-1">FREE UPGRADE</h2>
                 <div className="inline-block px-3 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-300 font-mono text-xs font-bold mb-3 border border-fuchsia-400/30">
                   UNLOCK: {perk?.name || 'Tech Upgrade'}
                 </div>
                 <p className="text-white/70 mb-5 font-medium text-xs leading-relaxed">
-                  Watch a quick sponsor video to grant immediate R&D funding and authorize this tech tier upgrade.
+                  Watch a short ad to unlock this upgrade for free.
                 </p>
                 
                 <button 

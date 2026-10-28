@@ -347,7 +347,7 @@ export function Shop() {
 
   const handleBuyPowerupCoins = (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) e.stopPropagation();
-    triggerAssetTransition(`Authorizing Tactical ${activePowerupDef.name}...`, 450);
+    triggerAssetTransition(`Buying ${activePowerupDef.name}...`, 450);
     const success = buyPowerupWithCoins(selectedPowerup);
     if (success) {
       audio.playComboSurge(2);
@@ -405,13 +405,13 @@ export function Shop() {
             className="font-black text-xl uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-mono transition-colors duration-300"
             style={{ color: themePalette.accent }}
           >
-            ARMORY & LOCKER
+            SHOP
           </div>
           <span 
             className="text-[10px] font-mono tracking-wider uppercase font-bold transition-colors duration-300"
             style={{ color: themePalette.primary }}
           >
-            {activeCategory === 'background' ? `${worldTheme.worldName} • World Environment` : 'Tactical Customization'}
+            {activeCategory === 'background' ? `${worldTheme.worldName} • World Environment` : 'Customise your look'}
           </span>
         </div>
         <motion.button 
@@ -457,7 +457,7 @@ export function Shop() {
                     color: '#0f172a',
                   } : undefined}
                 >
-                  {cat === 'powerups' ? '⚡ BOOST' : cat}
+                  {cat === 'powerups' ? '⚡ POWER-UPS' : cat === 'boom' ? 'bomb' : cat}
                 </button>
               );
             })}
@@ -479,7 +479,7 @@ export function Shop() {
               <div className="flex items-center justify-between text-[11px] font-mono text-cyan-300 mb-2 px-1">
                 <span className="font-bold tracking-wider uppercase text-white/90 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                  TACTICAL MUNITIONS
+                  POWER-UPS
                 </span>
                 <span className="bg-black/60 px-2.5 py-1 rounded-xl border border-cyan-400/30 text-white font-mono">
                   ⏳ {powerups.stasis} • ⚡ {powerups.emp} • 🛡️ {powerups.shield}
@@ -714,7 +714,7 @@ export function Shop() {
                     }}
                     className="text-xs font-mono font-bold text-amber-300 hover:text-amber-200 cursor-pointer flex items-center gap-1 active:underline"
                   >
-                    <span>Upgrade in Shift Lab &rarr;</span>
+                    <span>See Upgrades &rarr;</span>
                   </button>
                 </div>
               </div>
@@ -758,7 +758,7 @@ export function Shop() {
                       <span>CURRENTLY EQUIPPED</span>
                     </div>
                     <span className="text-[10px] text-emerald-300/80 font-sans font-medium">
-                      {activeCategory === 'background' ? 'Active Environment in Shift Odyssey, Orbital Shift & Shift Arena' : 'Active Tactical Cosmetic'}
+                      {activeCategory === 'background' ? 'Active background in the Campaign, Endless & Tournaments' : 'Currently equipped'}
                     </span>
                   </div>
                 ) : isOwned ? (
