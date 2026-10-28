@@ -225,7 +225,7 @@ export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
     category: 'precision',
     badge: 'CYBERNETIC SENSOR',
     icon: '🎯',
-    summary: 'Laser trajectory sightlines that widen the PERFECT timing window and amplify combo multipliers.',
+    summary: 'Laser trajectory sightlines that widen the PERFECT timing window, cut landing slip by 10% per tier, and amplify combo multipliers.',
     tiers: [
       {
         tier: 1,

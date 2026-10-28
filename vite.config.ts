@@ -101,6 +101,18 @@ export default defineConfig(() => {
         },
       }),
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          // Keep third-party libraries in their own long-lived cached chunks
+          manualChunks: {
+            react: ['react', 'react-dom'],
+            motion: ['framer-motion', 'motion'],
+            zustand: ['zustand'],
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

@@ -1,5 +1,5 @@
 // Comprehensive Adversarial Regression Test Suite for TOWER//SHIFT
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact } from './src/game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH } from './src/game/physicsEngine';
 import { ALL_COSMETICS, COLLECTIONS } from './src/game/collections';
 import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider } from './src/billing/BillingService';
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
@@ -325,6 +325,91 @@ console.log('\n--- 6. PERSISTENCE & COMPATIBILITY KEYS ---');
 {
   assert(PROGRESSION_STORAGE_KEY === 'buildOrBoomProgressV5', 'Legacy storage key buildOrBoomProgressV5 preserved');
   assert(PROGRESSION_SNAPSHOT_KEY === 'buildOrBoom_progressionSnapshot', 'Progression snapshot key verified');
+}
+
+// ----------------------------------------------------
+// 7. STACKING PHYSICS (landing, balance, toppling)
+// ----------------------------------------------------
+console.log('\n--- 7. STACKING PHYSICS ---');
+{
+  const perks = {};
+  const settle = (st: ReturnType<typeof createInitialPhysicsState>, frames = 120) => {
+    let collapsed = false;
+    for (let i = 0; i < frames && !collapsed; i++) collapsed = updateTowerPhysics(st, 16.7, perks).collapsed;
+    return collapsed;
+  };
+
+  // Landing position follows where the block physically was
+  assert(landingSlip(10, Math.PI) < 0, 'Early tap on a block arriving from the left lands it left of centre');
+  assert(landingSlip(-10, Math.PI) > 0, 'Late tap on a block arriving from the left overshoots to the right');
+  assert(Math.abs(landingSlip(0, 0)) === 0, 'Dead-centre tap has no slip');
+  assert(Math.abs(landingSlip(10, -Math.PI / 2)) > 0, 'Vertical approaches still slip so timing always matters');
+
+  // A centred tower stands
+  const centred = createInitialPhysicsState(perks);
+  let centredOk = true;
+  for (let i = 0; i < 25; i++) {
+    if (placeBlock(centred, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks }).outcome !== 'stacked') centredOk = false;
+  }
+  assert(centredOk && centred.stack.length === 25, 'Perfectly centred 25-block tower stays standing');
+  assert(!settle(centred), 'Centred tower survives settling');
+
+  // A staircase leaning one way topples
+  const stairs = createInitialPhysicsState(perks);
+  let toppled = false;
+  for (let i = 0; i < 12 && !toppled; i++) {
+    const r = placeBlock(stairs, { distance: 13, angle: 0, mass: 1, isPerfect: false, perks });
+    toppled = r.outcome !== 'stacked' || settle(stairs, 60);
+  }
+  assert(toppled, 'Staircase of same-direction overhangs topples');
+
+  // Alternating overhangs balance out
+  const zigzag = createInitialPhysicsState(perks);
+  let zigFell = false;
+  for (let i = 0; i < 20 && !zigFell; i++) {
+    const r = placeBlock(zigzag, { distance: i % 2 ? 9 : -9, angle: 0, mass: 1, isPerfect: false, perks });
+    zigFell = r.outcome !== 'stacked' || settle(zigzag, 60);
+  }
+  assert(!zigFell, 'Counter-balanced zig-zag tower stays up');
+
+  // An off-centre tower leans towards its overhang
+  const lean = createInitialPhysicsState(perks);
+  for (let i = 0; i < 6; i++) placeBlock(lean, { distance: 4, angle: 0, mass: 1, isPerfect: false, perks });
+  settle(lean, 30);
+  assert(lean.tiltAngle > 0, 'Gravity leans the tower towards its overhanging side');
+
+  // Tutorial mode is forgiving
+  const tut = createInitialPhysicsState(perks);
+  let tutFell = false;
+  for (let i = 0; i < 10; i++) {
+    const r = placeBlock(tut, { distance: 15, angle: 0, mass: 1, isPerfect: false, perks, forgiving: true });
+    if (r.outcome !== 'stacked') tutFell = true;
+    for (let f = 0; f < 60; f++) if (updateTowerPhysics(tut, 16.7, perks, { forgiving: true }).toppleLevel >= 0) tutFell = true;
+  }
+  assert(!tutFell, 'Tutorial placements never topple');
+
+  // Titan blocks land flush and stop the sway
+  const anchor = createInitialPhysicsState(perks);
+  placeBlock(anchor, { distance: 8, angle: 0, mass: 1, isPerfect: false, perks });
+  const imp = applyBlockImpact(anchor, 12, 0, 'titan', perks, 3);
+  const tr = placeBlock(anchor, { distance: 12, angle: 0, mass: 3, archetype: 'titan', isPerfect: imp.isPerfect, perks });
+  assert(tr.slip === 0 && anchor.tiltAngle === 0, 'Titan lands flush on the block below and cancels sway');
+
+  // Revive straightens the tower
+  const rb = createInitialPhysicsState(perks);
+  for (let i = 0; i < 4; i++) placeBlock(rb, { distance: 10, angle: 0, mass: 1, isPerfect: false, perks, forgiving: true });
+  const before = Math.abs(rb.stack[3].x);
+  rebraceTower(rb);
+  assert(Math.abs(rb.stack[3].x) < before && rb.tiltAngle === 0 && findToppleLevel(rb) === -1, 'Revive re-braces the tower upright');
+
+  // Heavier blocks shift the balance more
+  const light = createInitialPhysicsState(perks);
+  const heavy = createInitialPhysicsState(perks);
+  placeBlock(light, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks });
+  placeBlock(heavy, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks });
+  placeBlock(light, { distance: 12, angle: 0, mass: 1, isPerfect: false, perks });
+  placeBlock(heavy, { distance: 12, angle: 0, mass: 2.4, isPerfect: false, perks });
+  assert(heavy.comOffset > light.comOffset && heavy.comOffset < BLOCK_HALF_WIDTH, 'Heavier block shifts the centre of mass further');
 }
 
 console.log('\n=====================================================');

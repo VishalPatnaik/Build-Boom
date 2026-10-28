@@ -80,7 +80,7 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
 
           {/* Core Briefing */}
           <p className="text-xs text-white/80 leading-relaxed mb-3.5">
-            Stack your <strong className="text-amber-300">first 3 blocks</strong> with active safety dampeners. Learn the timing sweet spot before facing full gravity collapse!
+            Stack your <strong className="text-amber-300">first 3 blocks</strong> with active safety dampeners. Then gravity is real: keep the tower centred, because a stack that hangs past its edge topples.
           </p>
 
           {/* 3 Step Interactive Visual Cards */}
@@ -110,13 +110,13 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
               </div>
               <div className="flex-1 text-left leading-snug">
                 <div className="text-xs font-black text-white flex items-center gap-1.5">
-                  <span>Laser Trajectory Tracking</span>
+                  <span>Timing Sets the Landing</span>
                   <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase">
-                    Angles
+                    Balance
                   </span>
                 </div>
                 <div className="text-[11px] text-white/70 mt-0.5">
-                  Blocks arrive from different angles. Follow the trajectory line into the center platform.
+                  Tap early and a block lands short on its side; tap late and it overshoots. The ghost box shows where it will land, so balance each overhang with the next block.
                 </div>
               </div>
             </div>

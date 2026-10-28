@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from './game/store';
 import { generateLevel, BlockDef } from './game/LevelGenerator';
@@ -12,15 +12,17 @@ import { PlayfulBackground } from './components/PlayfulBackground';
 import { AdOverlay } from './components/AdOverlay';
 import { IAPOverlay } from './components/IAPOverlay';
 import { RemoveAdsOverlay } from './components/RemoveAdsOverlay';
-import { Shop } from './components/Shop';
-import { DailyMissions } from './components/daily/DailyMissions';
-import { TournamentHub } from './components/tournaments/TournamentHub';
-import { TechAcademy } from './components/academy/TechAcademy';
-import { BlueprintWorkshop } from './components/workshop/BlueprintWorkshop';
 import { AchievementUnlockToast } from './components/achievements/AchievementUnlockToast';
-import { SettingsOverlay } from './components/SettingsOverlay';
 import { UnifiedLoadingOverlay } from './components/UnifiedLoadingOverlay';
 import { autoSaveProgression } from './utils/progressionStorage';
+
+// Secondary screens load on demand so the first launch downloads less
+const Shop = lazy(() => import('./components/Shop').then((m) => ({ default: m.Shop })));
+const DailyMissions = lazy(() => import('./components/daily/DailyMissions').then((m) => ({ default: m.DailyMissions })));
+const TournamentHub = lazy(() => import('./components/tournaments/TournamentHub').then((m) => ({ default: m.TournamentHub })));
+const TechAcademy = lazy(() => import('./components/academy/TechAcademy').then((m) => ({ default: m.TechAcademy })));
+const BlueprintWorkshop = lazy(() => import('./components/workshop/BlueprintWorkshop').then((m) => ({ default: m.BlueprintWorkshop })));
+const SettingsOverlay = lazy(() => import('./components/SettingsOverlay').then((m) => ({ default: m.SettingsOverlay })));
 import { resolveActiveWorld } from './game/EnvironmentRenderer';
 import { applyThemeCSSVariables, getThemePalette } from './utils/themeAccents';
 import { getProductById } from './billing/catalog';
@@ -137,11 +139,11 @@ export default function App() {
       <AnimatePresence mode="wait">
         {showMenu && <Menu key="menu" />}
         {showLevelSelect && <LevelSelect key="levelselect" />}
-        {showShop && <Shop key="shop" />}
-        {showDaily && <DailyMissions key="daily" />}
-        {showTournamentHub && <TournamentHub key="tournament-hub" />}
-        {showAcademy && <TechAcademy key="academy" />}
-        {showWorkshop && <BlueprintWorkshop key="workshop" />}
+        {showShop && <Suspense key="shop" fallback={null}><Shop /></Suspense>}
+        {showDaily && <Suspense key="daily" fallback={null}><DailyMissions /></Suspense>}
+        {showTournamentHub && <Suspense key="tournament-hub" fallback={null}><TournamentHub /></Suspense>}
+        {showAcademy && <Suspense key="academy" fallback={null}><TechAcademy /></Suspense>}
+        {showWorkshop && <Suspense key="workshop" fallback={null}><BlueprintWorkshop /></Suspense>}
         {showGame && <GameBoard key="gameboard" />}
       </AnimatePresence>
 
@@ -149,7 +151,7 @@ export default function App() {
         {adState !== 'none' && <AdOverlay key="ad-overlay" />}
         <IAPOverlay key="iap-overlay" />
         <RemoveAdsOverlay key="remove-ads-overlay" />
-        {settingsModalOpen && <SettingsOverlay key="settings-overlay" />}
+        {settingsModalOpen && <Suspense key="settings-overlay" fallback={null}><SettingsOverlay /></Suspense>}
       </AnimatePresence>
 
       <UnifiedLoadingOverlay />

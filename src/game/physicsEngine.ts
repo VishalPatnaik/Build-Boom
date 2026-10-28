@@ -293,8 +293,9 @@ export function applyBlockImpact(
 
   // Special archetype handling
   if (archetype === 'titan') {
-    state.angularVelocity *= 0.2;
-    state.tiltAngle *= 0.5;
+    // Titan anchors cancel the sway outright (the stack's balance still matters afterwards)
+    state.tiltAngle = 0;
+    state.angularVelocity = 0;
     message = 'TITAN ANCHOR LOCKED!';
   } else if (archetype === 'gold_ingot') {
     bonusCoins += Math.round(50 * (1 + midasTier * 0.25));
@@ -316,7 +317,7 @@ export function applyBlockImpact(
 
     // Perfect hit damps existing sway (it cannot fix an off-centre stack)
     if (gyroTier >= 3) {
-      state.angularVelocity *= 0.2;
+      state.angularVelocity = 0;
     } else {
       state.angularVelocity *= 0.5;
     }

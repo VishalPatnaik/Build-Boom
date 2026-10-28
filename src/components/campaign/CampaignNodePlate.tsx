@@ -26,6 +26,8 @@ export function CampaignNodePlate({ zoneIdx, state, level }: CampaignNodePlatePr
     if (!ctx) return;
 
     let animId: number = 0;
+    // Only nodes near the viewport animate; there are 200 of them on the map
+    let visible = false;
     const startTime = performance.now();
 
     const render = (now: number) => {
@@ -128,12 +130,21 @@ export function CampaignNodePlate({ zoneIdx, state, level }: CampaignNodePlatePr
 
       ctx.restore();
 
-      // Run continuous RAF loop for all nodes to ensure dynamic time-based shaders & materials render smoothly
-      animId = requestAnimationFrame(render);
+      // Keep animating only while on screen; locked nodes are static after their first frame
+      animId = visible && !isLocked ? requestAnimationFrame(render) : 0;
     };
 
     animId = requestAnimationFrame(render);
+    const observer = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          if (visible && !animId) animId = requestAnimationFrame(render);
+        }, { rootMargin: '150px' })
+      : null;
+    if (observer) observer.observe(canvas);
+    else visible = true;
     return () => {
+      observer?.disconnect();
       if (animId) cancelAnimationFrame(animId);
     };
   }, [zoneIdx, state, isCurrent, isLocked, themeIndex, palette]);

@@ -37,6 +37,8 @@ export interface ReplayFrame {
     shieldActive: boolean;
     stasisActive: boolean;
     prismSurgeRemaining: number;
+    /** Horizontal offsets of the visible (top 30) tower blocks; absent in older replays */
+    stackX?: number[];
   };
   blocks: ReplayBlockSnapshot[];
   builtCount: number;
@@ -150,6 +152,7 @@ export class ReplayRecorder {
           shieldActive: physics.shieldActive,
           stasisActive: physics.stasisActive,
           prismSurgeRemaining: physics.prismSurgeRemaining,
+          stackX: (physics.stack || []).slice(-30).map((b) => Math.round(b.x * 10) / 10),
         },
         blocks: blockSnapshots,
         builtCount,

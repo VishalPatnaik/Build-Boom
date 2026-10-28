@@ -258,13 +258,14 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
     renderPlate(ctx, cx - 50, cy + bounce - 5, 100, 30, replay.equippedPlate || 'plate-0', time);
 
     // Tower Stack with Structural Physics Flexion
-    const towerLayers = Math.min(currentFrame.builtCount, 30);
+    const stackX = currentFrame.physics.stackX;
+    const towerLayers = stackX ? stackX.length : Math.min(currentFrame.builtCount, 30);
     const tiltRad = (currentFrame.physics.tiltAngle * Math.PI) / 180;
 
     for (let i = 0; i < towerLayers; i++) {
       const progress = (i + 1) / Math.max(1, towerLayers);
       const layerTilt = tiltRad * progress;
-      const layerOffsetX = Math.sin(layerTilt) * (i * 20);
+      const layerOffsetX = (stackX ? stackX[i] : 0) + Math.sin(layerTilt) * (i * 20);
       const layerOffsetY = -i * 20 * Math.cos(layerTilt);
 
       ctx.save();

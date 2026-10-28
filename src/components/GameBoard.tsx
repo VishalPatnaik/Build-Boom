@@ -1272,6 +1272,8 @@ export function GameBoard() {
     }
 
     // Update Tower Tilt & Equilibrium
+    // Dev-only hook so automated playtests can read the live game state
+    if (import.meta.env.DEV) (window as any).__gs = gs;
     const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks, { forgiving: isTutorialActive });
     if (physResult.warningAlert && time - gs.lastWarningTime > 1100) {
       gs.lastWarningTime = time;
