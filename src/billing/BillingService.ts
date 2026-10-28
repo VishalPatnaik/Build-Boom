@@ -153,6 +153,14 @@ export class MockBillingProvider implements IBillingProvider {
   }
 
   async executePurchase(product: ProductCatalogItem): Promise<PurchaseResult> {
+    // Simulated purchases grant real rewards, so they are only available in development builds
+    if (!import.meta.env.DEV) {
+      return {
+        success: false,
+        productId: product.id,
+        errorMessage: 'Purchases must go through secure checkout.',
+      };
+    }
     // Simulate real billing provider roundtrip delay (400ms - 900ms)
     await new Promise(resolve => setTimeout(resolve, 600));
 

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass } from '../game/LevelGenerator';
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, TowerPhysicsState } from '../game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, BLOCK_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { audio } from '../audio/AudioEngine';
@@ -45,6 +45,17 @@ interface Particle {
   color: string;
   size: number;
   type?: 'spark' | 'ring';
+}
+
+// A block that has physically fallen off the tower (rendered with gravity + spin)
+interface Debris {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vr: number;
+  life: number;
 }
 
 export function GameBoard() {
@@ -132,6 +143,7 @@ export function GameBoard() {
   
   const [builtCount, setBuiltCount] = useState(0);
   const [totalBlocks, setTotalBlocks] = useState(0);
+  const [lostReason, setLostReason] = useState('');
   const [message, setMessage] = useState('');
   const [tiltDisplay, setTiltDisplay] = useState(0);
   const [stressDisplay, setStressDisplay] = useState(0);
@@ -229,6 +241,7 @@ export function GameBoard() {
     physics: createInitialPhysicsState(unlockedPerks),
     lastWarningTime: 0,
     lastUiUpdateTime: 0,
+    debris: [] as Debris[],
   });
 
   const initGame = (customLevel?: number) => {
@@ -333,6 +346,7 @@ export function GameBoard() {
       physics: initialPhys,
       lastWarningTime: 0,
       lastUiUpdateTime: 0,
+      debris: [],
     };
     
     setTimeout(() => setMessage(''), 1500);
@@ -464,6 +478,7 @@ export function GameBoard() {
         // Add a 1.5 second buffer before they start coming again
         gameStateRef.current.lastSpawnTime = performance.now() + 1500;
         
+        rebraceTower(gameStateRef.current.physics);
         gameStateRef.current.hasRevived = true;
         setMessage(''); // Clear BOOM! text when resuming
         useGameStore.getState().clearReviveFlag();
@@ -628,6 +643,63 @@ export function GameBoard() {
           targetMass
         );
 
+        // Physically land the block where it was when tapped
+        const placement = placeBlock(gs.physics, {
+          distance: targetBlock.distance,
+          angle: targetBlock.angle,
+          mass: targetMass,
+          archetype: targetBlock.archetype,
+          isPerfect: impact.isPerfect,
+          perks: unlockedPerks,
+          forgiving: isTutorialActive,
+        });
+
+        if (placement.outcome !== 'stacked') {
+          spawnDebris(placement.fallen, placement.toppleLevel, w, h);
+          gs.shake = Math.max(gs.shake, placement.outcome === 'collapsed' ? 28 : 12);
+
+          if (placement.outcome === 'collapsed' && !gs.physics.shieldActive) {
+            audio.playCollisionSound(3.0, { type: 'crash' });
+            triggerHapticVibrate([70, 35, 95, 45, 140]);
+            haptics.towerCollapsed();
+            recorderRef.current.logEvent('collapse', 'TOWER TOPPLED', '#ef4444');
+            gameOver(false, 'OVERHANG! TOWER TOPPLED');
+            return;
+          }
+
+          if (placement.outcome === 'collapsed') {
+            // Aegis shield catches the toppling section; the rest of the tower stands
+            gs.physics.shieldActive = false;
+            gs.physics.angularVelocity *= 0.3;
+            useGameStore.getState().recordAchievementProgress('shieldUsed', 1);
+            setTacticalCharges((c) => ({ ...c, shield: false }));
+            audio.playShieldBreak();
+            haptics.bombAbsorbedByShield();
+            recorderRef.current.logEvent('shield', 'AEGIS SHIELD CAUGHT TOPPLE', '#38bdf8');
+            setMessage(`AEGIS SHIELD CAUGHT THE FALL! -${placement.fallen.length} BLOCKS`);
+          } else {
+            audio.playCollisionSound(targetMass, { type: 'glance' });
+            triggerHapticVibrate([30, 25, 45]);
+            recorderRef.current.logEvent('slide', 'BLOCK SLID OFF', '#f59e0b');
+            setMessage('SLID OFF! LAND IT OVER THE TOWER');
+          }
+          setTimeout(() => setMessage(''), 1100);
+
+          // A lost block breaks the combo and the rapid-perfect chain
+          gs.combo = 0;
+          setActiveCombo(0);
+          gs.rapidPerfectStreak = 0;
+          gs.lastPerfectTime = 0;
+          gs.rapidPerfectMultiplier = 1;
+          useGameStore.getState().setTowerHeight(gs.physics.stack.length);
+          return;
+        }
+
+        if (!impact.isPerfect && Math.abs(placement.slip) > BLOCK_HALF_WIDTH * 0.5 && !targetBlock.archetype?.match(/titan|gold_ingot|prism/)) {
+          setMessage(placement.slip > 0 ? 'OVERHANG ▶ BALANCE IT LEFT' : '◀ OVERHANG BALANCE IT RIGHT');
+          setTimeout(() => setMessage(''), 800);
+        }
+
         gs.builtCount++;
         gs.combo++;
         gs.maxCombo = Math.max(gs.maxCombo || 0, gs.combo);
@@ -635,7 +707,7 @@ export function GameBoard() {
           gs.perfectCount = (gs.perfectCount || 0) + 1;
         }
         setBuiltCount(gs.builtCount);
-        useGameStore.getState().setTowerHeight(gs.builtCount);
+        useGameStore.getState().setTowerHeight(gs.physics.stack.length);
         setActiveCombo(gs.combo);
         trackEvent('BUILD_SUCCESS');
 
@@ -861,6 +933,31 @@ export function GameBoard() {
     }
   };
 
+  // Turns blocks that fell off the tower into tumbling debris at their on-screen positions
+  const spawnDebris = (fallen: StackedBlock[], fromLevel: number, w: number, h: number) => {
+    const gs = gameStateRef.current;
+    const cx = w / 2;
+    const cy = h * 0.65;
+    const total = gs.physics.stack.length + fallen.length;
+    const firstVisible = Math.max(0, total - 30);
+    const lean = gs.physics.tiltAngle >= 0 ? 1 : -1;
+    fallen.forEach((b, k) => {
+      const level = fromLevel + k;
+      const visible = Math.max(0, level - firstVisible);
+      const overhang = Math.sign(b.x - (level > 0 ? (gs.physics.stack[level - 1]?.x ?? b.x) : 0)) || lean;
+      gs.debris.push({
+        x: cx + b.x + flexOffset(gs.physics.tiltAngle, level, total),
+        y: cy - 10 - visible * LAYER_HEIGHT,
+        vx: overhang * (1.5 + Math.random() * 2.5) + k * 0.15 * overhang,
+        vy: -2 - Math.random() * 2,
+        rot: (gs.physics.tiltAngle * Math.PI) / 180,
+        vr: overhang * (0.04 + Math.random() * 0.08),
+        life: 1,
+      });
+    });
+    gs.debris = gs.debris.slice(-60);
+  };
+
   const createExplosionAtDistance = (block: ActiveBlock, gameRadius: number, w: number, h: number, baseColor: string) => {
       const px = w/2 + Math.cos(block.angle) * (block.distance / 100) * gameRadius;
       const py = h * 0.65 + Math.sin(block.angle) * (block.distance / 100) * gameRadius;
@@ -1070,7 +1167,7 @@ export function GameBoard() {
       audio.playBoomSound();
       // Physical immersion: 'boom' event visceral detonation rumble
       triggerHapticVibrate([80, 40, 120, 50, 160]);
-      if (reason && reason.includes('COLLAPSED')) {
+      if (reason && (reason.includes('COLLAPSED') || reason.includes('TOPPLED'))) {
         haptics.towerCollapsed();
       }
       // Dynamic boom detonation shake intensity-scaled with stack height
@@ -1078,6 +1175,7 @@ export function GameBoard() {
       const boomHeightScale = 1 + Math.min(3.5, (boomStackHeight / 5) * 0.85);
       gameStateRef.current.shake = Math.min(65, 28 * boomHeightScale);
       setMessage(reason || 'BOOM!');
+      setLostReason(reason || '');
       if (mode !== 'campaign') {
         const finalScore = useGameStore.getState().score;
         updateHighScore(mode, finalScore);
@@ -1174,7 +1272,7 @@ export function GameBoard() {
     }
 
     // Update Tower Tilt & Equilibrium
-    const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks);
+    const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks, { forgiving: isTutorialActive });
     if (physResult.warningAlert && time - gs.lastWarningTime > 1100) {
       gs.lastWarningTime = time;
       audio.playTiltWarning();
@@ -1185,12 +1283,37 @@ export function GameBoard() {
         gs.physics.angularVelocity = 0;
         return;
       }
-      audio.playCollisionSound(3.0, { type: 'crash' });
-      triggerHapticVibrate([70, 35, 95, 45, 140]);
-      haptics.towerCollapsed();
-      recorderRef.current.logEvent('collapse', 'TOWER COLLAPSED', '#ef4444');
-      gameOver(false, 'EQUILIBRIUM LOST! TOWER COLLAPSED');
-      return;
+      const cw = canvasRef.current?.width || 800;
+      const ch = canvasRef.current?.height || 600;
+      if (physResult.toppleLevel >= 0 && gs.physics.shieldActive) {
+        // Aegis shield catches the section that tipped; the tower below survives
+        const fallen = gs.physics.stack.splice(physResult.toppleLevel);
+        spawnDebris(fallen, physResult.toppleLevel, cw, ch);
+        gs.physics.shieldActive = false;
+        gs.physics.angularVelocity = 0;
+        gs.physics.tiltAngle *= 0.4;
+        rebraceTower(gs.physics);
+        useGameStore.getState().recordAchievementProgress('shieldUsed', 1);
+        setTacticalCharges((c) => ({ ...c, shield: false }));
+        audio.playShieldBreak();
+        haptics.bombAbsorbedByShield();
+        recorderRef.current.logEvent('shield', 'AEGIS SHIELD CAUGHT TOPPLE', '#38bdf8');
+        useGameStore.getState().setTowerHeight(gs.physics.stack.length);
+        setMessage(`AEGIS SHIELD CAUGHT THE FALL! -${fallen.length} BLOCKS`);
+        setTimeout(() => setMessage(''), 1100);
+      } else {
+        // Everything above the failed joint (or the whole tower if it flexed too far) comes down
+        const from = physResult.toppleLevel >= 0 ? physResult.toppleLevel : 0;
+        const fallen = gs.physics.stack.splice(from);
+        spawnDebris(fallen, from, cw, ch);
+        gs.shake = Math.max(gs.shake, 30);
+        audio.playCollisionSound(3.0, { type: 'crash' });
+        triggerHapticVibrate([70, 35, 95, 45, 140]);
+        haptics.towerCollapsed();
+        recorderRef.current.logEvent('collapse', 'TOWER COLLAPSED', '#ef4444');
+        gameOver(false, physResult.toppleLevel >= 0 ? 'TOWER TOPPLED! KEEP IT CENTRED' : 'EQUILIBRIUM LOST! TOWER COLLAPSED');
+        return;
+      }
     }
 
     // Sync HUD displays
@@ -1833,16 +1956,21 @@ export function GameBoard() {
     }
 
     // Center Tower with Structural Dynamic Flexion
-    const towerLayers = Math.min(gs.builtCount, 30);
+    // Each block is drawn where it physically rests, plus the tower's flex
+    const stack = gs.physics.stack;
+    const towerLayers = Math.min(stack.length, 30);
+    const firstVisibleLayer = stack.length - towerLayers;
     const tiltRad = (gs.physics.tiltAngle * Math.PI) / 180;
+    const weakLevel = gs.physics.weakestRatio > 0.7 ? gs.physics.weakestLevel : -1;
 
     for (let i = 0; i < towerLayers; i++) {
         const progress = (i + 1) / Math.max(1, towerLayers);
         const layerTilt = tiltRad * progress;
-        const layerOffsetX = Math.sin(layerTilt) * (i * 20);
+        const blockX = stack[firstVisibleLayer + i]?.x ?? 0;
+        const layerOffsetX = blockX + Math.sin(layerTilt) * (i * 20);
         const layerOffsetY = - (i * 20) * Math.cos(layerTilt);
 
-        const squash = (i === gs.builtCount - 1 && time - gs.lastSpawnTime < 200) ? 0.8 : 1;
+        const squash = (i === towerLayers - 1 && time - gs.lastSpawnTime < 200) ? 0.8 : 1;
         
         ctx.save();
         ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 10);
@@ -1850,8 +1978,68 @@ export function GameBoard() {
         ctx.scale(1 / squash, squash);
         
         renderBlock(ctx, -30, -15, 60, 30, activeSkin, true, time, undefined);
+
+        // Glow the joint that is closest to giving way
+        if (firstVisibleLayer + i === weakLevel && !gs.isGameOver) {
+          const danger = Math.min(1, (gs.physics.weakestRatio - 0.7) / 0.3);
+          ctx.strokeStyle = `rgba(255, ${Math.round(160 - danger * 120)}, 40, ${0.45 + 0.5 * Math.abs(Math.sin(time / 90))})`;
+          ctx.lineWidth = 3;
+          ctx.strokeRect(-31, -16, 62, 32);
+        }
         
         ctx.restore();
+    }
+
+    // Landing guide: where the incoming block would settle if tapped right now
+    const guideTarget = gs.isGameOver ? null : gs.blocks.reduce<ActiveBlock | null>((c, b) => (!b.handled && (!c || b.distance < c.distance) ? b : c), null);
+    if (guideTarget && guideTarget.type !== 'boom' && guideTarget.distance <= HIT_WINDOW + 25 && guideTarget.distance > -HIT_WINDOW) {
+      const topI = towerLayers;
+      const guideTilt = tiltRad;
+      const baseX = cx + supportX(gs.physics) + Math.sin(guideTilt) * (topI * 20);
+      const gy = cy + bounce - (topI * 20) * Math.cos(guideTilt) - 10;
+      const inWindow = guideTarget.distance <= HIT_WINDOW;
+      const slip = guideTarget.archetype === 'titan' ? 0 : landingSlip(Math.min(HIT_WINDOW, guideTarget.distance), guideTarget.angle, unlockedPerks['precision_optics'] || 0);
+      const risk = Math.abs(slip) / BLOCK_HALF_WIDTH;
+      const col = risk < 0.35 ? '0, 255, 204' : risk < 0.7 ? '250, 204, 21' : '255, 64, 64';
+      ctx.save();
+      ctx.translate(baseX, gy);
+      ctx.rotate(guideTilt);
+      // centre line of the surface below
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.setLineDash([3, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -26);
+      ctx.lineTo(0, 14);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // ghost of the predicted landing
+      ctx.globalAlpha = inWindow ? 0.9 : 0.45;
+      ctx.strokeStyle = `rgb(${col})`;
+      ctx.fillStyle = `rgba(${col}, 0.12)`;
+      ctx.lineWidth = 2;
+      ctx.fillRect(slip - 30, -15, 60, 30);
+      ctx.strokeRect(slip - 30, -15, 60, 30);
+      ctx.restore();
+    }
+
+    // Debris from blocks that fell off: gravity, drag and spin
+    for (let i = gs.debris.length - 1; i >= 0; i--) {
+      const d = gs.debris[i];
+      d.vy += 0.45;
+      d.vx *= 0.995;
+      d.x += d.vx;
+      d.y += d.vy;
+      d.rot += d.vr;
+      if (d.y > h + 80) {
+        gs.debris.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.translate(d.x, d.y + bounce);
+      ctx.rotate(d.rot);
+      renderBlock(ctx, -30, -15, 60, 30, activeSkin, true, time, undefined);
+      ctx.restore();
     }
 
     // Visual Health Indicator on Active Tower Top Block (when boom hazards approach center)
@@ -1859,7 +2047,7 @@ export function GameBoard() {
       const topIdx = towerLayers - 1;
       const topProgress = (topIdx + 1) / Math.max(1, towerLayers);
       const topLayerTilt = tiltRad * topProgress;
-      const topOffsetX = Math.sin(topLayerTilt) * (topIdx * 20);
+      const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * 20);
       const topOffsetY = - (topIdx * 20) * Math.cos(topLayerTilt);
       const topPx = cx + topOffsetX;
       const topPy = cy + bounce + topOffsetY - 10;
@@ -2020,7 +2208,7 @@ export function GameBoard() {
         const topIdx = towerLayers - 1;
         const topProgress = (topIdx + 1) / Math.max(1, towerLayers);
         const topLayerTilt = tiltRad * topProgress;
-        const topOffsetX = Math.sin(topLayerTilt) * (topIdx * 20);
+        const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * 20);
         const topOffsetY = - (topIdx * 20) * Math.cos(topLayerTilt);
         const topPx = cx + topOffsetX;
         const topPy = cy + bounce + topOffsetY - 10;
@@ -2752,8 +2940,11 @@ export function GameBoard() {
                   }`}
                   style={{ WebkitTextStroke: '2px #fff' }}
                 >
-                  {state === 'won' ? 'CLEARED!' : 'BOOM!'}
+                  {state === 'won' ? 'CLEARED!' : /TOPPLED|COLLAPSED/.test(lostReason) ? 'TOPPLED!' : 'BOOM!'}
                 </motion.h2>
+                {state !== 'won' && lostReason && (
+                  <div className="text-xs sm:text-sm font-bold tracking-wider text-white/80 mb-2 uppercase">{lostReason}</div>
+                )}
                 
                 <div className="text-2xl sm:text-3xl text-white font-black mb-5 drop-shadow-md" style={{ WebkitTextStroke: '1.5px #333' }}>
                   SCORE: {score}

@@ -119,7 +119,6 @@ function PaymentScreenModalContent({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          coins: product.rewards.coins || 0,
           paymentMethod: activeRail,
         }),
       });
@@ -149,6 +148,10 @@ function PaymentScreenModalContent({
 
   const executePayment = async () => {
     if (isProcessing) return;
+    if (!import.meta.env.DEV) {
+      // Real money only goes through the verified Stripe checkout
+      return handleExternalRedirect();
+    }
     setIsProcessing(true);
     setErrorMessage(null);
     audio.playClickSound();
@@ -589,6 +592,7 @@ function PaymentScreenModalContent({
               </motion.button>
             )}
 
+            {import.meta.env.DEV && (
             <button
               type="button"
               onClick={executePayment}
@@ -597,6 +601,7 @@ function PaymentScreenModalContent({
             >
               Or simulate in-game purchase (Test Mode)
             </button>
+            )}
 
             <div className="flex items-center justify-center gap-2 text-[10px] text-white/50 font-mono text-center pt-1">
               <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />

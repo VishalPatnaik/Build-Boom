@@ -77,36 +77,48 @@ export default function App() {
     };
   }, []);
 
-  // Handle Checkout Success Callback (Stripe, Cards, PayPal, GPay)
+  // Handle Checkout return: rewards are granted only after the server confirms payment with Stripe.
+  // The session id is kept until it is settled, so a dropped connection can be retried on next launch.
   useEffect(() => {
+    const PENDING_KEY = 'towershift_pending_checkout';
     const query = new URLSearchParams(window.location.search);
-    if (query.get("success")) {
-      const productId = query.get("productId");
-      const coins = parseInt(query.get("coins") || "0", 10);
+    if (query.has("checkout_session") || query.has("success") || query.has("canceled")) {
+      window.history.replaceState({}, document.title, "/");
+    }
+    let sessionId = query.get("checkout_session");
+    try {
+      if (sessionId) localStorage.setItem(PENDING_KEY, sessionId);
+      else sessionId = localStorage.getItem(PENDING_KEY);
+    } catch {
+      // storage unavailable: verify this one attempt only
+    }
+    if (!sessionId) return;
+    const settle = () => {
+      try { localStorage.removeItem(PENDING_KEY); } catch { /* ignore */ }
+    };
 
-      if (productId) {
-        const product = getProductById(productId);
+    fetch('/api/checkout/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    })
+      .then(async (res) => ({ status: res.status, data: await res.json().catch(() => ({})) }))
+      .then(({ status, data }) => {
+        if (status >= 500) return; // server not ready: keep pending and retry next launch
+        settle();
+        const product = data?.status === 'paid' ? getProductById(data.productId) : undefined;
         if (product) {
           EntitlementGranter.grantEntitlements(product.rewards);
           audio.playPerfectSound();
           useGameStore.getState().triggerAssetTransition(`✓ ${product.name} Verified & Granted!`, 2200);
-        } else if (coins > 0) {
-          useGameStore.getState().addCoins(coins);
-          audio.playPerfectSound();
-          useGameStore.getState().triggerAssetTransition(`✓ +${coins.toLocaleString()} Coins Granted!`, 2200);
-          autoSaveProgression('purchase_finalized', { coins: useGameStore.getState().coins + coins });
+          autoSaveProgression('purchase_finalized', { coins: useGameStore.getState().coins });
+        } else if (data?.status !== 'already_fulfilled') {
+          useGameStore.getState().triggerAssetTransition('Payment could not be verified.', 2600);
         }
-      } else if (coins > 0) {
-        useGameStore.getState().addCoins(coins);
-        audio.playPerfectSound();
-        useGameStore.getState().triggerAssetTransition(`✓ +${coins.toLocaleString()} Coins Granted!`, 2200);
-        autoSaveProgression('purchase_finalized', { coins: useGameStore.getState().coins + coins });
-      }
-      window.history.replaceState({}, document.title, "/");
-    }
-    if (query.get("canceled")) {
-      window.history.replaceState({}, document.title, "/");
-    }
+      })
+      .catch(() => {
+        useGameStore.getState().triggerAssetTransition('Could not reach the payment server. It will retry next launch.', 2600);
+      });
   }, []);
 
   const showGame = (mode === 'endless') || (mode === 'campaign' && state !== 'idle') || (mode === 'tournament' && state !== 'idle') || (mode === 'workshop' && state !== 'idle');
