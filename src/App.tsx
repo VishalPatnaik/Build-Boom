@@ -19,11 +19,27 @@ import { TechAcademy } from './components/academy/TechAcademy';
 import { BlueprintWorkshop } from './components/workshop/BlueprintWorkshop';
 import { AchievementUnlockToast } from './components/achievements/AchievementUnlockToast';
 import { SettingsOverlay } from './components/SettingsOverlay';
+import { UnifiedLoadingOverlay } from './components/UnifiedLoadingOverlay';
+import { autoSaveProgression } from './utils/progressionStorage';
+import { resolveActiveWorld } from './game/EnvironmentRenderer';
+import { applyThemeCSSVariables, getThemePalette } from './utils/themeAccents';
+import { getProductById } from './billing/catalog';
+import { EntitlementGranter } from './billing/BillingService';
 
 export default function App() {
-  const { mode, state, adState, visualTheme, highContrastMode } = useGameStore();
+  const { 
+    mode, 
+    state, 
+    level, 
+    equippedBackground, 
+    activeTournament, 
+    adState, 
+    visualTheme, 
+    highContrastMode, 
+    settingsModalOpen 
+  } = useGameStore();
   
-  // Sync document root theme and accessibility class
+  // Sync document root theme, CSS variables, and accessibility class in real-time
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', visualTheme || 'default');
     if (highContrastMode) {
@@ -31,7 +47,18 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('high-contrast-mode');
     }
-  }, [visualTheme, highContrastMode]);
+
+    const worldInfo = resolveActiveWorld({
+      mode,
+      state,
+      level,
+      equippedBackground,
+      activeTournament,
+      visualTheme,
+    });
+    const palette = getThemePalette(worldInfo.worldIndex);
+    applyThemeCSSVariables(palette, worldInfo.worldIndex);
+  }, [visualTheme, highContrastMode, mode, state, level, equippedBackground, activeTournament]);
 
   // Initialize audio & background music on first user interaction
   useEffect(() => {
@@ -50,13 +77,30 @@ export default function App() {
     };
   }, []);
 
-  // Handle Stripe Success Callback
+  // Handle Checkout Success Callback (Stripe, Cards, PayPal, GPay)
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     if (query.get("success")) {
+      const productId = query.get("productId");
       const coins = parseInt(query.get("coins") || "0", 10);
-      if (coins > 0) {
+
+      if (productId) {
+        const product = getProductById(productId);
+        if (product) {
+          EntitlementGranter.grantEntitlements(product.rewards);
+          audio.playPerfectSound();
+          useGameStore.getState().triggerAssetTransition(`✓ ${product.name} Verified & Granted!`, 2200);
+        } else if (coins > 0) {
+          useGameStore.getState().addCoins(coins);
+          audio.playPerfectSound();
+          useGameStore.getState().triggerAssetTransition(`✓ +${coins.toLocaleString()} Coins Granted!`, 2200);
+          autoSaveProgression('purchase_finalized', { coins: useGameStore.getState().coins + coins });
+        }
+      } else if (coins > 0) {
         useGameStore.getState().addCoins(coins);
+        audio.playPerfectSound();
+        useGameStore.getState().triggerAssetTransition(`✓ +${coins.toLocaleString()} Coins Granted!`, 2200);
+        autoSaveProgression('purchase_finalized', { coins: useGameStore.getState().coins + coins });
       }
       window.history.replaceState({}, document.title, "/");
     }
@@ -65,14 +109,14 @@ export default function App() {
     }
   }, []);
 
-  const showGame = (mode === 'endless') || (mode === 'campaign' && state !== 'idle') || (mode === 'tournament' && state === 'playing') || (mode === 'workshop' && state === 'playing');
+  const showGame = (mode === 'endless') || (mode === 'campaign' && state !== 'idle') || (mode === 'tournament' && state !== 'idle') || (mode === 'workshop' && state !== 'idle');
   const showDaily = mode === 'daily';
   const showMenu = mode === 'menu';
   const showLevelSelect = mode === 'campaign' && state === 'idle';
   const showShop = mode === 'shop';
-  const showTournamentHub = mode === 'tournament' && state !== 'playing';
+  const showTournamentHub = mode === 'tournament' && state === 'idle';
   const showAcademy = mode === 'academy';
-  const showWorkshop = mode === 'workshop' && state !== 'playing';
+  const showWorkshop = mode === 'workshop' && state === 'idle';
 
   return (
     <div className="w-full h-full bg-[#030712] flex items-center justify-center overflow-hidden relative font-display text-slate-100">
@@ -93,8 +137,10 @@ export default function App() {
         {adState !== 'none' && <AdOverlay key="ad-overlay" />}
         <IAPOverlay key="iap-overlay" />
         <RemoveAdsOverlay key="remove-ads-overlay" />
-        <SettingsOverlay key="settings-overlay" />
+        {settingsModalOpen && <SettingsOverlay key="settings-overlay" />}
       </AnimatePresence>
+
+      <UnifiedLoadingOverlay />
 
       <AchievementUnlockToast />
     </div>

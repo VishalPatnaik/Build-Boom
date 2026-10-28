@@ -49,7 +49,8 @@ export function updateTowerPhysics(
   dtMs: number,
   perks: Record<string, number>
 ): { collapsed: boolean; warningAlert: boolean } {
-  const dt = dtMs / 1000;
+  // Clamp delta time to avoid large physics steps on mobile frame hitches or tab resumption
+  const dt = Math.min(0.064, Math.max(0.001, (Number.isFinite(dtMs) ? dtMs : 16.67) / 1000));
   const gyroTier = perks['structural_gyro'] || 0;
   
   // Dampening coefficient increases with gyro tech
@@ -104,11 +105,11 @@ export function applyBlockImpact(
     state.angularVelocity = 0;
     message = 'TITAN ANCHOR LOCKED!';
   } else if (archetype === 'gold_ingot') {
-    bonusCoins += 50;
+    bonusCoins += Math.round(50 * (1 + midasTier * 0.25));
     message = '+50 GOLD INGOT!';
   } else if (archetype === 'prism') {
     state.prismSurgeRemaining = 5;
-    bonusCoins += 100;
+    bonusCoins += Math.round(100 * (1 + midasTier * 0.25));
     message = '3X PRISM SURGE!';
   }
 
@@ -118,7 +119,7 @@ export function applyBlockImpact(
   }
 
   if (isPerfect) {
-    message = 'PERFECT!';
+    message = archetype === 'titan' ? 'PERFECT! TITAN ANCHOR LOCKED!' : 'PERFECT!';
     scoreMultiplier *= opticsTier >= 2 ? 2.0 : 1.5;
 
     // Perfect hit stabilizes existing sway!
@@ -129,7 +130,7 @@ export function applyBlockImpact(
       state.tiltAngle *= 0.5;
       state.angularVelocity *= 0.3;
     }
-  } else {
+  } else if (archetype !== 'titan') {
     // Off-center hit imparts angular torque based on arrival angle, timing, and block mass
     const direction = Math.sin(arrivalAngle) >= 0 ? 1 : -1;
     const timingTorque = (timingOffset / 10) * (gyroTier >= 2 ? 0.6 : 1.0);

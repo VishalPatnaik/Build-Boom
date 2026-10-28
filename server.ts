@@ -1,9 +1,9 @@
+import http from "http";
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import Stripe from "stripe";
 import "dotenv/config";
-import { serverTournamentManager } from "./serverTournaments";
+import { serverTournamentManager } from "./serverTournaments.ts";
 
 // Setup Stripe with optional env var (lazy initialization or handle missing gently for dev)
 let stripeClient: Stripe | null = null;
@@ -15,13 +15,15 @@ function getStripe(): Stripe {
       // Create a mock Stripe client for dev if no key is provided
       return {} as Stripe; 
     }
-    stripeClient = new Stripe(key, { apiVersion: "2025-02-24.acacia" as any });
+    stripeClient = new Stripe(key);
   }
   return stripeClient;
 }
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', true);
+  const httpServer = http.createServer(app);
   const PORT = 3000;
 
   app.use(express.json());
@@ -138,48 +140,100 @@ async function startServer() {
 
   app.post("/api/checkout", async (req, res) => {
     try {
-      const { packId, coins } = req.body;
+      const { productId, packId, coins, paymentMethod } = req.body;
       const stripe = getStripe();
       
+      // Determine product name and amount in cents
+      let name = "TOWER//SHIFT In-App Purchase";
+      let description = "Architectural credits and tactical powerups.";
+      let unitAmount = 99; // in cents ($0.99)
+      const targetId = productId || packId || 'coins_100';
+
+      if (targetId === 'coins_100') {
+        name = "100 Architectural Credits";
+        unitAmount = 99;
+      } else if (targetId === 'coins_500') {
+        name = "500 Architectural Credits (Value Pack)";
+        unitAmount = 399;
+      } else if (targetId === 'coins_1200') {
+        name = "1,200 Architectural Credits (Mega Pack)";
+        unitAmount = 799;
+      } else if (targetId === 'coins_2500') {
+        name = "2,500 Architectural Credits (Ultra Pack)";
+        unitAmount = 1499;
+      } else if (targetId === 'coins_5000') {
+        name = "5,000 Architectural Credits (Legend Pack)";
+        unitAmount = 2499;
+      } else if (targetId === 'remove_ads') {
+        name = "Ad Blocker VIP Pass (Permanent)";
+        description = "Permanent ad removal & VIP instant claim rewards.";
+        unitAmount = 499;
+      } else if (targetId === 'powerup_tactical_pack') {
+        name = "Tactical Arsenal Pack (5 Stasis • 5 EMP • 5 Shields)";
+        unitAmount = 299;
+      } else if (targetId.startsWith('powerup_')) {
+        name = "Tactical Powerup Munitions Pack";
+        unitAmount = 199;
+      } else if (targetId === 'bundle_starter_architect') {
+        name = "Starter Architect Pack (350 Coins + 15 Powerups + Lunar Skin)";
+        unitAmount = 499;
+      } else if (targetId === 'bundle_tactical_architect') {
+        name = "Tactical Architect Pack (1,000 Coins + 36 Powerups + Nebula Skin)";
+        unitAmount = 999;
+      } else if (targetId === 'bundle_legend_architect') {
+        name = "Legend Architect Pack (3,500 Coins + 75 Powerups + 2 Master Skins)";
+        unitAmount = 1999;
+      } else if (targetId.startsWith('bundle_')) {
+        name = "Architect Tactical Bundle";
+        unitAmount = 499;
+      }
+
       // If we don't have a real stripe key, return a mock session URL for testing
       if (!process.env.STRIPE_SECRET_KEY) {
         return res.json({ 
-          url: `/?success=true&coins=${coins}&mock_checkout=1` 
+          url: `/?success=true&productId=${encodeURIComponent(targetId)}&coins=${coins || 0}&method=${encodeURIComponent(paymentMethod || 'universal')}&mock_checkout=1` 
         });
       }
 
-      // Real Stripe integration
+      // Real Stripe integration with multi-payment methods: Card, Google Pay, Apple Pay, PayPal, Link
+      const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+      const host = (req.headers['x-forwarded-host'] as string) || req.get("host");
+      const baseUrl = `${proto}://${host}`;
+
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
         line_items: [
           {
             price_data: {
               currency: "usd",
               product_data: {
-                name: `${coins} Coins Pack`,
-                description: `Unlock cosmetics and revives.`,
+                name,
+                description,
               },
-              unit_amount: packId === 'pack1' ? 99 : packId === 'pack2' ? 299 : 499,
+              unit_amount: unitAmount,
             },
             quantity: 1,
           },
         ],
         mode: "payment",
-        success_url: `${req.protocol}://${req.get("host")}/?success=true&coins=${coins}`,
-        cancel_url: `${req.protocol}://${req.get("host")}/?canceled=true`,
+        success_url: `${baseUrl}/?success=true&productId=${encodeURIComponent(targetId)}&coins=${coins || 0}`,
+        cancel_url: `${baseUrl}/?canceled=true`,
       });
 
       res.json({ url: session.url });
     } catch (error: any) {
-      console.error(error);
+      console.error("Stripe checkout error:", error);
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Vite middleware for development
+  // Vite middleware for development (HMR disabled for iframe / cloud container stability)
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -192,7 +246,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
   });
 }

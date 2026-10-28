@@ -190,6 +190,13 @@ class HapticsEngine {
   }
 
   /**
+   * Rewarded action / unlock celebration haptic.
+   */
+  public success() {
+    this.vibrate([25, 30, 60]);
+  }
+
+  /**
    * Achievement milestone reached tactile celebratory rhythm.
    */
   public achievementUnlocked() {

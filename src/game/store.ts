@@ -6,6 +6,9 @@ import { ACHIEVEMENTS, Achievement, AchievementProgress, AchievementStats, getAc
 import { audio, SoundPackTheme } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
 import { ReplayData, loadLastReplay, generateDemoReplay } from './replayEngine';
+import { environmentRenderer } from './EnvironmentRenderer';
+import { applyThemeCSSVariables, getThemePalette } from '../utils/themeAccents';
+import { ALL_COSMETICS } from './collections';
 
 type GameMode = 'menu' | 'campaign' | 'endless' | 'daily' | 'shop' | 'tournament' | 'academy' | 'workshop';
 type GameState = 'idle' | 'playing' | 'won' | 'lost';
@@ -81,6 +84,10 @@ interface GameStore {
   showRemoveAds: boolean;
   hapticsEnabled: boolean;
   toggleHaptics: () => void;
+  showFpsMonitor: boolean;
+  toggleFpsMonitor: () => void;
+  screenShakeEnabled: boolean;
+  toggleScreenShake: () => void;
 
   // Settings Overlay & Audio/Visual Preferences
   settingsModalOpen: boolean;
@@ -132,6 +139,7 @@ interface GameStore {
   setPendingCoins: (amount: number) => void;
   buyCosmetic: (id: string, price: number) => boolean;
   equipCosmetic: (id: string, type: 'skin' | 'background' | 'boom' | 'plate') => void;
+  equipThemeSet: (themeIdx: number) => void;
   unlockCosmetic: (id: string) => void;
   
   // Monetization Actions
@@ -177,11 +185,52 @@ interface GameStore {
   startCampaignTutorial: () => void;
   completeCampaignTutorial: () => void;
   resetCampaignTutorial: () => void;
+
+  // Unified Engine & Asset Transition State
+  isAssetTransitioning: boolean;
+  transitionMessage: string | null;
+  triggerAssetTransition: (message?: string, durationMs?: number) => void;
+  setAssetTransitioning: (active: boolean, message?: string | null) => void;
+
+  /**
+   * Atomic batch update for world theme state:
+   * Prevents multiple staggered re-renders during high-intensity gameplay by
+   * combining equipped background, visual theme, accessibility flags, and DOM
+   * updates into a single store transaction.
+   */
+  batchUpdateWorldTheme: (
+    targetWorld: string | number,
+    options?: {
+      visualTheme?: VisualThemeMode;
+      equipMatchingSet?: boolean;
+      transitionMessage?: string | null;
+      skipTransition?: boolean;
+    }
+  ) => void;
 }
+
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return null;
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+      localStorage.setItem(key, value);
+    } catch {
+      // Ignore quota or sandboxed iframe security errors
+    }
+  }
+};
 
 const loadProgress = () => {
   try {
-    const data = localStorage.getItem('buildOrBoomProgressV5');
+    const data = safeStorage.getItem('buildOrBoomProgressV5');
     if (data) {
       const parsed = JSON.parse(data);
       if (!parsed.playerId) {
@@ -209,6 +258,12 @@ const loadProgress = () => {
       }
       if (parsed.hapticsEnabled === undefined) {
         parsed.hapticsEnabled = true;
+      }
+      if (parsed.showFpsMonitor === undefined) {
+        parsed.showFpsMonitor = true;
+      }
+      if (parsed.screenShakeEnabled === undefined) {
+        parsed.screenShakeEnabled = true;
       }
       if (parsed.musicEnabled === undefined) {
         parsed.musicEnabled = true;
@@ -266,6 +321,8 @@ const loadProgress = () => {
     unlockedPerks: {}, // NO FREE PERKS
     powerups: { stasis: 0, emp: 0, shield: 0 }, // NO FREE POWERUPS
     hapticsEnabled: true,
+    showFpsMonitor: true,
+    screenShakeEnabled: true,
     musicEnabled: true,
     sfxEnabled: true,
     musicVolume: 0.6,
@@ -307,6 +364,8 @@ const saveProgress = (data: Partial<GameStore>) => {
       unlockedPerks: data.unlockedPerks ?? current.unlockedPerks,
       powerups: data.powerups ?? current.powerups,
       hapticsEnabled: data.hapticsEnabled !== undefined ? data.hapticsEnabled : current.hapticsEnabled,
+      showFpsMonitor: data.showFpsMonitor !== undefined ? data.showFpsMonitor : current.showFpsMonitor,
+      screenShakeEnabled: data.screenShakeEnabled !== undefined ? data.screenShakeEnabled : current.screenShakeEnabled,
       musicEnabled: data.musicEnabled !== undefined ? data.musicEnabled : current.musicEnabled,
       sfxEnabled: data.sfxEnabled !== undefined ? data.sfxEnabled : current.sfxEnabled,
       musicVolume: data.musicVolume !== undefined ? data.musicVolume : current.musicVolume,
@@ -316,7 +375,7 @@ const saveProgress = (data: Partial<GameStore>) => {
       achievementStats: data.achievementStats ?? current.achievementStats,
       unlockedAchievements: data.unlockedAchievements ?? current.unlockedAchievements,
     };
-    localStorage.setItem('buildOrBoomProgressV5', JSON.stringify(toSave));
+    safeStorage.setItem('buildOrBoomProgressV5', JSON.stringify(toSave));
   } catch (e) {
     console.error('Failed to save progress', e);
   }
@@ -379,6 +438,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     saveProgress({ hapticsEnabled: next });
     set({ hapticsEnabled: next });
   },
+  showFpsMonitor: initialProgress.showFpsMonitor !== undefined ? initialProgress.showFpsMonitor : false,
+  toggleFpsMonitor: () => {
+    const next = !get().showFpsMonitor;
+    saveProgress({ showFpsMonitor: next });
+    set({ showFpsMonitor: next });
+  },
+  screenShakeEnabled: initialProgress.screenShakeEnabled !== undefined ? initialProgress.screenShakeEnabled : true,
+  toggleScreenShake: () => {
+    const next = !get().screenShakeEnabled;
+    saveProgress({ screenShakeEnabled: next });
+    set({ screenShakeEnabled: next });
+  },
 
   // Settings & Theme
   settingsModalOpen: false,
@@ -428,9 +499,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setVisualTheme: (theme) => {
     saveProgress({ visualTheme: theme });
+    // Synchronize matching skin, boom, and plate when selecting special visual themes
+    let extraSync: Record<string, string> = {};
+    let targetWorldId = 'bg-0';
+    let targetWorldIndex = 0;
+
+    if (theme === 'cyberpunk') {
+      extraSync = {
+        equippedBackground: 'bg-14',
+        equippedCosmetic: 'skin-14',
+        equippedBoomEffect: 'boom-14',
+        equippedPlate: 'plate-14',
+      };
+      targetWorldId = 'bg-14';
+      targetWorldIndex = 14;
+    } else if (theme === 'solar-gold') {
+      extraSync = {
+        equippedBackground: 'bg-13',
+        equippedCosmetic: 'skin-13',
+        equippedBoomEffect: 'boom-13',
+        equippedPlate: 'plate-13',
+      };
+      targetWorldId = 'bg-13';
+      targetWorldIndex = 13;
+    } else if (theme === 'deep-cosmos') {
+      extraSync = {
+        equippedBackground: 'bg-3',
+        equippedCosmetic: 'skin-3',
+        equippedBoomEffect: 'boom-3',
+        equippedPlate: 'plate-3',
+      };
+      targetWorldId = 'bg-3';
+      targetWorldIndex = 3;
+    } else {
+      const currentBg = get().equippedBackground || 'bg-0';
+      targetWorldId = currentBg;
+      targetWorldIndex = Math.abs(parseInt(currentBg.replace('bg-', '').replace('campaign-', '')) || 0) % 20;
+    }
+
+    if (Object.keys(extraSync).length > 0) {
+      saveProgress(extraSync);
+    }
+
+    // Immediately update theme CSS variables and environment renderer
+    const palette = getThemePalette(targetWorldIndex);
+    applyThemeCSSVariables(palette, targetWorldIndex);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'high-contrast') {
+        document.documentElement.classList.add('high-contrast-mode');
+      } else {
+        document.documentElement.classList.remove('high-contrast-mode');
+      }
+    }
+    environmentRenderer.setTargetWorld(targetWorldId, performance.now());
+
     set({
       visualTheme: theme,
       highContrastMode: theme === 'high-contrast',
+      ...extraSync,
     });
   },
 
@@ -460,6 +587,91 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setLastReplay: (replay: ReplayData | null) => set({ lastReplay: replay }),
   replayModalOpen: false,
   setReplayModalOpen: (open: boolean) => set({ replayModalOpen: open }),
+
+  // Unified Engine & Asset Transition State
+  isAssetTransitioning: false,
+  transitionMessage: null,
+  triggerAssetTransition: (message = 'Updating Environment Shaders...', durationMs = 500) => {
+    set({ isAssetTransitioning: true, transitionMessage: message });
+    setTimeout(() => {
+      set({ isAssetTransitioning: false, transitionMessage: null });
+    }, durationMs);
+  },
+  setAssetTransitioning: (active: boolean, message: string | null = null) => {
+    set({ isAssetTransitioning: active, transitionMessage: message });
+  },
+
+  batchUpdateWorldTheme: (targetWorld, options) => {
+    const {
+      visualTheme: explicitTheme,
+      equipMatchingSet = false,
+      transitionMessage = 'Synthesizing World Shaders & Textures...',
+      skipTransition = false,
+    } = options || {};
+
+    const clean = typeof targetWorld === 'number'
+      ? `bg-${Math.abs(Math.round(targetWorld)) % 20}`
+      : (targetWorld || 'bg-0').toLowerCase();
+
+    const worldIndex = Math.abs(parseInt(clean.replace('bg-', '').replace('campaign-', '')) || 0) % 20;
+
+    let targetVisualTheme: VisualThemeMode = explicitTheme || 'default';
+    if (!explicitTheme) {
+      if (worldIndex === 14) targetVisualTheme = 'cyberpunk';
+      else if (worldIndex === 13) targetVisualTheme = 'solar-gold';
+      else if (worldIndex === 3) targetVisualTheme = 'deep-cosmos';
+    }
+
+    const matchingSkinId = `skin-${worldIndex}`;
+    const matchingPlateId = `plate-${worldIndex}`;
+    const matchingBoomId = `boom-${worldIndex}`;
+
+    const progressUpdates: Record<string, any> = {
+      equippedBackground: clean,
+      visualTheme: targetVisualTheme,
+    };
+
+    if (equipMatchingSet) {
+      progressUpdates.equippedCosmetic = matchingSkinId;
+      progressUpdates.equippedPlate = matchingPlateId;
+      progressUpdates.equippedBoomEffect = matchingBoomId;
+    }
+
+    saveProgress(progressUpdates);
+
+    // Apply CSS variables & DOM attributes in one pass
+    const palette = getThemePalette(worldIndex);
+    applyThemeCSSVariables(palette, worldIndex);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', targetVisualTheme);
+      document.documentElement.classList.remove('high-contrast-mode');
+    }
+    environmentRenderer.setTargetWorld(clean, performance.now());
+
+    // Perform atomic single-tick update on the store state:
+    // updates equipped background, visualTheme, accessibility, and transition state together
+    set((prev) => ({
+      ...prev,
+      equippedBackground: clean,
+      visualTheme: targetVisualTheme,
+      highContrastMode: targetVisualTheme === 'high-contrast',
+      ...(equipMatchingSet ? {
+        equippedCosmetic: matchingSkinId,
+        equippedPlate: matchingPlateId,
+        equippedBoomEffect: matchingBoomId,
+      } : {}),
+      ...(skipTransition ? {} : {
+        isAssetTransitioning: true,
+        transitionMessage: transitionMessage || 'Updating World Shaders...',
+      }),
+    }));
+
+    if (!skipTransition) {
+      setTimeout(() => {
+        set({ isAssetTransitioning: false, transitionMessage: null });
+      }, 450);
+    }
+  },
   
   // Powerups: NO FREE POWERUPS - must be purchased with coins or ads
   powerups: initialProgress.powerups || { stasis: 0, emp: 0, shield: 0 },
@@ -479,6 +691,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     saveProgress({ coins: newCoins, powerups: current });
     set({ coins: newCoins, powerups: current });
+    get().triggerAssetTransition(`Acquiring Tactical ${config.name}...`, 450);
     return true;
   },
 
@@ -760,12 +973,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   buyCosmetic: (id, price) => {
     const store = get();
-    const safePrice = Number.isFinite(price) ? Math.max(0, Math.round(price)) : 0;
-    if (store.coins >= safePrice && !store.ownedCosmetics.includes(id)) {
-      const newCoins = Math.max(0, store.coins - safePrice);
+    const item = ALL_COSMETICS.find(c => c.id === id);
+    // Campaign Level is the mandatory gate! Item must exist and level requirement must be met.
+    if (!item || store.unlockedLevels < item.req) {
+      return false;
+    }
+    // Catalog price enforcement: cannot spoof price below catalog definition
+    const effectivePrice = Math.max(item.price, Number.isFinite(price) ? Math.max(0, Math.round(price)) : item.price);
+    if (store.coins >= effectivePrice && !store.ownedCosmetics.includes(id)) {
+      const newCoins = Math.max(0, store.coins - effectivePrice);
       const newOwned = [...store.ownedCosmetics, id];
       saveProgress({ coins: newCoins, ownedCosmetics: newOwned });
       set({ coins: newCoins, ownedCosmetics: newOwned });
+      store.triggerAssetTransition('Transaction Authorized • Unlocking Cosmetic', 450);
       return true;
     }
     return false;
@@ -776,8 +996,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       saveProgress({ equippedCosmetic: id });
       return { equippedCosmetic: id };
     } else if (type === 'background') {
-      saveProgress({ equippedBackground: id });
-      return { equippedBackground: id };
+      get().batchUpdateWorldTheme(id);
+      return {};
     } else if (type === 'boom') {
       saveProgress({ equippedBoomEffect: id });
       return { equippedBoomEffect: id };
@@ -787,8 +1007,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     return {};
   }),
+
+  equipThemeSet: (themeIdx: number) => {
+    get().batchUpdateWorldTheme(themeIdx, { equipMatchingSet: true });
+  },
   
   unlockCosmetic: (id) => set((store) => {
+    const item = ALL_COSMETICS.find(c => c.id === id);
+    // Campaign level is the mandatory gate! Item must exist and meet level req.
+    if (!item || store.unlockedLevels < item.req) {
+      return {};
+    }
     if (!store.ownedCosmetics.includes(id)) {
       const newOwned = [...store.ownedCosmetics, id];
       saveProgress({ ownedCosmetics: newOwned });
@@ -813,14 +1042,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     const now = Date.now();
     const timePassed = now - s.lastAdTime;
-    const cooldownMs = 3 * 60 * 1000; // Minimum 3 minutes between interstitials
+    const cooldownMs = 45 * 1000; // 45 seconds cooldown between interstitials
     
     const newLevelsPlayed = s.levelsPlayedSinceAd + 1;
     
-    // Only trigger if cooldown has elapsed AND sufficient gameplay sessions have completed
+    // Trigger if cooldown has elapsed and sufficient sessions played
     const shouldTrigger = completedLevel
-      ? (newLevelsPlayed >= 3 && timePassed >= cooldownMs)
-      : (newLevelsPlayed >= 6 && timePassed >= cooldownMs * 1.5); // Repeated failures cannot spam interstitials
+      ? (newLevelsPlayed >= 2 && timePassed >= cooldownMs)
+      : (newLevelsPlayed >= 3 && timePassed >= cooldownMs);
 
     if (shouldTrigger) {
       set({ adState: 'interstitial', levelsPlayedSinceAd: 0, lastAdTime: now });
@@ -830,7 +1059,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   
   closeAd: () => set({ adState: 'none' }),
-  showReviveAd: () => set({ adState: 'rewarded-revive' }),
+  showReviveAd: () => {
+    const s = get();
+    if (s.adsRemoved) {
+      s.triggerAssetTransition('VIP Ad-Free Revive Activated!', 450);
+      s.acceptRevive();
+      return;
+    }
+    set({ adState: 'rewarded-revive' });
+  },
   acceptRevive: () => {
      set({ adState: 'none', state: 'playing', isReviving: true }); 
   },
@@ -839,19 +1076,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   clearReviveFlag: () => set({ isReviving: false }),
   
-  showDoubleCoinsAd: () => set({ adState: 'rewarded-double-coins' }),
+  showDoubleCoinsAd: () => {
+    const s = get();
+    if (s.adsRemoved) {
+      s.triggerAssetTransition('VIP Ad-Free 2X Coins Granted!', 450);
+      s.acceptDoubleCoins();
+      return;
+    }
+    set({ adState: 'rewarded-double-coins' });
+  },
   acceptDoubleCoins: () => {
      const s = get();
-     s.addCoins(s.pendingCoins * 2);
+     const base = s.pendingCoins > 0 ? s.pendingCoins : Math.max(50, 50 + (s.level || 1) * 10);
+     s.addCoins(base * 2);
      set({ adState: 'none', pendingCoins: 0 });
   },
   declineDoubleCoins: () => {
      const s = get();
-     s.addCoins(s.pendingCoins);
+     if (s.pendingCoins > 0) {
+       s.addCoins(s.pendingCoins);
+     }
      set({ adState: 'none', pendingCoins: 0 });
   },
   
-  showShopAd: (id) => set({ adState: 'rewarded-shop-item', pendingShopItemId: id }),
+  showShopAd: (id) => {
+    const s = get();
+    const item = ALL_COSMETICS.find(c => c.id === id);
+    if (!item) return;
+
+    if (s.adsRemoved) {
+      s.unlockCosmetic(id);
+      s.triggerAssetTransition('VIP Ad-Free Unlock Granted!', 450);
+      return;
+    }
+    set({ adState: 'rewarded-shop-item', pendingShopItemId: id });
+  },
   acceptShopAd: () => {
     const s = get();
     if (s.pendingShopItemId) {
@@ -863,7 +1122,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ adState: 'none', pendingShopItemId: null });
   },
 
-  showPowerupAd: (type) => set({ adState: 'rewarded-powerup', pendingPowerupType: type }),
+  showPowerupAd: (type) => {
+    const s = get();
+    if (s.adsRemoved) {
+      s.rewardPowerupWithAd(type);
+      s.triggerAssetTransition('VIP Ad-Free Munitions Granted!', 450);
+      return;
+    }
+    set({ adState: 'rewarded-powerup', pendingPowerupType: type });
+  },
   acceptPowerupAd: () => {
     const s = get();
     if (s.pendingPowerupType) {
@@ -875,7 +1142,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ adState: 'none', pendingPowerupType: null });
   },
 
-  showPerkAd: (perkId) => set({ adState: 'rewarded-perk', pendingPerkId: perkId }),
+  showPerkAd: (perkId) => {
+    const s = get();
+    if (s.adsRemoved) {
+      s.unlockPerkWithAd(perkId);
+      s.triggerAssetTransition('VIP Ad-Free Tech Tier Granted!', 450);
+      return;
+    }
+    set({ adState: 'rewarded-perk', pendingPerkId: perkId });
+  },
   acceptPerkAd: () => {
     const s = get();
     if (s.pendingPerkId) {

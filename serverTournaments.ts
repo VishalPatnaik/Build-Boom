@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Tournament, TournamentEntry, GlobalLeaderboardEntry } from './src/game/tournamentTypes';
+import type { Tournament, TournamentEntry, GlobalLeaderboardEntry } from './src/game/tournamentTypes';
 
 const STORE_PATH = path.join(process.cwd(), 'tournaments_store.json');
 

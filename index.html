@@ -2,20 +2,85 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Build or Boom Game</title>
+    <script>
+      // Suppress Vite HMR WebSocket errors in iframe / cloud container preview
+      (function() {
+        if (typeof window !== 'undefined') {
+          var isWsError = function(msg) {
+            if (!msg) return false;
+            var str = typeof msg === 'string' ? msg : (msg.message || (msg.error && msg.error.message) || String(msg));
+            return str.indexOf('WebSocket') !== -1 || str.indexOf('ws://') !== -1 || str.indexOf('wss://') !== -1 || str.indexOf('[vite]') !== -1;
+          };
+
+          var origConsoleError = console.error;
+          console.error = function() {
+            for (var i = 0; i < arguments.length; i++) {
+              if (isWsError(arguments[i])) return;
+            }
+            origConsoleError.apply(console, arguments);
+          };
+
+          window.addEventListener('error', function(event) {
+            if (isWsError(event && (event.message || event.error))) {
+              if (event.preventDefault) event.preventDefault();
+              if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+              return true;
+            }
+          }, true);
+
+          window.addEventListener('unhandledrejection', function(event) {
+            if (isWsError(event && (event.reason || (event.reason && event.reason.message)))) {
+              if (event.preventDefault) event.preventDefault();
+              if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            }
+          });
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>TOWER//SHIFT</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Lilita+One&display=swap" rel="stylesheet">
-    <meta name="description" content="A fast, colorful memory and timing game where you build structures while avoiding bombs." />
-    <meta property="og:title" content="Build or Boom Game" />
-    <meta property="og:description" content="A fast, colorful memory and timing game where you build structures while avoiding bombs." />
+    <meta name="description" content="TOWER//SHIFT — Precision physics tower stacking and deflection. BUILD. BALANCE. DEFLECT. ASCEND." />
+    <meta property="og:title" content="TOWER//SHIFT" />
+    <meta property="og:description" content="TOWER//SHIFT — Precision physics tower stacking and deflection. BUILD. BALANCE. DEFLECT. ASCEND." />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/pwa-512x512.png" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TOWER//SHIFT" />
+    <meta name="twitter:description" content="TOWER//SHIFT — Precision physics tower stacking and deflection. BUILD. BALANCE. DEFLECT. ASCEND." />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
 
-    <!-- Google AdSense (Replace YOUR_ADSENSE_ID with your actual publisher ID) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_ADSENSE_ID" crossorigin="anonymous"></script>
-    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "TOWER//SHIFT",
+        "description": "Precision physics tower stacking and deflection arcade game. Build towers, balance kinetic blocks, deflect hazards, and ascend through cosmic biomes.",
+        "genre": ["Arcade", "Physics Puzzle", "Action"],
+        "playMode": "SinglePlayer",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any"
+      }
+    </script>
+
+    <!-- Mobile App & PWA Native Capabilities -->
+    <meta name="theme-color" content="#030712" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TOWER//SHIFT" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png" />
+
   </head>
   <body>
     <div id="root"></div>

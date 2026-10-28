@@ -292,3 +292,410 @@ export function drawGameplayReadabilityBackdrop(
   }
   ctx.restore();
 }
+
+/**
+ * Natural organic tree with woody bark striations, gnarled tapering branches,
+ * and multi-layered foliage volume clusters with sunlight rims and deep shadows.
+ * (NO primitive circles or rectangles!)
+ */
+export function drawOrganicTree(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  height: number,
+  options: {
+    barkColor?: string;
+    barkShadow?: string;
+    leafBase?: string;
+    leafMid?: string;
+    leafHigh?: string;
+    sway?: number;
+    autumnLeaves?: boolean;
+    seed?: number;
+  } = {}
+) {
+  const {
+    barkColor = '#3e2723',
+    barkShadow = '#1b100c',
+    leafBase = '#1b5e20',
+    leafMid = '#2e7d32',
+    leafHigh = '#4caf50',
+    sway = 0,
+    seed = 1,
+  } = options;
+
+  ctx.save();
+  const trunkW = height * 0.16;
+
+  // 1. Root flare & ground shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(x + trunkW * 0.4, y + 2, trunkW * 1.8, trunkW * 0.6, 0.15, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Gnarled organic trunk with branch splits
+  ctx.fillStyle = barkColor;
+  ctx.beginPath();
+  ctx.moveTo(x - trunkW * 0.8, y);
+  ctx.quadraticCurveTo(x - trunkW * 0.3, y - height * 0.35, x - trunkW * 0.2 + sway, y - height * 0.65);
+  // Left branch fork
+  ctx.quadraticCurveTo(x - trunkW * 0.9 + sway, y - height * 0.8, x - trunkW * 0.7 + sway * 1.2, y - height * 0.95);
+  ctx.lineTo(x - trunkW * 0.4 + sway * 1.2, y - height * 0.9);
+  ctx.quadraticCurveTo(x - trunkW * 0.1 + sway, y - height * 0.72, x + sway, y - height * 0.7);
+  // Right branch fork
+  ctx.quadraticCurveTo(x + trunkW * 0.5 + sway, y - height * 0.85, x + trunkW * 0.8 + sway * 1.2, y - height * 1.05);
+  ctx.lineTo(x + trunkW * 0.55 + sway * 1.2, y - height * 1.0);
+  ctx.quadraticCurveTo(x + trunkW * 0.25 + sway, y - height * 0.75, x + trunkW * 0.2 + sway, y - height * 0.6);
+  ctx.quadraticCurveTo(x + trunkW * 0.35, y - height * 0.3, x + trunkW * 0.9, y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bark shadow & striations
+  ctx.fillStyle = barkShadow;
+  ctx.beginPath();
+  ctx.moveTo(x + trunkW * 0.15, y);
+  ctx.quadraticCurveTo(x + trunkW * 0.15, y - height * 0.35, x + trunkW * 0.1 + sway, y - height * 0.6);
+  ctx.lineTo(x + trunkW * 0.3 + sway, y - height * 0.6);
+  ctx.quadraticCurveTo(x + trunkW * 0.35, y - height * 0.3, x + trunkW * 0.9, y);
+  ctx.closePath();
+  ctx.fill();
+
+  // 3. Volumetric Foliage Canopy Clumps (Organic overlapping leaf masses)
+  const clumps = [
+    { ox: -trunkW * 0.8 + sway * 1.1, oy: -height * 0.92, rx: height * 0.38, ry: height * 0.28 },
+    { ox: trunkW * 0.85 + sway * 1.2, oy: -height * 0.98, rx: height * 0.42, ry: height * 0.3 },
+    { ox: sway * 1.1, oy: -height * 1.12, rx: height * 0.45, ry: height * 0.32 },
+    { ox: -trunkW * 0.3 + sway * 1.15, oy: -height * 1.22, rx: height * 0.36, ry: height * 0.26 },
+    { ox: trunkW * 0.4 + sway * 1.15, oy: -height * 1.18, rx: height * 0.34, ry: height * 0.25 },
+  ];
+
+  // Base shadow pass for foliage
+  clumps.forEach((c) => {
+    ctx.fillStyle = leafBase;
+    ctx.beginPath();
+    ctx.ellipse(x + c.ox, y + c.oy + c.ry * 0.15, c.rx, c.ry, 0.1, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Midtone leaf texture pass
+  clumps.forEach((c, idx) => {
+    ctx.fillStyle = leafMid;
+    ctx.beginPath();
+    ctx.ellipse(x + c.ox - c.rx * 0.1, y + c.oy, c.rx * 0.85, c.ry * 0.85, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Natural leaf edge micro-lobes
+    ctx.beginPath();
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+      const lx = x + c.ox + Math.cos(angle) * c.rx * 0.75;
+      const ly = y + c.oy + Math.sin(angle) * c.ry * 0.75;
+      ctx.arc(lx, ly, c.rx * 0.25, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  });
+
+  // Highlight sunlit crown pass
+  clumps.forEach((c) => {
+    ctx.fillStyle = leafHigh;
+    ctx.beginPath();
+    ctx.ellipse(x + c.ox - c.rx * 0.25, y + c.oy - c.ry * 0.3, c.rx * 0.55, c.ry * 0.45, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+/**
+ * Natural organic pine/fir tree with tapering trunk, tiered drooping boughs,
+ * realistic needle masses, and optional snowpack layer.
+ */
+export function drawOrganicPine(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  height: number,
+  options: {
+    barkColor?: string;
+    needleBase?: string;
+    needleHigh?: string;
+    snow?: boolean;
+    sway?: number;
+  } = {}
+) {
+  const {
+    barkColor = '#27170e',
+    needleBase = '#064e3b',
+    needleHigh = '#059669',
+    snow = false,
+    sway = 0,
+  } = options;
+
+  ctx.save();
+  const trunkW = height * 0.1;
+
+  // Trunk
+  ctx.fillStyle = barkColor;
+  ctx.beginPath();
+  ctx.moveTo(x - trunkW * 0.6, y);
+  ctx.lineTo(x + trunkW * 0.6, y);
+  ctx.lineTo(x + trunkW * 0.15 + sway * 0.5, y - height * 0.5);
+  ctx.lineTo(x - trunkW * 0.15 + sway * 0.5, y - height * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Tiered pine foliage boughs (from bottom to top)
+  const tiers = 5;
+  for (let t = 0; t < tiers; t++) {
+    const tierRatio = t / tiers;
+    const tierY = y - height * (0.25 + tierRatio * 0.72);
+    const tierW = height * 0.45 * (1 - tierRatio * 0.65);
+    const tierH = height * 0.26;
+    const tierSway = sway * (0.2 + tierRatio * 0.8);
+
+    // Deep under-shadow
+    ctx.fillStyle = '#022c22';
+    ctx.beginPath();
+    ctx.moveTo(x + tierSway, tierY - tierH);
+    ctx.lineTo(x + tierW + tierSway, tierY);
+    ctx.lineTo(x - tierW + tierSway, tierY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Needle mass
+    ctx.fillStyle = needleBase;
+    ctx.beginPath();
+    ctx.moveTo(x + tierSway, tierY - tierH);
+    ctx.lineTo(x + tierW * 0.95 + tierSway, tierY - 2);
+    // Serrated bottom boughs
+    const steps = 6;
+    for (let s = steps; s >= 0; s--) {
+      const bx = x - tierW + (tierW * 2 * s) / steps + tierSway;
+      const by = tierY + (s % 2 === 0 ? 5 : -2);
+      ctx.lineTo(bx, by);
+    }
+    ctx.lineTo(x - tierW * 0.95 + tierSway, tierY - 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sunlit needle highlights on top edge
+    ctx.fillStyle = needleHigh;
+    ctx.beginPath();
+    ctx.moveTo(x + tierSway, tierY - tierH);
+    ctx.lineTo(x + tierW * 0.45 + tierSway, tierY - tierH * 0.3);
+    ctx.lineTo(x - tierW * 0.45 + tierSway, tierY - tierH * 0.3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Snow cover if winter
+    if (snow) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.moveTo(x + tierSway, tierY - tierH);
+      ctx.lineTo(x + tierW * 0.75 + tierSway, tierY - tierH * 0.25);
+      ctx.quadraticCurveTo(x + tierSway, tierY - tierH * 0.05, x - tierW * 0.75 + tierSway, tierY - tierH * 0.25);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Natural organic palm tree with curved, segmented fibrous trunk,
+ * hanging coconut bunch, and sweeping drooping fronds with leaflets.
+ */
+export function drawOrganicPalm(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  height: number,
+  options: {
+    curve?: number;
+    windSway?: number;
+    barkColor?: string;
+    frondBase?: string;
+    frondHigh?: string;
+  } = {}
+) {
+  const {
+    curve = 25,
+    windSway = 0,
+    barkColor = '#78350f',
+    frondBase = '#15803d',
+    frondHigh = '#4ade80',
+  } = options;
+
+  ctx.save();
+  const crownX = x + curve + windSway;
+  const crownY = y - height;
+
+  // Segmented textured curved trunk
+  ctx.strokeStyle = barkColor;
+  ctx.lineWidth = height * 0.09;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.quadraticCurveTo(x + curve * 0.4, y - height * 0.5, crownX, crownY);
+  ctx.stroke();
+
+  // Bark segment rings
+  ctx.strokeStyle = '#451a03';
+  ctx.lineWidth = 2.5;
+  for (let r = 0.1; r <= 0.9; r += 0.08) {
+    const rx = x + curve * 0.4 * r * 2 * (1 - r) + (curve + windSway) * r * r;
+    const ry = y - height * r;
+    ctx.beginPath();
+    ctx.moveTo(rx - 4, ry);
+    ctx.lineTo(rx + 4, ry - 1);
+    ctx.stroke();
+  }
+
+  // Coconuts at crown
+  ctx.fillStyle = '#3e2723';
+  ctx.beginPath();
+  ctx.arc(crownX - 4, crownY + 3, 5, 0, Math.PI * 2);
+  ctx.arc(crownX + 3, crownY + 4, 4.5, 0, Math.PI * 2);
+  ctx.arc(crownX - 1, crownY + 6, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Sweeping detailed fronds
+  const frondAngles = [
+    -0.85, -0.5, -0.15, 0.25, 0.65, 1.05, 1.45, 1.85, 2.25, 2.65, 3.05, 3.45,
+  ];
+
+  frondAngles.forEach((baseAngle) => {
+    const angle = baseAngle + Math.sin(windSway * 0.05 + baseAngle) * 0.12;
+    const frondLen = height * (0.42 + Math.cos(baseAngle) * 0.08);
+
+    const endX = crownX + Math.cos(angle) * frondLen;
+    const endY = crownY + Math.sin(angle) * frondLen + frondLen * 0.38; // natural droop
+    const ctrlX = crownX + Math.cos(angle) * frondLen * 0.6;
+    const ctrlY = crownY + Math.sin(angle) * frondLen * 0.4 - 8;
+
+    // Main frond stem
+    ctx.strokeStyle = frondBase;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(crownX, crownY);
+    ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+    ctx.stroke();
+
+    // Leaflets along the frond
+    ctx.strokeStyle = frondHigh;
+    ctx.lineWidth = 1.5;
+    for (let t = 0.2; t <= 0.95; t += 0.1) {
+      const lx = (1 - t) * (1 - t) * crownX + 2 * (1 - t) * t * ctrlX + t * t * endX;
+      const ly = (1 - t) * (1 - t) * crownY + 2 * (1 - t) * t * ctrlY + t * t * endY;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(lx - 4, ly + 8);
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(lx + 4, ly + 8);
+      ctx.stroke();
+    }
+  });
+
+  ctx.restore();
+}
+
+/**
+ * Multi-faceted natural boulder/rock with fractured planes,
+ * directional sun highlights, and cast ambient shadow.
+ */
+export function drawNaturalRock(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  options: {
+    baseColor?: string;
+    highColor?: string;
+    shadowColor?: string;
+  } = {}
+) {
+  const {
+    baseColor = '#64748b',
+    highColor = '#cbd5e1',
+    shadowColor = '#1e293b',
+  } = options;
+
+  ctx.save();
+  // Ground drop shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+  ctx.beginPath();
+  ctx.ellipse(x + w * 0.35, y + h * 0.3, w * 0.75, h * 0.35, 0.15, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Dark shadow facet
+  ctx.fillStyle = shadowColor;
+  ctx.beginPath();
+  ctx.moveTo(x - w * 0.5, y);
+  ctx.lineTo(x - w * 0.1, y - h);
+  ctx.lineTo(x + w * 0.2, y - h * 0.85);
+  ctx.lineTo(x + w * 0.6, y - h * 0.2);
+  ctx.lineTo(x + w * 0.45, y + h * 0.2);
+  ctx.lineTo(x - w * 0.35, y + h * 0.15);
+  ctx.closePath();
+  ctx.fill();
+
+  // Main rock body facet
+  ctx.fillStyle = baseColor;
+  ctx.beginPath();
+  ctx.moveTo(x - w * 0.5, y);
+  ctx.lineTo(x - w * 0.1, y - h);
+  ctx.lineTo(x + w * 0.1, y - h * 0.4);
+  ctx.lineTo(x - w * 0.2, y + h * 0.1);
+  ctx.closePath();
+  ctx.fill();
+
+  // Top sunlit facet
+  ctx.fillStyle = highColor;
+  ctx.beginPath();
+  ctx.moveTo(x - w * 0.35, y - h * 0.65);
+  ctx.lineTo(x - w * 0.1, y - h);
+  ctx.lineTo(x + w * 0.2, y - h * 0.85);
+  ctx.lineTo(x + w * 0.05, y - h * 0.55);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * Volumetric God Rays streaming from sky/sun down through atmosphere.
+ */
+export function drawVolumetricGodRays(
+  ctx: CanvasRenderingContext2D,
+  sourceX: number,
+  sourceY: number,
+  targetY: number,
+  w: number,
+  color: string,
+  time: number
+) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const rays = 6;
+  for (let i = 0; i < rays; i++) {
+    const pulse = 0.5 + 0.5 * Math.sin(time * 0.001 + i * 1.3);
+    const startOffset = ((i - rays / 2) * (w / rays)) * 0.65;
+    const endX = sourceX + startOffset * 2.5 + Math.sin(time * 0.0008 + i) * 60;
+    const rayWidth = w * (0.08 + pulse * 0.04);
+
+    const grad = ctx.createLinearGradient(sourceX, sourceY, endX, targetY);
+    grad.addColorStop(0, color);
+    grad.addColorStop(0.3, color.replace(/[\d\.]+\)$/, '0.12)'));
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(sourceX + startOffset * 0.3, sourceY);
+    ctx.lineTo(endX - rayWidth, targetY);
+    ctx.lineTo(endX + rayWidth, targetY);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}

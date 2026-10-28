@@ -28,6 +28,8 @@ import { RewardCalendarView } from './RewardCalendarView';
 import { MysteryChestModal } from './MysteryChestModal';
 import { ChestUnboxingCelebration } from './ChestUnboxingCelebration';
 import { StreakResetTimer } from './StreakResetTimer';
+import { DailyRewardRevealModal, DailyRewardPayload } from './DailyRewardRevealModal';
+import { screenFadeSlideVariants } from '../../utils/screenTransitions';
 
 export function DailyMissions() {
   const { setMode } = useGameStore();
@@ -40,15 +42,12 @@ export function DailyMissions() {
     initDaily, 
     claimReward, 
     claimBonus,
-    claimStreakReward,
-    simulateOpenChest,
-    debugAdvanceStreak,
-    debugResetStreak
+    claimStreakReward
   } = useDailyStore();
 
   const [activeTab, setActiveTab] = useState<'calendar' | 'directives'>('calendar');
   const [claimFeedback, setClaimFeedback] = useState<{ text: string; coins: number } | null>(null);
-  const [showDevControls, setShowDevControls] = useState(false);
+  const [rewardReveal, setRewardReveal] = useState<DailyRewardPayload | null>(null);
 
   // Mystery Chest Modal & Celebration State
   const [inspectChest, setInspectChest] = useState<{
@@ -95,9 +94,14 @@ export function DailyMissions() {
           cosmeticSkin: result.chestAwarded.cosmeticSkin
         });
       } else {
-        audio.playComboSurge(3);
-        haptics.blockPlaced('gold_ingot');
-        showRewardToast(`Day ${streakCount} Check-In Claimed!`, result.totalCoins);
+        setRewardReveal({
+          title: `Day ${streakCount} Check-In`,
+          subtitle: `Unbroken daily architect streak secured with ${currentMultiplier.toFixed(1)}x multiplier boost!`,
+          coins: result.totalCoins,
+          multiplier: currentMultiplier,
+          bonusTag: 'DAILY STREAK BONUS',
+          type: 'checkin'
+        });
       }
     }
   };
@@ -105,18 +109,26 @@ export function DailyMissions() {
   const handleClaimTask = (taskId: string, title: string) => {
     const coins = claimReward(taskId);
     if (coins > 0) {
-      audio.playBuildSound(1.3);
-      haptics.blockPlaced('gold_ingot');
-      showRewardToast(`Directive Met: ${title}`, coins);
+      setRewardReveal({
+        title: title,
+        subtitle: 'Mission objective accomplished! Tactical funds credited to your vault.',
+        coins,
+        bonusTag: 'DIRECTIVE REWARD',
+        type: 'mission'
+      });
     }
   };
 
   const handleClaimBonus = () => {
     const coins = claimBonus();
     if (coins > 0) {
-      audio.playPerfectSound();
-      haptics.blockPlaced('prism');
-      showRewardToast('Orbital Bounty Claimed!', coins);
+      setRewardReveal({
+        title: 'All Directives Cleared!',
+        subtitle: 'Orbital completion cache unlocked with bonus tactical currency.',
+        coins,
+        bonusTag: 'DAILY GRAND BOUNTY',
+        type: 'all_complete'
+      });
     }
   };
 
@@ -126,17 +138,12 @@ export function DailyMissions() {
     setInspectChest({ chest, daysRemaining });
   };
 
-  const handleTestUnboxFromInspector = (chestId: string) => {
-    setInspectChest(null);
-    const unboxed = simulateOpenChest(chestId);
-    setUnboxingPayload(unboxed);
-  };
-
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.02 }}
+      variants={screenFadeSlideVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="flex flex-col w-full h-full max-w-2xl p-4 sm:p-6 py-6 sm:py-8 relative z-10 mx-auto font-mono text-slate-100"
     >
       {/* Floating Claim Feedback Toast */}
@@ -163,7 +170,6 @@ export function DailyMissions() {
         chest={inspectChest?.chest || null}
         daysRemaining={inspectChest?.daysRemaining}
         onClose={() => setInspectChest(null)}
-        onTestUnbox={handleTestUnboxFromInspector}
       />
 
       {/* Chest Unboxing Celebration */}
@@ -182,6 +188,13 @@ export function DailyMissions() {
         />
       )}
 
+      {/* CSS-Based Daily Reward Reveal Modal */}
+      <DailyRewardRevealModal
+        isOpen={rewardReveal !== null}
+        reward={rewardReveal}
+        onClose={() => setRewardReveal(null)}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4 sm:mb-5 gap-3">
         <div className="flex items-center gap-3">
@@ -199,8 +212,8 @@ export function DailyMissions() {
               <span>PROTOCOL OPS</span>
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 uppercase tracking-wider drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-              DAILY DIRECTIVES
+            <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 uppercase tracking-wider drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] font-mono">
+              DAILY SHIFT
             </h2>
           </div>
         </div>
@@ -642,59 +655,6 @@ export function DailyMissions() {
           >
             <span>♾️ Endless Protocol</span>
           </motion.button>
-        </div>
-
-        {/* Streak Simulator & Testing Utility */}
-        <div className="pt-2 text-center">
-          <button
-            onClick={() => setShowDevControls(!showDevControls)}
-            className="text-[10px] font-mono text-slate-600 hover:text-slate-400 cursor-pointer uppercase tracking-wider transition-colors"
-          >
-            {showDevControls ? 'Hide Testing Utilities' : '⚙️ Test Calendar Streaks & Mystery Chests'}
-          </button>
-
-          {showDevControls && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mt-2 p-3 bg-slate-950 border border-slate-800 rounded-xl flex flex-wrap items-center justify-center gap-2 text-xs"
-            >
-              <button
-                onClick={() => {
-                  debugAdvanceStreak();
-                  audio.playBuildSound(1.2);
-                }}
-                className="px-3 py-1.5 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 rounded-lg text-cyan-300 text-[10px] font-bold uppercase cursor-pointer flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Advance Streak (+1 Day)
-              </button>
-              <button
-                onClick={() => {
-                  debugResetStreak();
-                  audio.playBuildSound(0.8);
-                }}
-                className="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-500/50 rounded-lg text-red-300 text-[10px] font-bold uppercase cursor-pointer flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reset Streak (Day 1)
-              </button>
-
-              <button
-                onClick={() => handleTestUnboxFromInspector('chest-day3')}
-                className="px-3 py-1.5 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/50 rounded-lg text-cyan-300 text-[10px] font-bold uppercase cursor-pointer flex items-center gap-1.5"
-              >
-                <span>⚡ Test Day 3 Mystery Chest (+Skin)</span>
-              </button>
-
-              <button
-                onClick={() => handleTestUnboxFromInspector('chest-day7')}
-                className="px-3 py-1.5 bg-amber-950/80 hover:bg-amber-900 border border-amber-400/50 rounded-lg text-amber-300 text-[10px] font-bold uppercase cursor-pointer flex items-center gap-1.5"
-              >
-                <span>👑 Test Day 7 Grand Vault (+Skin)</span>
-              </button>
-            </motion.div>
-          )}
         </div>
 
       </div>

@@ -246,6 +246,7 @@ export class ReplayRecorder {
  */
 export function saveLastReplay(replay: ReplayData): void {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     const serialized = JSON.stringify(replay);
     localStorage.setItem(STORAGE_KEY, serialized);
   } catch (err) {
@@ -258,6 +259,7 @@ export function saveLastReplay(replay: ReplayData): void {
  */
 export function loadLastReplay(): ReplayData | null {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return null;
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);

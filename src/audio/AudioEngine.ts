@@ -1,15 +1,22 @@
 export type SoundPackTheme = 'default' | 'retro' | 'scifi' | 'organic';
 
+import { worldAmbienceManager } from './WorldAmbience';
+import { audioCrossFader } from './AudioCrossFader';
+import { getAmbientAssetForWorldAndTheme, AmbientSoundAsset } from './AmbientSoundAssets';
+
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private initialized = false;
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
+  private ambienceGain: GainNode | null = null;
 
   public sfxEnabled: boolean = true;
   public musicEnabled: boolean = true;
+  public ambienceEnabled: boolean = true;
   public sfxVolume: number = 0.8;
   public musicVolume: number = 0.6;
+  public ambienceVolume: number = 0.55;
   public soundPack: SoundPackTheme = 'retro';
 
   public setSoundPack(pack: SoundPackTheme) {
@@ -34,6 +41,11 @@ class AudioEngine {
       this.musicGain.gain.setValueAtTime(this.musicEnabled ? this.musicVolume : 0, this.ctx.currentTime);
       this.musicGain.connect(this.ctx.destination);
 
+      this.ambienceGain = this.ctx.createGain();
+      const initialAmbGain = (this.musicEnabled && this.ambienceEnabled) ? this.ambienceVolume * this.musicVolume : 0;
+      this.ambienceGain.gain.setValueAtTime(initialAmbGain, this.ctx.currentTime);
+      this.ambienceGain.connect(this.ctx.destination);
+
       this.initialized = true;
 
       if (this.musicEnabled) {
@@ -46,14 +58,127 @@ class AudioEngine {
 
   resume() {
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      try {
+        this.ctx.resume().catch(() => {});
+      } catch (e) {}
     }
+  }
+
+  getAudioContext(): AudioContext | null {
+    if (!this.ctx) this.init();
+    return this.ctx;
   }
 
   getDestination(): AudioNode {
     if (!this.ctx) return null as any;
     if (this.sfxGain) return this.sfxGain;
     return this.ctx.destination;
+  }
+
+  getAmbienceDestination(): AudioNode {
+    if (!this.ctx) this.init();
+    if (!this.ctx) return null as any;
+    if (this.ambienceGain) return this.ambienceGain;
+    return this.ctx.destination;
+  }
+
+  setAmbienceEnabled(enabled: boolean) {
+    this.ambienceEnabled = enabled;
+    audioCrossFader.setMuted(!enabled, this.ctx);
+    if (this.ambienceGain && this.ctx) {
+      const target = enabled && this.musicEnabled ? this.ambienceVolume * this.musicVolume : 0;
+      this.ambienceGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.ambienceGain.gain.linearRampToValueAtTime(target, this.ctx.currentTime + 0.3);
+    }
+  }
+
+  setAmbienceVolume(vol: number) {
+    this.ambienceVolume = Math.max(0, Math.min(1, vol));
+    const effective = this.ambienceVolume * this.musicVolume;
+    if (this.ambienceGain && this.ctx && this.ambienceEnabled && this.musicEnabled) {
+      this.ambienceGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.ambienceGain.gain.linearRampToValueAtTime(effective, this.ctx.currentTime + 0.1);
+    }
+    audioCrossFader.setVolume(effective, this.ctx);
+    worldAmbienceManager.setVolume(effective);
+  }
+
+  /**
+   * Cross-fading utility that smoothly transitions between background audio clips
+   * when world type or 'visualTheme' state changes.
+   */
+  crossFadeToWorldTheme(
+    worldIdentifier: string | number,
+    visualTheme?: string,
+    crossFadeDuration: number = 1.4,
+    volume?: number
+  ): AmbientSoundAsset | null {
+    this.init();
+    this.resume();
+    if (!this.ctx) return null;
+
+    const asset = getAmbientAssetForWorldAndTheme(worldIdentifier, visualTheme);
+    const dest = this.getAmbienceDestination();
+    if (!dest) return null;
+
+    const targetVolume = volume !== undefined
+      ? volume
+      : (this.ambienceVolume * this.musicVolume);
+
+    audioCrossFader.crossFadeTo(asset, this.ctx, dest, {
+      duration: crossFadeDuration,
+      targetVolume,
+      isMuted: !this.ambienceEnabled || !this.musicEnabled,
+    });
+
+    return asset;
+  }
+
+  /**
+   * Maps an active world environment (e.g. 'Winter', 'Cyberpunk', 10, 'bg-14')
+   * to a continuous looping ambient track with smooth cross-fading.
+   */
+  playWorldAmbience(
+    worldIdentifier: string | number,
+    visualTheme?: string,
+    crossFadeDuration: number = 1.4,
+    volume?: number
+  ) {
+    const asset = this.crossFadeToWorldTheme(worldIdentifier, visualTheme, crossFadeDuration, volume);
+    if (!asset) return null;
+
+    return {
+      worldIndex: typeof worldIdentifier === 'number' ? worldIdentifier : 0,
+      worldKey: asset.worldType,
+      soundscapeName: asset.name,
+      setVolume: (v: number) => this.setAmbienceVolume(v),
+      stop: (d?: number) => this.stopWorldAmbience(d),
+    };
+  }
+
+  stopWorldAmbience(fadeDuration: number = 0.8) {
+    if (this.ctx) {
+      audioCrossFader.stopAll(this.ctx, fadeDuration);
+    }
+    worldAmbienceManager.stopAmbience(fadeDuration);
+  }
+
+  getActiveWorldAmbience(): { worldKey: string | null; soundscape: string } {
+    const asset = audioCrossFader.getActiveAsset();
+    if (asset) {
+      return {
+        worldKey: asset.worldType,
+        soundscape: asset.name,
+      };
+    }
+    return {
+      worldKey: worldAmbienceManager.getCurrentWorldKey(),
+      soundscape: worldAmbienceManager.getCurrentSoundscapeName(),
+    };
+  }
+
+  isWorldAmbiencePlaying(): boolean {
+    return audioCrossFader.isPlaying() || worldAmbienceManager.isPlaying();
   }
 
   setSfxEnabled(enabled: boolean) {
@@ -70,6 +195,11 @@ class AudioEngine {
     } else {
       this.stopMusic();
     }
+    if (this.ambienceGain && this.ctx) {
+      const target = enabled && this.ambienceEnabled ? this.ambienceVolume * this.musicVolume : 0;
+      this.ambienceGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.ambienceGain.gain.linearRampToValueAtTime(target, this.ctx.currentTime + 0.3);
+    }
   }
 
   setSfxVolume(vol: number) {
@@ -83,6 +213,9 @@ class AudioEngine {
     this.musicVolume = Math.max(0, Math.min(1, vol));
     if (this.musicGain && this.ctx && this.musicEnabled) {
       this.musicGain.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
+    }
+    if (this.ambienceGain && this.ctx && this.ambienceEnabled && this.musicEnabled) {
+      this.ambienceGain.gain.setValueAtTime(this.ambienceVolume * this.musicVolume, this.ctx.currentTime);
     }
   }
 

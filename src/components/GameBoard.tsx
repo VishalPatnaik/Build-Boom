@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
@@ -8,13 +8,25 @@ import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
-import { ArrowLeft, RotateCcw, Play, Video, Home, Trophy, Crown, Medal, Zap, Shield, Compass, Plus, Coins, Vibrate, VibrateOff, Award, Sparkles, CheckCircle2, Hand, Target, Settings } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Play, Video, Home, Trophy, Crown, Medal, Zap, Shield, Compass, Plus, Coins, Vibrate, VibrateOff, Award, Sparkles, CheckCircle2, Hand, Target, Settings, Volume2, VolumeX } from 'lucide-react';
 import { TacticalRechargeModal } from './TacticalRechargeModal';
 import { PowerupType } from '../game/techTree';
 import { ComboStreakHUD, FloatingScoreMultiplierItem, FloatingMultiplierData } from './FloatingFeedback';
 import { ComboMultiplierIndicator, ComboMultiplierState } from './ComboMultiplierIndicator';
-import { ReplayRecorder } from '../game/replayEngine';
+import { ReplayRecorder, ReplayData } from '../game/replayEngine';
 import { safeCreateRadialGradient } from '../utils/canvasUtils';
+import { EndOfLevelSummary, LevelPerformanceMetrics } from './campaign/EndOfLevelSummary';
+import { ReplayViewer } from './ReplayViewer';
+import { autoSaveProgression } from '../utils/progressionStorage';
+import { resolveActiveWorld } from '../game/EnvironmentRenderer';
+import { triggerBlockStackParticles, triggerBombDestroyedParticles } from '../utils/particleEffects';
+import { getThemePalette } from '../utils/themeAccents';
+import { useWorldTheme } from '../hooks/useWorldTheme';
+import { useWorldAmbience } from '../hooks/useWorldAmbience';
+import { PerformanceMonitor } from './PerformanceMonitor';
+import { LevelIntroBanner, LevelWarpCurtain, LevelStageShutter } from './campaign/LevelTransitions';
+import { screenFadeSlideVariants } from '../utils/screenTransitions';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 interface ActiveBlock extends BlockDef {
   distance: number; // 100 to 0 (center)
@@ -50,6 +62,9 @@ export function GameBoard() {
     pendingCoins, 
     equippedCosmetic, 
     equippedBoomEffect, 
+    equippedPlate,
+    equippedBackground,
+    activeTournament,
     unlockedPerks, 
     sandboxOptions, 
     coins, 
@@ -70,13 +85,48 @@ export function GameBoard() {
   const [tutorialCompletedSheet, setTutorialCompletedSheet] = useState(false);
   const [sweetSpotActive, setSweetSpotActive] = useState(false);
   
-  let activeBoom = equippedBoomEffect || 'boom-0';
-  if (mode === 'campaign') {
-     const zone = Math.floor((level - 1) / 2);
-     activeBoom = `boom-${zone}`;
-  }
+  // Unified Theme Hook: Maps active world to CSS variables, shader configurations, and particle presets
+  const worldTheme = useWorldTheme();
+  const activeWorldInfo = worldTheme.activeWorldInfo;
+  const activePalette = worldTheme.palette;
+
+  // Attach world-specific background ambience to the GameBoard (e.g. wind howling for Winter, city hums for Cyberpunk)
+  const worldAmbience = useWorldAmbience();
+
+  // Screen Wake Lock: Keeps mobile screen illuminated during active gameplay
+  useWakeLock(state === 'playing');
+
+  const worldThemeRef = useRef(worldTheme);
+  worldThemeRef.current = worldTheme;
+
+  const activeSkin = activeWorldInfo.isSpecialTheme
+    ? activeWorldInfo.matchingSkinId
+    : (equippedCosmetic || activeWorldInfo.matchingSkinId);
+
+  const activePlate = activeWorldInfo.isSpecialTheme
+    ? activeWorldInfo.matchingPlateId
+    : (equippedPlate || activeWorldInfo.matchingPlateId);
+
+  const activeBoom = activeWorldInfo.isSpecialTheme
+    ? activeWorldInfo.matchingBoomId
+    : (equippedBoomEffect || activeWorldInfo.matchingBoomId);
+
+  // Real-time synchronization ref for immediate zero-reload visual asset & shader updates
+  const activeCosmeticsRef = useRef({
+    activeSkin,
+    activePlate,
+    activeBoom,
+    activeWorldInfo,
+  });
+  activeCosmeticsRef.current = {
+    activeSkin,
+    activePlate,
+    activeBoom,
+    activeWorldInfo,
+  };
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>();
   
@@ -104,6 +154,40 @@ export function GameBoard() {
     active: false,
   });
   const [floatingMultipliers, setFloatingMultipliers] = useState<FloatingMultiplierData[]>([]);
+
+  // Performance metrics for EndOfLevelSummary
+  const [summaryMetrics, setSummaryMetrics] = useState<LevelPerformanceMetrics | null>(null);
+  const [isViewingReplay, setIsViewingReplay] = useState(false);
+
+  // Smooth Level Warp Transition state between campaign levels
+  const [warpTransition, setWarpTransition] = useState<{
+    isActive: boolean;
+    fromLevel: number;
+    toLevel: number;
+  }>({
+    isActive: false,
+    fromLevel: 1,
+    toLevel: 1,
+  });
+
+  const gameOverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initGameRef = useRef<(customLevel?: number) => void>(() => {});
+  const canvasSizeRef = useRef({ w: 0, h: 0 });
+
+  const handleWarpComplete = useCallback(() => {
+    setWarpTransition((prev) => {
+      const targetLvl = prev.toLevel;
+      setTimeout(() => {
+        useGameStore.getState().setLevel(targetLvl);
+        setScore(0);
+        setSummaryMetrics(null);
+        setState('playing');
+        initGameRef.current(targetLvl);
+      }, 0);
+      return { ...prev, isActive: false };
+    });
+  }, []);
+  const [savedReplayData, setSavedReplayData] = useState<ReplayData | null>(null);
 
   // Physical immersion haptic vibration trigger for collisions and boom events
   const triggerHapticVibrate = (pattern: number | number[]) => {
@@ -134,6 +218,8 @@ export function GameBoard() {
     isGameOver: false,
     particles: [] as Particle[],
     combo: 0,
+    maxCombo: 0,
+    perfectCount: 0,
     rapidPerfectStreak: 0,
     lastPerfectTime: 0,
     rapidPerfectMultiplier: 1,
@@ -145,16 +231,21 @@ export function GameBoard() {
     lastUiUpdateTime: 0,
   });
 
-  const initGame = () => {
+  const initGame = (customLevel?: number) => {
+    if (gameOverTimeoutRef.current) {
+      clearTimeout(gameOverTimeoutRef.current);
+      gameOverTimeoutRef.current = null;
+    }
     recorderRef.current.reset();
     let queue: BlockDef[] = [];
+    const activeLevel = customLevel !== undefined ? customLevel : (useGameStore.getState().level ?? 1);
 
     const isTutorialMode = isTutorialActive;
     if (isTutorialMode) {
       useGameStore.getState().setTutorialStep(1);
       queue = generateTutorialBlocks();
     } else if (mode === 'campaign') {
-      queue = generateLevel(level);
+      queue = generateLevel(activeLevel);
     } else if (mode === 'endless') {
       queue = generateEndless(Math.random() * 1000000, 999, 1);
     } else if (mode === 'daily') {
@@ -198,11 +289,13 @@ export function GameBoard() {
     setTutorialEmergencyHold(false);
     setTutorialCompletedSheet(false);
     setSweetSpotActive(false);
+    setSummaryMetrics(null);
+    setIsViewingReplay(false);
 
     const initialMsg = isTutorialMode
       ? 'QUICK-START: STACK 3 BLOCKS'
       : mode === 'campaign' 
-      ? (isBossLevel ? `TITAN SIEGE • LVL ${level}` : `LEVEL ${level}`)
+      ? (activeLevel % 10 === 0 ? `TITAN SIEGE • LVL ${activeLevel}` : `LEVEL ${activeLevel}`)
       : mode === 'tournament'
       ? (useGameStore.getState().activeTournament?.title || 'TOURNAMENT')
       : mode === 'workshop'
@@ -229,6 +322,8 @@ export function GameBoard() {
       isGameOver: false,
       particles: [],
       combo: 0,
+      maxCombo: 0,
+      perfectCount: 0,
       rapidPerfectStreak: 0,
       lastPerfectTime: 0,
       rapidPerfectMultiplier: 1,
@@ -242,6 +337,7 @@ export function GameBoard() {
     
     setTimeout(() => setMessage(''), 1500);
   };
+  initGameRef.current = initGame;
 
   const handleRechargePurchased = (type: PowerupType) => {
     const gs = gameStateRef.current;
@@ -360,6 +456,9 @@ export function GameBoard() {
           }));
         
         gameStateRef.current.queue = [...unbuiltBlocks, ...gameStateRef.current.queue];
+        if (gameStateRef.current.queue.length === 0) {
+          gameStateRef.current.queue = generateLevel(level).slice(0, 4);
+        }
         gameStateRef.current.blocks = [];
         
         // Add a 1.5 second buffer before they start coming again
@@ -373,9 +472,36 @@ export function GameBoard() {
     }
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (gameOverTimeoutRef.current) {
+        clearTimeout(gameOverTimeoutRef.current);
+        gameOverTimeoutRef.current = null;
+      }
       haptics.stop();
     };
   }, [state, level, mode]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const updateSize = () => {
+      const w = container.clientWidth || 300;
+      const h = container.clientHeight || 300;
+      canvasSizeRef.current = { w, h };
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    };
+    updateSize();
+
+    const ro = new ResizeObserver(() => {
+      updateSize();
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, []);
 
   const lastActionTimeRef = useRef(0);
 
@@ -504,6 +630,10 @@ export function GameBoard() {
 
         gs.builtCount++;
         gs.combo++;
+        gs.maxCombo = Math.max(gs.maxCombo || 0, gs.combo);
+        if (impact.isPerfect) {
+          gs.perfectCount = (gs.perfectCount || 0) + 1;
+        }
         setBuiltCount(gs.builtCount);
         useGameStore.getState().setTowerHeight(gs.builtCount);
         setActiveCombo(gs.combo);
@@ -641,6 +771,11 @@ export function GameBoard() {
         const placementShake = (basePlacementShake * heightScale) + comboShakeBonus;
         gs.shake = Math.max(gs.shake, Math.min(32, placementShake));
 
+        // Lightweight library particle burst for successful block stacking
+        const normStackX = px / Math.max(1, w);
+        const normStackY = py / Math.max(1, h);
+        worldThemeRef.current.particles.triggerStackParticles(normStackX, normStackY, impact.isPerfect, gs.combo);
+
         if (impact.bonusCoins > 0) {
           useGameStore.getState().addCoins(impact.bonusCoins);
         }
@@ -729,12 +864,22 @@ export function GameBoard() {
   const createExplosionAtDistance = (block: ActiveBlock, gameRadius: number, w: number, h: number, baseColor: string) => {
       const px = w/2 + Math.cos(block.angle) * (block.distance / 100) * gameRadius;
       const py = h * 0.65 + Math.sin(block.angle) * (block.distance / 100) * gameRadius;
+      const { activeBoom, activeWorldInfo } = activeCosmeticsRef.current;
       
       let effectColor = baseColor;
-      effectColor = getBoomColor(activeBoom);
-
+      if (block.type === 'boom') {
+        effectColor = getBoomColor(activeBoom);
+      }
 
       createExplosion(px, py, effectColor, 40);
+
+      // Lightweight particle library explosion burst
+      const normX = px / Math.max(1, w);
+      const normY = py / Math.max(1, h);
+      const isDefused = baseColor === '#38bdf8' || baseColor === '#eab308';
+      if (block.type === 'boom' || isDefused || baseColor === '#ef4444' || baseColor === '#f59e0b') {
+        worldThemeRef.current.particles.triggerBombParticles(normX, normY, isDefused);
+      }
       
       // Add Shockwave ring
       gameStateRef.current.particles.push({
@@ -743,6 +888,7 @@ export function GameBoard() {
   };
 
   const gameOver = (win: boolean, reason?: string) => {
+    if (gameStateRef.current.isGameOver) return;
     gameStateRef.current.isGameOver = true;
     gameStateRef.current.rapidPerfectStreak = 0;
     gameStateRef.current.lastPerfectTime = 0;
@@ -751,6 +897,8 @@ export function GameBoard() {
     setRapidComboData((prev) => ({ ...prev, active: false, timeRemaining: 0 }));
     setFloatingMultipliers([]);
 
+    const { activeSkin, activePlate, activeBoom, activeWorldInfo } = activeCosmeticsRef.current;
+
     // Finalize 10-second physics replay recording
     try {
       const savedReplay = recorderRef.current.finalize({
@@ -758,9 +906,9 @@ export function GameBoard() {
         level,
         finalOutcome: win ? 'won' : 'lost',
         finalReason: reason,
-        equippedCosmetic,
-        equippedPlate: useGameStore.getState().equippedPlate,
-        equippedBackground: useGameStore.getState().equippedBackground,
+        equippedCosmetic: activeSkin,
+        equippedPlate: activePlate,
+        equippedBackground: activeWorldInfo.worldId,
         activeBoom,
       });
       if (savedReplay) {
@@ -849,6 +997,7 @@ export function GameBoard() {
       setMessage('PERFECT!');
       if (mode === 'campaign') {
         unlockNextLevel();
+        autoSaveProgression('level_complete', { levelCompleted: level });
         useDailyStore.getState().updateProgress('LEVELS_PLAYED', 1);
         if (gameStateRef.current.hasRevived) {
            useDailyStore.getState().updateProgress('BOOM_RECOVERY', 1);
@@ -857,7 +1006,53 @@ export function GameBoard() {
         }
         const baseCoins = 50 + (level * 10);
         const performanceCoins = gameStateRef.current.builtCount * 5;
-        useGameStore.getState().setPendingCoins(baseCoins + performanceCoins);
+        const totalCoins = baseCoins + performanceCoins;
+        useGameStore.getState().setPendingCoins(totalCoins);
+
+        // Compute performance metrics for EndOfLevelSummary
+        const gs = gameStateRef.current;
+        const elapsedSec = gs.startTime > 0 ? (performance.now() - gs.startTime) / 1000 : 0;
+        const built = gs.builtCount;
+        const perfects = gs.perfectCount || 0;
+        const accuracyPct = built > 0 ? Math.min(100, Math.round((perfects / built) * 100)) : 100;
+        const heightMeters = built * 2.5;
+
+        let starsEarned = 1;
+        if (accuracyPct >= 90) starsEarned = 3;
+        else if (accuracyPct >= 70) starsEarned = 2;
+
+        const currentHighScore = highScores[`campaign-${level}`] || 0;
+        const isNewBest = score > currentHighScore;
+        if (isNewBest) {
+          updateHighScore(`campaign-${level}`, score);
+        }
+
+        const metricsData: LevelPerformanceMetrics = {
+          level,
+          score,
+          highScore: Math.max(score, currentHighScore),
+          isNewHighScore: isNewBest,
+          accuracy: accuracyPct,
+          perfectHits: perfects,
+          totalBlocks: totalBlocks || built,
+          timeTakenSeconds: Math.max(0.1, elapsedSec),
+          heightReached: built,
+          heightMeters,
+          maxCombo: gs.maxCombo || 0,
+          coinsEarned: totalCoins,
+          stars: starsEarned,
+        };
+
+        setSummaryMetrics(metricsData);
+
+        // Capture replay data
+        try {
+          const replay = recorderRef.current.getReplayData();
+          if (replay) {
+            setSavedReplayData(replay);
+            useGameStore.getState().setLastReplay(replay);
+          }
+        } catch (e) {}
       }
       else {
         updateHighScore(mode, gameStateRef.current.builtCount * 10);
@@ -866,9 +1061,10 @@ export function GameBoard() {
         useGameStore.getState().setPendingCoins(endlessCoins);
       }
       
-      setTimeout(() => {
-        useGameStore.getState().checkAndTriggerAd();
+      if (gameOverTimeoutRef.current) clearTimeout(gameOverTimeoutRef.current);
+      gameOverTimeoutRef.current = setTimeout(() => {
         setState('won');
+        gameOverTimeoutRef.current = null;
       }, 1500);
     } else {
       audio.playBoomSound();
@@ -902,12 +1098,11 @@ export function GameBoard() {
         }
       }
       
-      setTimeout(() => {
-        // Trigger Revive logic once per run (except tournament where competitive purity is maintained)
+      if (gameOverTimeoutRef.current) clearTimeout(gameOverTimeoutRef.current);
+      gameOverTimeoutRef.current = setTimeout(() => {
+        // Player defeated: transition cleanly to defeat score card with zero disruptive popups
         setState('lost');
-        if (mode !== 'menu' && mode !== 'tournament' && !gameStateRef.current.hasRevived) {
-           useGameStore.getState().showReviveAd();
-        }
+        gameOverTimeoutRef.current = null;
       }, 1500);
     }
   };
@@ -948,7 +1143,9 @@ export function GameBoard() {
       gs.lastFrameTime = time;
     }
 
-    const dt = time - gs.lastFrameTime;
+    // Clamp dt to maximum 33.3ms (approx 30fps minimum delta) to prevent physics jumps on frame hitches
+    const rawDt = time - gs.lastFrameTime;
+    const dt = Math.min(rawDt, 33.3);
     gs.lastFrameTime = time;
 
     if (rechargeModalOpenRef.current) {
@@ -985,7 +1182,7 @@ export function GameBoard() {
     if (physResult.collapsed) {
       if (isTutorialActive) {
         gs.physics.tiltAngle = 0;
-        gs.physics.tiltVelocity = 0;
+        gs.physics.angularVelocity = 0;
         return;
       }
       audio.playCollisionSound(3.0, { type: 'crash' });
@@ -1427,29 +1624,27 @@ export function GameBoard() {
 
     ctx.restore();
     ctx.restore();
+    ctx.shadowBlur = 0;
   };
 
   const draw = (time: number) => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+    if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
+    if (!ctxRef.current) {
+      ctxRef.current = canvas.getContext('2d');
+    }
+    const ctx = ctxRef.current;
     if (!ctx) return;
     
-    if (canvas.width !== container.clientWidth || canvas.height !== container.clientHeight) {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-    }
-    
-    const w = canvas.width;
-    const h = canvas.height;
+    const { w, h } = canvasSizeRef.current;
     if (!w || !h || w <= 0 || h <= 0 || !Number.isFinite(w) || !Number.isFinite(h)) return;
 
     const cx = w / 2;
     const cy = h * 0.65;
     const gameRadius = Math.min(w, h) * 0.45;
     const gs = gameStateRef.current;
+    const { activeSkin, activePlate, activeBoom, activeWorldInfo } = activeCosmeticsRef.current;
     
     // Clear Canvas directly
     ctx.clearRect(0, 0, w, h);
@@ -1465,23 +1660,10 @@ export function GameBoard() {
       ctx.translate(dx, dy);
       ctx.rotate(rot);
 
-      // Dynamically shake the HTML game board container for full physical immersion
-      if (containerRef.current) {
-        const boardDx = (Math.random() - 0.5) * (shakeFactor * 0.55);
-        const boardDy = (Math.random() - 0.5) * (shakeFactor * 0.55);
-        const boardRot = (Math.random() - 0.5) * (shakeFactor * 0.035);
-        containerRef.current.style.transform = `translate3d(${boardDx.toFixed(1)}px, ${boardDy.toFixed(1)}px, 0) rotate(${boardRot.toFixed(2)}deg)`;
-      }
-
       gs.shake *= 0.88;
       if (gs.shake < 0.4) {
         gs.shake = 0;
-        if (containerRef.current) {
-          containerRef.current.style.transform = '';
-        }
       }
-    } else if (containerRef.current && containerRef.current.style.transform) {
-      containerRef.current.style.transform = '';
     }
 
     // Chrono Stasis Chroma Overlay
@@ -1547,27 +1729,28 @@ export function GameBoard() {
     const inSweetSpot = activeTargetBlock && activeTargetBlock.distance <= 15 && activeTargetBlock.distance >= -15;
 
     const isHighContrastEnv = useGameStore.getState().visualTheme === 'high-contrast';
+    const activePalette = getThemePalette(activeWorldInfo.worldIndex);
 
     ctx.save();
     if (inSweetSpot) {
-      // Vivid Emerald Neon Pulsing Reticle Ring
-      ctx.strokeStyle = isHighContrastEnv ? '#ffff00' : '#10b981';
+      // Vivid Theme Accent Pulsing Reticle Ring
+      ctx.strokeStyle = isHighContrastEnv ? '#ffff00' : (activePalette.accent || '#10b981');
       ctx.lineWidth = isHighContrastEnv ? 4.5 : 3.5;
-      ctx.shadowColor = isHighContrastEnv ? '#ffff00' : '#00ffcc';
+      ctx.shadowColor = isHighContrastEnv ? '#ffff00' : (activePalette.glow || '#00ffcc');
       ctx.shadowBlur = 18;
       ctx.beginPath();
       ctx.arc(cx, cy + bounce - 5, reticleRadius, 0, Math.PI * 2);
       ctx.stroke();
 
       // Pulsing Sweet Spot Glow
-      ctx.fillStyle = isHighContrastEnv ? 'rgba(255, 255, 0, 0.25)' : 'rgba(16, 185, 129, 0.16)';
+      ctx.fillStyle = isHighContrastEnv ? 'rgba(255, 255, 0, 0.25)' : (activePalette.glow || 'rgba(16, 185, 129, 0.16)');
       ctx.fill();
 
       // Corner Crosshair Nodes
       for (let ang = 0; ang < Math.PI * 2; ang += Math.PI / 2) {
         const bx = cx + Math.cos(ang) * reticleRadius;
         const by = cy + bounce - 5 + Math.sin(ang) * reticleRadius;
-        ctx.fillStyle = isHighContrastEnv ? '#ffff00' : '#10b981';
+        ctx.fillStyle = isHighContrastEnv ? '#ffff00' : (activePalette.accent || '#10b981');
         ctx.beginPath();
         ctx.arc(bx, by, 4, 0, Math.PI * 2);
         ctx.fill();
@@ -1610,7 +1793,7 @@ export function GameBoard() {
     }
     ctx.restore();
 
-    renderPlate(ctx, cx - 50, cy + bounce - 5, 100, 30, useGameStore.getState().equippedPlate || "plate-0", time);
+    renderPlate(ctx, cx - 50, cy + bounce - 5, 100, 30, activePlate, time);
 
     // Rapid Perfect Multiplier Dynamic Canvas Resonance
     if (gs.rapidPerfectStreak >= 2) {
@@ -1666,7 +1849,7 @@ export function GameBoard() {
         ctx.rotate(layerTilt);
         ctx.scale(1 / squash, squash);
         
-        renderBlock(ctx, -30, -15, 60, 30, equippedCosmetic || "skin-0", true, time, undefined);
+        renderBlock(ctx, -30, -15, 60, 30, activeSkin, true, time, undefined);
         
         ctx.restore();
     }
@@ -1750,7 +1933,7 @@ export function GameBoard() {
       ctx.scale(stretch, 1 / stretch);
       
       if (apparentType === 'build') {
-          renderBlock(ctx, -15, -15, 30, 30, equippedCosmetic || "skin-0", false, time, b.archetype);
+          renderBlock(ctx, -15, -15, 30, 30, activeSkin, false, time, b.archetype);
           if (isHighContrastEnv) {
             ctx.save();
             ctx.strokeStyle = '#ffff00';
@@ -1908,13 +2091,34 @@ export function GameBoard() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={screenFadeSlideVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="relative w-full h-full flex flex-col select-none overflow-hidden"
+      style={worldTheme.cssVariables}
     >
+      {/* Cinematic Stage Entry Shutter */}
+      <LevelStageShutter />
+
+      {/* Holographic Level Mission Intro Banner */}
+      <LevelIntroBanner level={level} mode={mode} totalBlocks={totalBlocks} />
+
+      {/* Cinematic Sci-Fi Level Warp Transition */}
+      <LevelWarpCurtain
+        isActive={warpTransition.isActive}
+        fromLevel={warpTransition.fromLevel}
+        toLevel={warpTransition.toLevel}
+        onTransitionComplete={handleWarpComplete}
+      />
+
       {/* Header */}
-      <div className="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-start z-10 pointer-events-none">
+      <motion.div 
+        initial={{ y: -28, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', damping: 24, stiffness: 280, delay: 0.08 }}
+        className="absolute top-0 left-0 w-full pt-[max(0.75rem,env(safe-area-inset-top,12px))] px-3 sm:px-4 md:px-6 flex justify-between items-start z-10 pointer-events-none"
+      >
         <div className="flex items-center gap-2 pointer-events-auto">
           <button 
             onClick={() => {
@@ -1924,9 +2128,9 @@ export function GameBoard() {
                   level,
                   finalOutcome: 'aborted',
                   finalReason: 'EXITED RUN',
-                  equippedCosmetic,
-                  equippedPlate: useGameStore.getState().equippedPlate,
-                  equippedBackground: useGameStore.getState().equippedBackground,
+                  equippedCosmetic: activeSkin,
+                  equippedPlate: activePlate,
+                  equippedBackground: activeWorldInfo.worldId,
                   activeBoom,
                 });
                 if (replay) {
@@ -1944,7 +2148,11 @@ export function GameBoard() {
                 useGameStore.getState().setMode('menu');
               }
             }}
-            className="p-3.5 bg-black/40 backdrop-blur-md border-2 border-white/20 rounded-2xl hover:bg-black/60 transition-all text-white shadow-lg active:scale-95 cursor-pointer"
+            className="p-3.5 bg-black/40 backdrop-blur-md border-2 rounded-2xl hover:bg-black/60 transition-all text-white shadow-lg active:scale-95 cursor-pointer"
+            style={{
+              borderColor: `${activePalette.accent}60`,
+              boxShadow: `0 0 12px ${activePalette.glow}`,
+            }}
             aria-label="Back"
           >
             <ArrowLeft className="w-6 h-6 stroke-[2.5]" />
@@ -1967,6 +2175,26 @@ export function GameBoard() {
             aria-label="Toggle Haptic Feedback"
           >
             {hapticsEnabled ? <Vibrate className="w-6 h-6" /> : <VibrateOff className="w-6 h-6" />}
+          </button>
+
+          {/* World Background Ambience Toggle & Soundscape Status */}
+          <button
+            onClick={() => {
+              worldAmbience.toggleMute();
+            }}
+            className={`p-3.5 backdrop-blur-md border-2 rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer ${
+              worldAmbience.isPlaying && !worldAmbience.isMuted
+                ? 'bg-black/40 border-emerald-400/50 text-emerald-300 hover:bg-emerald-950/40'
+                : 'bg-black/30 border-white/10 text-white/40 hover:bg-black/50'
+            }`}
+            title={`World Ambience: ${worldAmbience.soundscapeName} (${worldAmbience.isMuted ? 'Muted' : 'Active'})`}
+            aria-label="Toggle World Ambience"
+          >
+            {worldAmbience.isPlaying && !worldAmbience.isMuted ? (
+              <Volume2 className="w-6 h-6 animate-pulse" />
+            ) : (
+              <VolumeX className="w-6 h-6" />
+            )}
           </button>
 
           {/* Quick Settings Button */}
@@ -2000,11 +2228,20 @@ export function GameBoard() {
           )}
 
           {/* Gyro Inclinometer Attitude Bar */}
-          <div className="px-3.5 py-1.5 rounded-2xl bg-black/40 backdrop-blur-md border border-white/15 text-center shadow-lg">
-            <div className="flex items-center justify-center gap-1.5 text-[10px] font-mono tracking-wider text-cyan-300 uppercase">
-              <Compass className="w-3 h-3 text-cyan-400" />
+          <div 
+            className="px-3.5 py-1.5 rounded-2xl bg-black/40 backdrop-blur-md border text-center shadow-lg transition-all"
+            style={{
+              borderColor: `${activePalette.accent}55`,
+              boxShadow: `0 0 16px ${activePalette.glow}`,
+            }}
+          >
+            <div 
+              className="flex items-center justify-center gap-1.5 text-[10px] font-mono tracking-wider uppercase font-bold"
+              style={{ color: activePalette.accent }}
+            >
+              <Compass className="w-3 h-3" style={{ color: activePalette.accent }} />
               <span>GYRO STABILITY</span>
-              <span className={`font-black tabular-nums ${stressDisplay > 0.7 ? 'text-rose-400 animate-ping' : stressDisplay > 0.4 ? 'text-amber-300' : 'text-emerald-400'}`}>
+              <span className={`font-black tabular-nums ${stressDisplay > 70 ? 'text-rose-400 animate-ping' : stressDisplay > 40 ? 'text-amber-300' : 'text-emerald-400'}`}>
                 {tiltDisplay > 0 ? `+${tiltDisplay.toFixed(1)}°` : `${tiltDisplay.toFixed(1)}°`}
               </span>
             </div>
@@ -2016,7 +2253,7 @@ export function GameBoard() {
               {/* Horizon Pip */}
               <div 
                 className={`absolute top-0 bottom-0 w-2.5 rounded-full transition-all duration-100 ${
-                  stressDisplay > 0.7 ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : stressDisplay > 0.4 ? 'bg-amber-400' : 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]'
+                  stressDisplay > 70 ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : stressDisplay > 40 ? 'bg-amber-400' : 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]'
                 }`}
                 style={{
                   left: `calc(50% + ${(tiltDisplay / 35) * 45}%)`,
@@ -2039,16 +2276,21 @@ export function GameBoard() {
           </div>
         </div>
         
-        {/* Right: Score & Level Header */}
-        <div className="text-right pointer-events-none">
-          <div className="text-white font-black uppercase tracking-wider text-xs md:text-sm flex items-center justify-end gap-1.5 drop-shadow">
+        {/* Right: Score, Level Header & Performance Telemetry Monitor */}
+        <div className="text-right pointer-events-none flex flex-col items-end gap-1">
+          {/* Lightweight Frame-Rate & Memory Telemetry Monitor */}
+          <div className="pointer-events-auto">
+            <PerformanceMonitor className="relative z-40" />
+          </div>
+
+          <div className="text-white font-black uppercase tracking-wider text-xs md:text-sm flex items-center justify-end gap-1.5 drop-shadow mt-0.5">
             {mode === 'tournament' ? (
               <span className="flex items-center gap-1 text-yellow-300">
                 <Trophy className="w-4 h-4 text-yellow-300" />
                 {useGameStore.getState().activeTournament?.title || 'TOURNAMENT'}
               </span>
             ) : mode === 'workshop' ? (
-              <span className="text-sky-300 font-mono text-xs">BLUEPRINT LAB</span>
+              <span className="text-sky-300 font-mono text-xs">SHIFT FORGE</span>
             ) : mode === 'campaign' ? (
               `LEVEL ${level}`
             ) : (
@@ -2059,22 +2301,15 @@ export function GameBoard() {
             {score}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Game Area */}
       <div 
         ref={containerRef} 
         className="flex-1 w-full relative cursor-pointer touch-none select-none"
-        style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}
+        style={{ ...worldTheme.cssVariables, touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}
         onPointerDown={(e) => {
           if (e.cancelable) e.preventDefault();
-          handleAction();
-        }}
-        onTouchStart={(e) => {
-          if (e.cancelable) e.preventDefault();
-          handleAction();
-        }}
-        onMouseDown={() => {
           handleAction();
         }}
       >
@@ -2091,8 +2326,8 @@ export function GameBoard() {
           />
         ))}
         
-        {/* Floating Tactical Arsenal Pods (Bottom Corners) */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between pointer-events-none z-20">
+        {/* Floating Tactical Arsenal Pods (Bottom Corners with Home Indicator Safe Area) */}
+        <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom,12px))] left-[max(0.75rem,env(safe-area-inset-left,12px))] right-[max(0.75rem,env(safe-area-inset-right,12px))] flex items-end justify-between pointer-events-none z-20">
           {/* Tactical Gadgets (Left) */}
           <div className="flex items-center gap-2 pointer-events-auto">
             {/* STASIS POD */}
@@ -2170,26 +2405,14 @@ export function GameBoard() {
             </button>
           </div>
 
-          {/* IN-GAME COINS HUD */}
-          <div className="pointer-events-auto">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                audio.playClickSound();
-                useGameStore.getState().setShowIAP(true);
-              }}
-              className="flex items-center gap-1.5 bg-black/70 hover:bg-black/90 px-3 py-1.5 rounded-2xl border border-amber-400/60 backdrop-blur-md text-amber-300 shadow-md cursor-pointer transition-all active:scale-95"
-              title="Architect Store - Buy Coins & Packages"
-            >
+          {/* IN-GAME COINS HUD (Passive, non-obstructive display) */}
+          <div className="pointer-events-none">
+            <div className="flex items-center gap-1.5 bg-black/70 px-3 py-1.5 rounded-2xl border border-amber-400/60 backdrop-blur-md text-amber-300 shadow-md">
               <Coins className="w-4 h-4 fill-current text-amber-400" />
               <span className="font-mono font-black text-xs tabular-nums text-white">
                 {coins.toLocaleString()}
               </span>
-              <div className="bg-amber-400 text-black rounded p-0.5 ml-0.5">
-                <Plus className="w-2.5 h-2.5 stroke-[3]" />
-              </div>
-            </button>
+            </div>
           </div>
 
           {/* AEGIS SHIELD STATUS POD (Right) */}
@@ -2277,7 +2500,7 @@ export function GameBoard() {
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   <span className="text-[10px] font-mono font-black uppercase tracking-wider text-amber-300">
-                    QUICK-START FLIGHT TEST
+                    CAMPAIGN FLIGHT TRAINING
                   </span>
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[9px] sm:text-[10px]">
@@ -2345,9 +2568,65 @@ export function GameBoard() {
         )}
       </div>
 
-      {/* Post Game Overlay - Bottom Center Sheet */}
+      {/* Post Game Overlay - Bottom Center Sheet or EndOfLevelSummary for Campaign */}
       <AnimatePresence>
-        {(state === 'won' || state === 'lost') && (
+        {state === 'won' && mode === 'campaign' && summaryMetrics ? (
+          <EndOfLevelSummary
+            metrics={summaryMetrics}
+            onNextLevel={() => {
+              if (gameOverTimeoutRef.current) {
+                clearTimeout(gameOverTimeoutRef.current);
+                gameOverTimeoutRef.current = null;
+              }
+              const currentLvl = level;
+              const nextLvl = Math.min(200, currentLvl + 1);
+              if (pendingCoins > 0) {
+                useGameStore.getState().addCoins(pendingCoins);
+                useGameStore.getState().setPendingCoins(0);
+              }
+              setSummaryMetrics(null);
+              setWarpTransition({
+                isActive: true,
+                fromLevel: currentLvl,
+                toLevel: nextLvl,
+              });
+            }}
+            onRetry={() => {
+              if (gameOverTimeoutRef.current) {
+                clearTimeout(gameOverTimeoutRef.current);
+                gameOverTimeoutRef.current = null;
+              }
+              if (pendingCoins > 0) {
+                useGameStore.getState().addCoins(pendingCoins);
+                useGameStore.getState().setPendingCoins(0);
+              }
+              setScore(0);
+              setSummaryMetrics(null);
+              setState('playing');
+              initGame(level);
+            }}
+            onHome={() => {
+              if (gameOverTimeoutRef.current) {
+                clearTimeout(gameOverTimeoutRef.current);
+                gameOverTimeoutRef.current = null;
+              }
+              if (pendingCoins > 0) {
+                useGameStore.getState().addCoins(pendingCoins);
+                useGameStore.getState().setPendingCoins(0);
+              }
+              useGameStore.getState().checkAndTriggerAd(false);
+              setSummaryMetrics(null);
+              setState('idle');
+            }}
+            onWatchDoubleCoins={() => {
+              useGameStore.getState().showDoubleCoinsAd();
+            }}
+            onViewReplay={() => {
+              setIsViewingReplay(true);
+            }}
+            hasReplay={!!savedReplayData}
+          />
+        ) : !warpTransition.isActive && (state === 'won' || state === 'lost') && (
           <div className="fixed inset-0 z-30 pointer-events-none overflow-hidden flex flex-col justify-end items-center sm:p-4">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/65 backdrop-blur-sm pointer-events-auto" />
@@ -2505,46 +2784,77 @@ export function GameBoard() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row space-y-2.5 sm:space-y-0 sm:space-x-4 w-full max-w-md">
-                    <button
-                      onClick={() => {
-                        useGameStore.getState().checkAndTriggerAd(false);
-                        setState('idle');
-                        if (mode !== 'campaign') {
-                          useGameStore.getState().setMode('menu');
-                        }
-                      }}
-                      className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-2xl font-black text-base uppercase transition-all cursor-pointer shadow-md"
-                    >
-                      <Home className="w-5 h-5" strokeWidth={2.5} />
-                      <span>HOME</span>
-                    </button>
+                  <div className="flex flex-col space-y-2.5 w-full max-w-md">
+                    {/* Rewarded Ad Revive Opportunity */}
+                    {state === 'lost' && !gameStateRef.current.hasRevived && (
+                      <button
+                        onClick={() => {
+                          audio.playClickSound();
+                          haptics.vibrate([20]);
+                          useGameStore.getState().showReviveAd();
+                        }}
+                        className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 border-2 border-emerald-300 text-slate-950 rounded-2xl font-black text-base uppercase tracking-wider transition-all shadow-[0_4px_0_#0f766e,0_0_20px_rgba(20,184,166,0.4)] active:translate-y-1 active:shadow-none cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <Video className="w-5 h-5 stroke-[2.5]" />
+                        <span>REVIVE TOWER (WATCH AD)</span>
+                      </button>
+                    )}
 
-                    {(state === 'lost' || mode !== 'campaign') && (
+                    <div className="flex space-x-3 w-full">
                       <button
                         onClick={() => {
-                          setScore(0);
-                          setState('playing');
+                          useGameStore.getState().checkAndTriggerAd(false);
+                          setState('idle');
+                          if (mode !== 'campaign') {
+                            useGameStore.getState().setMode('menu');
+                          }
                         }}
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-amber-950 rounded-2xl font-black text-base uppercase transition-all shadow-[0_4px_0_#b45309] active:translate-y-1 active:shadow-none cursor-pointer"
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-2xl font-black text-base uppercase transition-all cursor-pointer shadow-md"
                       >
-                        <RotateCcw className="w-5 h-5" strokeWidth={3} />
-                        <span>RETRY</span>
+                        <Home className="w-5 h-5" strokeWidth={2.5} />
+                        <span>HOME</span>
                       </button>
-                    )}
-                    
-                    {state === 'won' && mode === 'campaign' && (
-                      <button
-                        onClick={() => {
-                          useGameStore.getState().setLevel(useGameStore.getState().unlockedLevels);
-                          setState('playing');
-                        }}
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-[#4facfe] hover:bg-[#3b9be8] border-2 border-white text-white rounded-2xl font-black text-base uppercase transition-all shadow-[0_4px_0_#2a82c9] active:translate-y-1 active:shadow-none cursor-pointer"
-                      >
-                        <Play className="w-5 h-5" fill="currentColor" />
-                        <span>NEXT</span>
-                      </button>
-                    )}
+
+                      {(state === 'lost' || mode !== 'campaign') && (
+                        <button
+                          onClick={() => {
+                            setScore(0);
+                            setState('playing');
+                          }}
+                          className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-amber-950 rounded-2xl font-black text-base uppercase transition-all shadow-[0_4px_0_#b45309] active:translate-y-1 active:shadow-none cursor-pointer"
+                        >
+                          <RotateCcw className="w-5 h-5" strokeWidth={3} />
+                          <span>RETRY</span>
+                        </button>
+                      )}
+
+                      {state === 'won' && mode === 'campaign' && (
+                        <button
+                          onClick={() => {
+                            if (gameOverTimeoutRef.current) {
+                              clearTimeout(gameOverTimeoutRef.current);
+                              gameOverTimeoutRef.current = null;
+                            }
+                            const currentLvl = level;
+                            const nextLvl = Math.min(200, currentLvl + 1);
+                            if (pendingCoins > 0) {
+                              useGameStore.getState().addCoins(pendingCoins);
+                              useGameStore.getState().setPendingCoins(0);
+                            }
+                            setSummaryMetrics(null);
+                            setWarpTransition({
+                              isActive: true,
+                              fromLevel: currentLvl,
+                              toLevel: nextLvl,
+                            });
+                          }}
+                          className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-[#4facfe] hover:bg-[#3b9be8] border-2 border-white text-white rounded-2xl font-black text-base uppercase transition-all shadow-[0_4px_0_#2a82c9] active:translate-y-1 active:shadow-none cursor-pointer"
+                        >
+                          <Play className="w-5 h-5" fill="currentColor" />
+                          <span>NEXT</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
@@ -2553,6 +2863,15 @@ export function GameBoard() {
         </div>
       )}
     </AnimatePresence>
+
+      {/* Post-Level Architect Tape Replay Viewer */}
+      {isViewingReplay && savedReplayData && (
+        <ReplayViewer
+          isOpen={isViewingReplay}
+          onClose={() => setIsViewingReplay(false)}
+          replayData={savedReplayData}
+        />
+      )}
 
       {/* Quick-Start Guide Completion Celebration Sheet */}
       <AnimatePresence>

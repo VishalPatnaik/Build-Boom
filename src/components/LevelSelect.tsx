@@ -5,8 +5,13 @@ import { renderCampaignMap } from './campaign/MapRenderer';
 import { drawPlatform } from './campaign/PlatformRenderer';
 import { ZONE_NAMES, ZONE_CONFIGS } from './campaign/WorldDefinitions';
 import { ArrowLeft, Lock, Check, Sparkles, GraduationCap } from 'lucide-react';
-import { CinematicTile, CinematicBanner } from './campaign/CinematicTiles';
+import { CampaignNodePlate } from './campaign/CampaignNodePlate';
+import { CinematicBanner } from './campaign/CinematicTiles';
 import { CampaignQuickStartModal } from './campaign/CampaignQuickStartModal';
+import { audio } from '../audio/AudioEngine';
+import { haptics } from '../utils/haptics';
+import { screenFadeSlideVariants } from '../utils/screenTransitions';
+import { useWorldTheme, WorldThemeResult } from '../hooks/useWorldTheme';
 
 const TOTAL_LEVELS = 200;
 const LEVELS_PER_ZONE = 10;
@@ -14,12 +19,19 @@ const SPACING = 60;
 const ZONE_HEIGHT = 11 * SPACING;
 const TOTAL_HEIGHT = ZONE_NAMES.length * ZONE_HEIGHT + 500;
 
-function CampaignBackground({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement> }) {
+function CampaignBackground({ scrollRef, worldTheme }: { scrollRef: React.RefObject<HTMLDivElement>; worldTheme: WorldThemeResult }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
+  const [size, setSize] = useState({
+    w: typeof window !== 'undefined' ? Math.max(1, window.innerWidth || 300) : 300,
+    h: typeof window !== 'undefined' ? Math.max(1, window.innerHeight || 300) : 300,
+  });
 
   useEffect(() => {
-    const handleResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    const handleResize = () =>
+      setSize({
+        w: Math.max(1, window.innerWidth || 300),
+        h: Math.max(1, window.innerHeight || 300),
+      });
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -37,13 +49,21 @@ function CampaignBackground({ scrollRef }: { scrollRef: React.RefObject<HTMLDivE
     const render = (now: number) => {
       const time = now - startTime;
       const currentScroll = scrollRef.current ? (scrollRef.current.scrollTop || 0) : 0;
-      renderCampaignMap(ctx, size.w || window.innerWidth, size.h || window.innerHeight, currentScroll, time);
+      const curW = size.w || window.innerWidth || 300;
+      const curH = size.h || window.innerHeight || 300;
+      if (curW > 0 && curH > 0 && canvas.width > 0 && canvas.height > 0) {
+        try {
+          renderCampaignMap(ctx, curW, curH, currentScroll, time, worldTheme.visualTheme, worldTheme.worldId);
+        } catch {
+          // Safeguard against canvas resizing race conditions
+        }
+      }
       animationId = requestAnimationFrame(render);
     };
 
     animationId = requestAnimationFrame(render);
     return () => { if (animationId) cancelAnimationFrame(animationId); };
-  }, [size, scrollRef]);
+  }, [size, scrollRef, worldTheme.visualTheme, worldTheme.worldId]);
 
   return (
     <canvas 
@@ -57,8 +77,28 @@ function CampaignBackground({ scrollRef }: { scrollRef: React.RefObject<HTMLDivE
 
 export function LevelSelect() {
   const { setMode, setLevel, unlockedLevels, setState, hasCompletedCampaignTutorial, startCampaignTutorial } = useGameStore();
+  const worldTheme = useWorldTheme();
+  const themePalette = worldTheme.palette;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showQuickStartModal, setShowQuickStartModal] = useState(!hasCompletedCampaignTutorial);
+  const [launchingLevel, setLaunchingLevel] = useState<number | null>(null);
+
+  const handleLaunchLevel = (lvl: number) => {
+    if (launchingLevel !== null) return;
+    setLaunchingLevel(lvl);
+    audio.playClickSound();
+    haptics.vibrate(20);
+    useGameStore.getState().triggerAssetTransition('Loading Zone Shaders & Atmosphere...', 400);
+
+    setTimeout(() => {
+      if (lvl === 1 && !hasCompletedCampaignTutorial) {
+        startCampaignTutorial();
+      } else {
+        setLevel(lvl);
+        setState('playing');
+      }
+    }, 220);
+  };
 
   const [winWidth, setWinWidth] = useState(window.innerWidth > 0 ? window.innerWidth : 400);
   useEffect(() => {
@@ -133,30 +173,46 @@ export function LevelSelect() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={screenFadeSlideVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="flex flex-col w-full h-full relative z-10 overflow-hidden bg-black"
+      style={worldTheme.cssVariables}
     >
-      <CampaignBackground scrollRef={scrollRef} />
+      <CampaignBackground scrollRef={scrollRef} worldTheme={worldTheme} />
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 sm:p-6 pb-4 fixed top-0 w-full z-40 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent pointer-events-none backdrop-blur-xs">
+      <div className="flex items-center justify-between p-4 sm:p-6 pb-4 absolute top-0 left-0 w-full z-40 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent pointer-events-none backdrop-blur-xs">
         <motion.button 
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setMode('menu')}
-          className="p-2.5 bg-slate-900/80 hover:bg-slate-800 border-2 border-cyan-400/60 rounded-2xl text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] pointer-events-auto cursor-pointer"
+          className="p-2.5 bg-slate-900/80 hover:bg-slate-800 border-2 rounded-2xl pointer-events-auto cursor-pointer transition-all"
+          style={{
+            borderColor: `${themePalette.accent}80`,
+            boxShadow: `0 0 16px ${themePalette.glow}`,
+            color: themePalette.accent,
+          }}
         >
           <ArrowLeft className="w-6 h-6" />
         </motion.button>
 
         <div className="flex flex-col items-center">
-          <span className="text-[10px] font-mono font-bold text-cyan-400 tracking-[0.3em] uppercase">
+          <span 
+            className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase transition-colors"
+            style={{ color: themePalette.accent }}
+          >
             WORLD EXPEDITION
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 uppercase tracking-widest font-mono drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
-            CAMPAIGN
+          <h2 
+            className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text uppercase tracking-widest font-mono transition-all"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${themePalette.accent}, ${themePalette.primary})`,
+              filter: `drop-shadow(0 0 15px ${themePalette.glow})`,
+            }}
+          >
+            SHIFT ODYSSEY
           </h2>
         </div>
 
@@ -165,10 +221,15 @@ export function LevelSelect() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowQuickStartModal(true)}
-          className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/90 hover:bg-slate-800/90 backdrop-blur-md border border-amber-400/70 rounded-2xl text-amber-300 font-mono font-bold text-xs uppercase shadow-[0_0_12px_rgba(245,158,11,0.3)] pointer-events-auto cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/90 hover:bg-slate-800/90 backdrop-blur-md border rounded-2xl font-mono font-bold text-xs uppercase pointer-events-auto cursor-pointer transition-all"
+          style={{
+            borderColor: `${themePalette.accent}60`,
+            boxShadow: `0 0 12px ${themePalette.glow}`,
+            color: themePalette.accent,
+          }}
           title="Architect Quick-Start Guide"
         >
-          <GraduationCap className="w-4 h-4 fill-current shrink-0 text-amber-400" />
+          <GraduationCap className="w-4 h-4 fill-current shrink-0" style={{ color: themePalette.accent }} />
           <span className="hidden sm:inline">GUIDE</span>
         </motion.button>
       </div>
@@ -254,39 +315,44 @@ export function LevelSelect() {
                   style={{ top: item.y, left: `${item.left}%`, transform: 'translate(-50%, -50%)', zIndex: isCurrent ? 40 : 25 }}
                 >
                   <motion.button
-                    whileHover={isUnlocked ? { scale: 1.08 } : {}}
-                    whileTap={isUnlocked ? { scale: 0.92 } : {}}
+                    whileHover={isUnlocked && launchingLevel === null ? { scale: 1.08 } : {}}
+                    whileTap={isUnlocked && launchingLevel === null ? { scale: 0.92 } : {}}
                     onClick={() => {
                       if (isUnlocked) {
-                        if (lvl === 1 && !hasCompletedCampaignTutorial) {
-                          startCampaignTutorial();
-                        } else {
-                          setLevel(lvl);
-                          setState('playing');
-                        }
+                        handleLaunchLevel(lvl);
                       }
                     }}
-                    disabled={!isUnlocked}
+                    disabled={!isUnlocked || launchingLevel !== null}
                     className={`
-                      relative flex items-center justify-center font-black transition-all cursor-pointer
-                      ${isCurrent ? 'w-24 h-24' : isUnlocked ? 'w-20 h-20' : 'w-16 h-16 opacity-75'}
+                      relative flex items-center justify-center font-black transition-all cursor-pointer select-none
+                      ${isCurrent ? 'w-24 h-24' : isUnlocked ? 'w-20 h-20' : 'w-18 h-18 opacity-80'}
+                      ${launchingLevel === lvl ? 'scale-110 shadow-[0_0_30px_rgba(6,182,212,0.9)]' : ''}
                     `}
                   >
+                    {/* Launching Pulse Ring */}
+                    {launchingLevel === lvl && (
+                      <motion.div
+                        initial={{ scale: 0.7, opacity: 1 }}
+                        animate={{ scale: 2.2, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                        className="absolute inset-0 rounded-full border-2 border-cyan-300 pointer-events-none z-30"
+                      />
+                    )}
                     
-                    {/* Integrated 3D Cinematic SVG Platform */}
+                    {/* Console-Grade 3D Themed Landing Platform & Biome Block */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <CinematicTile zoneIdx={item.zoneIndex} state={state} />
+                      <CampaignNodePlate zoneIdx={item.zoneIndex} state={state} level={lvl} />
                     </div>
 
-                    {/* Level Number */}
-                    <div className="relative z-20 flex flex-col items-center justify-center pointer-events-none mt-1">
+                    {/* Level Number Badge */}
+                    <div className="relative z-20 flex flex-col items-center justify-center pointer-events-none -mt-0.5">
                       <span 
                         className={`font-mono font-black ${
                           isCurrent 
-                            ? 'text-3xl text-cyan-300 drop-shadow-[0_0_12px_rgba(6,182,212,0.9)]' 
+                            ? 'text-2xl text-cyan-200 drop-shadow-[0_0_12px_rgba(6,182,212,0.95)]' 
                             : isUnlocked 
-                            ? 'text-xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' 
-                            : 'text-sm text-slate-500'
+                            ? 'text-lg text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]' 
+                            : 'text-xs text-slate-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]'
                         }`}
                       >
                         {lvl}
@@ -294,12 +360,12 @@ export function LevelSelect() {
                       
                       {/* Status Badges */}
                       {isPlayed && (
-                        <div className="absolute -bottom-2.5 -right-2.5 bg-emerald-950/90 rounded-lg p-1 shadow-[0_0_8px_rgba(16,185,129,0.5)] border border-emerald-400/80">
+                        <div className="absolute -bottom-2.5 -right-2.5 bg-emerald-950/95 rounded-lg p-1 shadow-[0_0_10px_rgba(16,185,129,0.7)] border border-emerald-400">
                           <Check className="w-3 h-3 text-emerald-400" strokeWidth={3.5} />
                         </div>
                       )}
                       {!isPlayed && !isCurrent && (
-                        <div className="absolute -bottom-2.5 -right-2.5 bg-slate-950/90 rounded-lg p-1 shadow-sm border border-slate-700">
+                        <div className="absolute -bottom-2.5 -right-2.5 bg-slate-950/95 rounded-lg p-1 shadow-sm border border-slate-700/80">
                           <Lock className="w-2.5 h-2.5 text-slate-400" strokeWidth={2.5} />
                         </div>
                       )}

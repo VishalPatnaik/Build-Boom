@@ -10,6 +10,9 @@ import { ACHIEVEMENTS, getAchievementCurrentValue } from '../game/achievements';
 import { haptics } from '../utils/haptics';
 import { audio } from '../audio/AudioEngine';
 import { ReplayViewer } from './ReplayViewer';
+import { MobileAppInstallButton } from './MobileAppInstallButton';
+
+import { screenFadeSlideVariants } from '../utils/screenTransitions';
 
 export function Menu() {
   const [armoryOpen, setArmoryOpen] = useState(false);
@@ -48,10 +51,11 @@ export function Menu() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="w-full h-full overflow-y-auto overflow-x-hidden touch-pan-y overscroll-y-contain flex flex-col items-center relative z-10 px-4 py-3"
+      variants={screenFadeSlideVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="w-full h-full overflow-y-auto overflow-x-hidden touch-pan-y overscroll-y-contain flex flex-col items-center relative z-10 pt-[max(0.75rem,env(safe-area-inset-top,12px))] pb-[max(5rem,env(safe-area-inset-bottom,20px))] pl-[max(1rem,env(safe-area-inset-left,16px))] pr-[max(1rem,env(safe-area-inset-right,16px))]"
       style={{ scrollbarWidth: 'thin' }}
     >
       <div className="w-full max-w-md flex flex-col items-center space-y-3.5 pb-20 pt-1">
@@ -79,6 +83,9 @@ export function Menu() {
           </motion.button>
 
           <div className="flex items-center gap-2">
+            {/* MOBILE APP INSTALL BUTTON */}
+            <MobileAppInstallButton />
+
             {/* SETTINGS OVERLAY BUTTON */}
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -139,15 +146,15 @@ export function Menu() {
           </div>
         </header>
 
-        {/* GAME TITLE */}
+        {/* OFFICIAL GAME TITLE: TOWER//SHIFT */}
         <div className="text-center relative w-full flex flex-col items-center shrink-0 pt-1">
           <div className="flex items-center justify-center gap-2">
             <motion.h1 
               animate={{ y: [0, -3, 0], rotate: [-1, 1, -1] }}
               transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="text-5xl sm:text-6xl font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 via-sky-400 to-blue-600 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] leading-none font-mono"
+              className="text-4xl sm:text-6xl font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 via-sky-400 to-blue-600 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] leading-none font-mono"
             >
-              BUILD
+              TOWER
             </motion.h1>
             
             <div className="text-xs font-black text-cyan-300 tracking-widest bg-slate-950/90 px-2.5 py-1 rounded-lg border border-cyan-400/50 shadow-[0_0_10px_rgba(6,182,212,0.3)] font-mono">
@@ -157,13 +164,13 @@ export function Menu() {
             <motion.h1 
               animate={{ y: [0, 3, 0], scale: [1, 1.02, 1] }}
               transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
-              className="text-5xl sm:text-6xl font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-orange-500 to-red-600 drop-shadow-[0_0_20px_rgba(239,68,68,0.6)] leading-none font-mono"
+              className="text-4xl sm:text-6xl font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-orange-500 to-red-600 drop-shadow-[0_0_20px_rgba(239,68,68,0.6)] leading-none font-mono"
             >
-              BOOM
+              SHIFT
             </motion.h1>
           </div>
-          <p className="text-cyan-400/80 text-[11px] font-mono uppercase tracking-[0.25em] font-bold mt-1.5 drop-shadow">
-            TACTICAL TOWER PHYSICS
+          <p className="text-cyan-400/90 text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.25em] font-black mt-1.5 drop-shadow">
+            BUILD. BALANCE. DEFLECT. ASCEND.
           </p>
         </div>
 
@@ -208,10 +215,10 @@ export function Menu() {
               </motion.div>
             </div>
 
-            {/* Campaign Action Pill */}
+            {/* Shift Odyssey Campaign Action Pill */}
             <div className="relative bg-gradient-to-r from-slate-950 via-cyan-950 to-slate-950 px-8 py-2.5 rounded-2xl border-2 border-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] z-30 transform group-hover:scale-105 transition-all -mt-3 text-center">
               <span className="text-xl font-black text-cyan-300 tracking-widest uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] font-mono">
-                PLAY CAMPAIGN
+                SHIFT ODYSSEY
               </span>
               <div className="text-[10px] font-bold text-cyan-200/80 uppercase tracking-widest font-mono">
                 WORLD EXPEDITION • LEVEL {unlockedLevels} / 200
@@ -220,7 +227,7 @@ export function Menu() {
           </motion.button>
         </div>
 
-        {/* TOURNAMENT LIVE BANNER */}
+        {/* SHIFT ARENA (TOURNAMENT) LIVE BANNER */}
         <div className="w-full z-20">
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -244,7 +251,7 @@ export function Menu() {
               <div className="text-left leading-tight">
                 <div className="flex items-center gap-2">
                   <span className="font-black text-sm text-white uppercase tracking-wider drop-shadow-md">
-                    TOURNAMENTS
+                    SHIFT ARENA
                   </span>
                   <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse border border-white/40 shadow-xs">
                     LIVE
@@ -306,7 +313,7 @@ export function Menu() {
           </button>
         </motion.div>
 
-        {/* GAME REPLAY: 10-SECOND PHYSICS PLAYBACK */}
+        {/* SHIFT REPLAY: 10-SECOND PHYSICS PLAYBACK */}
         <div className="w-full z-20">
           <motion.div
             whileHover={{ scale: 1.02 }}
@@ -333,7 +340,7 @@ export function Menu() {
               <div className="text-left leading-tight min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-black text-xs sm:text-sm text-white uppercase tracking-wider drop-shadow font-mono">
-                    GAME REPLAY
+                    SHIFT REPLAY
                   </span>
                   <span className="bg-cyan-500/30 text-cyan-300 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border border-cyan-400/40 font-mono">
                     LAST 10s
@@ -346,7 +353,7 @@ export function Menu() {
                           : 'bg-red-950/80 border-red-500/60 text-red-300'
                       }`}
                     >
-                      {lastReplay.finalOutcome === 'won' ? 'CLEARED' : 'BOOM'}
+                      {lastReplay.finalOutcome === 'won' ? 'CLEARED' : 'FALL'}
                     </span>
                   )}
                 </div>
@@ -374,9 +381,9 @@ export function Menu() {
           </motion.div>
         </div>
 
-        {/* DUAL SPECIALIST MODULES: ARCHITECT ACADEMY & BLUEPRINT LAB */}
+        {/* DUAL SPECIALIST MODULES: SHIFT LAB & SHIFT FORGE */}
         <div className="grid grid-cols-2 gap-2.5 w-full z-20">
-          {/* ARCHITECT ACADEMY */}
+          {/* SHIFT LAB (TECH ACADEMY) */}
           <motion.button
             type="button"
             whileHover={{ scale: 1.02 }}
@@ -388,7 +395,7 @@ export function Menu() {
               setMode('academy');
             }}
             className="relative p-3 rounded-2xl bg-gradient-to-br from-[#0c1938] via-[#0f244c] to-[#0c1938] border-2 border-cyan-400/80 shadow-[0_4px_0_#0369a1,0_6px_15px_rgba(0,0,0,0.5)] text-left cursor-pointer flex items-center gap-2.5 select-none active:translate-y-1 active:shadow-none transition-all overflow-hidden"
-            aria-label="Architect Academy"
+            aria-label="Shift Lab"
           >
             {/* Blueprint Grid Texture */}
             <div className="absolute inset-0 bg-blueprint-grid opacity-15 pointer-events-none" />
@@ -402,12 +409,12 @@ export function Menu() {
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               </div>
               <div className="text-xs font-black text-white uppercase tracking-tight truncate">
-                Academy
+                Shift Lab
               </div>
             </div>
           </motion.button>
 
-          {/* BLUEPRINT LAB */}
+          {/* SHIFT FORGE (BLUEPRINT WORKSHOP) */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
@@ -426,13 +433,13 @@ export function Menu() {
                 <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
               </div>
               <div className="text-xs font-black text-white uppercase tracking-tight truncate">
-                Blueprint Lab
+                Shift Forge
               </div>
             </div>
           </motion.button>
         </div>
 
-        {/* MILESTONES & UNLOCK BADGES SHOWCASE */}
+        {/* SHIFT ARCHIVE (ACHIEVEMENTS) SHOWCASE */}
         <div className="w-full z-20">
           <motion.div
             whileHover={{ scale: 1.01 }}
@@ -460,7 +467,7 @@ export function Menu() {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-black text-xs text-white uppercase tracking-wider group-hover:text-yellow-300 transition-colors drop-shadow">
-                      Hall of Records & Badges
+                      Shift Archive
                     </span>
                     {unclaimedCount > 0 && (
                       <span className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase animate-pulse border border-emerald-300">
@@ -628,13 +635,6 @@ export function Menu() {
               <span className="text-[11px] font-mono uppercase font-bold text-emerald-300">
                 VIP Ad-Free
               </span>
-              <button 
-                onClick={() => useGameStore.getState().restoreAds()}
-                className="text-[9px] text-white/50 hover:text-white underline ml-1 cursor-pointer font-mono"
-                title="Restore Ads for dev testing"
-              >
-                Reset
-              </button>
             </div>
           )}
         </div>

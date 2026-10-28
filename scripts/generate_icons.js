@@ -1,0 +1,140 @@
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+
+// Create a premium, iconic 512x512 SVG for TOWER//SHIFT
+const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="45%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </radialGradient>
+    <linearGradient id="cyanCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="40%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="amberCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="magentaCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="50%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#9d174d"/>
+    </linearGradient>
+    <linearGradient id="plateGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Metallic Background with subtle border -->
+  <rect width="512" height="512" rx="115" fill="url(#bgGlow)"/>
+  <rect width="496" height="496" x="8" y="8" rx="107" fill="none" stroke="#22d3ee" stroke-width="4" stroke-opacity="0.3"/>
+
+  <!-- Tactical Grid Coordinate Marks -->
+  <path d="M 64 256 L 448 256 M 256 64 L 256 448" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.12" stroke-dasharray="10 10"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.08"/>
+
+  <!-- Energy Ascension Reticle & Target Rings -->
+  <circle cx="256" cy="104" r="28" fill="none" stroke="#22d3ee" stroke-width="3" stroke-dasharray="6 4" stroke-opacity="0.8"/>
+  <circle cx="256" cy="104" r="14" fill="#22d3ee" filter="url(#softGlow)"/>
+  <circle cx="256" cy="104" r="5" fill="#ffffff"/>
+
+  <!-- Trajectory Deflection Kinetic Vectors -->
+  <path d="M 100 190 L 195 168 M 180 152 L 198 168 L 180 182" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)"/>
+  <path d="M 412 284 L 325 272 M 340 256 L 322 272 L 338 286" stroke="#f59e0b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)"/>
+
+  <!-- TOWER STACK: Base Foundation Plate -->
+  <g filter="url(#softGlow)">
+    <rect x="116" y="344" width="280" height="48" rx="14" fill="#0f172a" stroke="#22d3ee" stroke-width="4.5"/>
+    <rect x="126" y="352" width="260" height="32" rx="9" fill="url(#cyanCore)" fill-opacity="0.85"/>
+    <rect x="136" y="358" width="80" height="8" rx="4" fill="#ffffff" fill-opacity="0.6"/>
+  </g>
+
+  <!-- Mid Stacked Block (Dynamic Deflection Angle) -->
+  <g filter="url(#softGlow)" transform="rotate(-6 256 270)">
+    <rect x="156" y="246" width="200" height="46" rx="14" fill="#1e1b4b" stroke="#f59e0b" stroke-width="4.5"/>
+    <rect x="166" y="254" width="180" height="30" rx="9" fill="url(#amberCore)" fill-opacity="0.9"/>
+    <rect x="176" y="260" width="60" height="6" rx="3" fill="#ffffff" fill-opacity="0.6"/>
+  </g>
+
+  <!-- Top Apex Block (Precision Stacking Shift) -->
+  <g filter="url(#softGlow)" transform="rotate(4 256 172)">
+    <rect x="186" y="150" width="140" height="44" rx="13" fill="#31102f" stroke="#ec4899" stroke-width="4.5"/>
+    <rect x="194" y="157" width="124" height="30" rx="8" fill="url(#magentaCore)" fill-opacity="0.95"/>
+    <rect x="202" y="162" width="40" height="6" rx="3" fill="#ffffff" fill-opacity="0.7"/>
+  </g>
+
+  <!-- TOWER//SHIFT Branding Plaque -->
+  <rect x="106" y="420" width="300" height="44" rx="12" fill="#020617" stroke="#38bdf8" stroke-width="2.5" stroke-opacity="0.75"/>
+  <text x="256" y="448" font-family="'Lilita One', Impact, sans-serif" font-weight="900" font-size="22" fill="#ffffff" text-anchor="middle" letter-spacing="4">TOWER//SHIFT</text>
+</svg>`;
+
+async function buildIcons() {
+  const publicDir = path.resolve('public');
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+
+  // 1. Write the vector SVG icon
+  fs.writeFileSync(path.join(publicDir, 'icon.svg'), svgIcon, 'utf8');
+  console.log('Written public/icon.svg');
+
+  const svgBuffer = Buffer.from(svgIcon);
+
+  // 2. Generate 512x512 PWA Icon
+  await sharp(svgBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(publicDir, 'pwa-512x512.png'));
+  console.log('Generated public/pwa-512x512.png');
+
+  // 3. Generate 512x512 Maskable Icon (safe zone padded)
+  await sharp(svgBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(publicDir, 'pwa-maskable-512x512.png'));
+  console.log('Generated public/pwa-maskable-512x512.png');
+
+  // 4. Generate 192x192 PWA Icon
+  await sharp(svgBuffer)
+    .resize(192, 192)
+    .png()
+    .toFile(path.join(publicDir, 'pwa-192x192.png'));
+  console.log('Generated public/pwa-192x192.png');
+
+  // 5. Generate 180x180 Apple Touch Icon
+  await sharp(svgBuffer)
+    .resize(180, 180)
+    .png()
+    .toFile(path.join(publicDir, 'apple-touch-icon.png'));
+  console.log('Generated public/apple-touch-icon.png');
+
+  // 6. Generate 32x32 and 16x16 Favicons
+  await sharp(svgBuffer)
+    .resize(32, 32)
+    .png()
+    .toFile(path.join(publicDir, 'favicon-32x32.png'));
+  await sharp(svgBuffer)
+    .resize(16, 16)
+    .png()
+    .toFile(path.join(publicDir, 'favicon-16x16.png'));
+  console.log('Generated favicons');
+}
+
+buildIcons().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

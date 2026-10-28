@@ -213,6 +213,25 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
     defaultPricePlaceholder: '$19.99',
     iconType: 'bundle_legend',
   },
+
+  // ==========================================
+  // PHASE 11: UTILITY / PERMANENT PASSES
+  // ==========================================
+  {
+    id: 'remove_ads',
+    name: 'Ad Blocker VIP Pass',
+    subtitle: 'Permanent Interstitial Removal',
+    description: 'Permanently removes all interstitial and random ads, and enables VIP Instant Unlocks for rewarded shop bonuses without ads!',
+    type: 'utility',
+    rarity: 'epic',
+    rewards: {
+      removeAds: true,
+    },
+    defaultPricePlaceholder: '$4.99',
+    iconType: 'shield',
+    badge: 'PERMANENT VIP',
+    featured: true,
+  },
 ];
 
 export function getProductById(id: string): ProductCatalogItem | undefined {

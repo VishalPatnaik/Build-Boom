@@ -11,7 +11,6 @@ interface MysteryChestModalProps {
   daysRemaining?: number;
   isOpen: boolean;
   onClose: () => void;
-  onTestUnbox?: (chestId: string) => void;
 }
 
 export const MysteryChestModal: React.FC<MysteryChestModalProps> = ({
@@ -19,18 +18,9 @@ export const MysteryChestModal: React.FC<MysteryChestModalProps> = ({
   unlockDayLabel,
   daysRemaining,
   isOpen,
-  onClose,
-  onTestUnbox
+  onClose
 }) => {
   if (!isOpen || !chest) return null;
-
-  const handleTestUnbox = () => {
-    audio.playBuildSound(1.3);
-    haptics.blockPlaced('gold_ingot');
-    if (onTestUnbox) {
-      onTestUnbox(chest.id);
-    }
-  };
 
   const getPowerupIcon = (type?: 'stasis' | 'emp' | 'shield') => {
     switch (type) {
@@ -210,23 +200,13 @@ export const MysteryChestModal: React.FC<MysteryChestModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center gap-3 relative z-10">
-            {onTestUnbox && (
-              <button
-                onClick={handleTestUnbox}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Test Unbox Preview</span>
-              </button>
-            )}
-
+          <div className="mt-5 pt-3 border-t border-slate-800/80 w-full relative z-10">
             <button
               onClick={() => {
                 haptics.uiTap();
                 onClose();
               }}
-              className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-slate-950 font-mono text-xs font-black uppercase tracking-wider shadow-lg cursor-pointer transition-all active:scale-95"
+              className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-slate-950 font-mono text-xs font-black uppercase tracking-wider shadow-lg cursor-pointer transition-all active:scale-95"
             >
               Got It
             </button>

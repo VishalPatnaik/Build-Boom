@@ -4,6 +4,7 @@ import { useGameStore } from '../../game/store';
 import { PERK_DEFINITIONS, PerkCategory, PerkDefinition } from '../../game/techTree';
 import { ArrowLeft, Zap, Shield, Compass, Coins, Check, Lock, ChevronRight, Sparkles, AlertCircle, Video } from 'lucide-react';
 import { audio } from '../../audio/AudioEngine';
+import { screenFadeSlideVariants } from '../../utils/screenTransitions';
 
 const CATEGORIES: { id: PerkCategory | 'all'; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'all', label: 'All Disciplines', icon: Sparkles },
@@ -51,9 +52,10 @@ export function TechAcademy() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={screenFadeSlideVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="relative w-full h-full flex flex-col bg-[#0b0f19] text-white select-none overflow-hidden"
     >
       {/* Ambient Blueprint Background Mesh */}
@@ -87,8 +89,8 @@ export function TechAcademy() {
             <div className="text-[9px] sm:text-[10px] font-mono tracking-widest text-cyan-400 uppercase truncate">
               R&D DIVISION • SPEC V3.4
             </div>
-            <h1 className="text-base sm:text-xl font-black tracking-tight text-white uppercase flex items-center gap-1.5 sm:gap-2 truncate">
-              <span className="truncate">Architect Academy</span>
+            <h1 className="text-base sm:text-xl font-black tracking-tight text-white uppercase flex items-center gap-1.5 sm:gap-2 truncate font-mono">
+              <span className="truncate">Shift Lab</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/30 shrink-0">
                 TECH MATRIX
               </span>
@@ -98,13 +100,21 @@ export function TechAcademy() {
 
         {/* Player Vault Balance */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-xl bg-[#141b2d] border border-amber-500/30 shadow-inner">
+          <button
+            type="button"
+            onClick={() => {
+              audio.playClickSound();
+              useGameStore.getState().setShowIAP(true);
+            }}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-xl bg-[#141b2d] hover:bg-[#1a233a] border border-amber-500/40 shadow-inner cursor-pointer active:scale-95 transition-all"
+            title="Get Coins - Architect Store"
+          >
             <span className="text-sm sm:text-base">🪙</span>
             <span className="font-mono font-black text-amber-300 tabular-nums text-xs sm:text-sm">
               {coins.toLocaleString()}
             </span>
-            <span className="text-[9px] sm:text-[10px] uppercase font-mono text-amber-500/80">Coins</span>
-          </div>
+            <span className="text-[9px] sm:text-[10px] uppercase font-mono text-amber-400 font-bold">+</span>
+          </button>
         </div>
       </header>
 

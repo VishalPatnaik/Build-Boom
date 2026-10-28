@@ -1,6 +1,6 @@
 // Production Purchase & Monetization Architecture: Domain Types
 
-export type ProductType = 'coin_pack' | 'powerup_pack' | 'bundle';
+export type ProductType = 'coin_pack' | 'powerup_pack' | 'bundle' | 'utility';
 
 export type ProductRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -14,6 +14,7 @@ export interface ProductReward {
   cosmeticIds?: string[];
   cosmeticNames?: string[];
   specialPerkBonus?: string;
+  removeAds?: boolean;
 }
 
 export interface ProductCatalogItem {
@@ -26,7 +27,7 @@ export interface ProductCatalogItem {
   badge?: string;                  // e.g. 'BEST VALUE', 'MOST POPULAR', 'LIMITED BUNDLE'
   rewards: ProductReward;
   defaultPricePlaceholder: string; // Placeholder string until Google Play Billing localized price arrives
-  iconType: 'coin' | 'stasis' | 'emp' | 'shield' | 'tactical' | 'bundle_starter' | 'bundle_tactical' | 'bundle_legend';
+  iconType: 'coin' | 'stasis' | 'emp' | 'shield' | 'tactical' | 'bundle_starter' | 'bundle_tactical' | 'bundle_legend' | 'remove_ads';
   popular?: boolean;
   bestValue?: boolean;
   featured?: boolean;

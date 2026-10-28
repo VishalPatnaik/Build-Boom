@@ -77,8 +77,8 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
                 <Trophy className="w-6 h-6 fill-current" />
               </div>
               <div>
-                <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2 drop-shadow">
-                  <span>Hall of Records & Badges</span>
+                <h2 className="text-xl font-black text-white uppercase tracking-wider flex items-center gap-2 drop-shadow font-mono">
+                  <span>Shift Archive</span>
                 </h2>
                 <div className="text-xs text-amber-300 font-bold flex items-center gap-1.5 font-mono">
                   <span>{unlockedCount} of {totalAchievements} Unlocked</span>

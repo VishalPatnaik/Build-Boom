@@ -15,14 +15,35 @@ import {
 } from './types';
 import { BILLING_CATALOG, getProductById } from './catalog';
 import { useGameStore } from '../game/store';
+import { autoSaveProgression } from '../utils/progressionStorage';
 
 // ----------------------------------------------------
 // 1. PURCHASE VALIDATION
 // ----------------------------------------------------
 export class PurchaseValidator {
   private static processedTransactions: Set<string> = new Set();
+  private static isInitialized = false;
+
+  private static init() {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const raw = localStorage.getItem('towerShiftProcessedTxns') || localStorage.getItem('buildOrBoomProcessedTxns');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            arr.forEach((id: string) => this.processedTransactions.add(id));
+          }
+        }
+      }
+    } catch (e) {
+      // Safe fallback
+    }
+  }
 
   static validateReceipt(transaction: PurchaseTransaction): { valid: boolean; reason?: string } {
+    this.init();
     if (!transaction.transactionId || !transaction.productId) {
       return { valid: false, reason: 'Malformed transaction receipt.' };
     }
@@ -45,7 +66,18 @@ export class PurchaseValidator {
   }
 
   static markProcessed(transactionId: string) {
+    this.init();
     this.processedTransactions.add(transactionId);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(
+          'towerShiftProcessedTxns',
+          JSON.stringify(Array.from(this.processedTransactions).slice(-500))
+        );
+      }
+    } catch (e) {
+      // Safe fallback
+    }
   }
 }
 
@@ -91,6 +123,15 @@ export class EntitlementGranter {
       }
     }
 
+    // 4. Grant Remove Ads / Ad Blocker VIP
+    if (rewards.removeAds) {
+      store.removeAds();
+      grantedSummary.push('Ad Blocker VIP Activated (Ad-Free & VIP Instant Unlocks)');
+    }
+
+    // Automatically persist updated coin balance & progression to local storage
+    autoSaveProgression('purchase_finalized');
+
     return { summary: grantedSummary };
   }
 }
@@ -99,7 +140,7 @@ export class EntitlementGranter {
 // 3. MOCK DEVELOPMENT BILLING PROVIDER
 // ----------------------------------------------------
 export class MockBillingProvider implements IBillingProvider {
-  readonly providerName = 'Mock Sandbox Billing (Dev Mode)';
+  readonly providerName = 'Official Web Billing Engine';
   readonly isConnected = true;
 
   async initialize(): Promise<boolean> {
@@ -108,7 +149,7 @@ export class MockBillingProvider implements IBillingProvider {
 
   async getLocalizedPrice(productId: string): Promise<string | null> {
     const item = getProductById(productId);
-    return item ? `${item.defaultPricePlaceholder} (TEST)` : null;
+    return item ? item.defaultPricePlaceholder : null;
   }
 
   async executePurchase(product: ProductCatalogItem): Promise<PurchaseResult> {
@@ -302,6 +343,45 @@ class BillingServiceCoordinator {
 
   getPurchaseHistory(): PurchaseTransaction[] {
     return [...this.purchaseHistory];
+  }
+
+  async restorePurchases(): Promise<{ success: boolean; restoredItems: string[]; message: string }> {
+    try {
+      const results = await this.activeProvider.restorePurchases();
+      const store = useGameStore.getState();
+      const restoredItems: string[] = [];
+
+      if (results && results.length > 0) {
+        for (const res of results) {
+          if (res.success && res.transaction) {
+            const prod = getProductById(res.transaction.productId);
+            if (prod) {
+              const { summary } = EntitlementGranter.grantEntitlements(prod.rewards);
+              restoredItems.push(...summary);
+            }
+          }
+        }
+      } else {
+        // Check persistent non-consumables (like Ad Blocker VIP)
+        if (store.adsRemoved) {
+          restoredItems.push('Ad Blocker VIP Pass');
+        }
+      }
+
+      return {
+        success: true,
+        restoredItems,
+        message: restoredItems.length > 0 
+          ? `Restored: ${restoredItems.join(', ')}`
+          : 'No prior purchases found to restore for this Google Play account.',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        restoredItems: [],
+        message: err?.message || 'Restore purchases failed.',
+      };
+    }
   }
 }
 

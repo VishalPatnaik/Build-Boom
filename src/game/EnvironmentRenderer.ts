@@ -16,6 +16,9 @@ export interface ActiveWorldInfo {
   worldName: string;
   visualTheme: VisualThemeMode;
   isSpecialTheme: boolean;
+  matchingSkinId: string;
+  matchingPlateId: string;
+  matchingBoomId: string;
 }
 
 export interface LightSource {
@@ -239,7 +242,7 @@ export const WORLD_NAMES: Record<number, string> = {
 };
 
 // Atmospheric depth haze color profiles for authentic aerial perspective
-interface WorldAtmosphereProfile {
+export interface WorldAtmosphereProfile {
   hazeColor: string;
   horizonRatio: number;
   density: number;
@@ -247,7 +250,7 @@ interface WorldAtmosphereProfile {
   emissiveIntensity: number;
 }
 
-const WORLD_ATMOSPHERES: Record<number, WorldAtmosphereProfile> = {
+export const WORLD_ATMOSPHERES: Record<number, WorldAtmosphereProfile> = {
   0: { hazeColor: 'rgba(186, 230, 253, 0.22)', horizonRatio: 0.64, density: 0.24, emissiveBloomColor: '#fef08a', emissiveIntensity: 0.35 },
   1: { hazeColor: 'rgba(148, 163, 184, 0.08)', horizonRatio: 0.65, density: 0.12, emissiveBloomColor: '#38bdf8', emissiveIntensity: 0.4 },
   2: { hazeColor: 'rgba(234, 88, 12, 0.26)', horizonRatio: 0.62, density: 0.28, emissiveBloomColor: '#fed7aa', emissiveIntensity: 0.4 },
@@ -1105,21 +1108,74 @@ export function resolveActiveWorld(storeState: {
   visualTheme?: VisualThemeMode;
 }): ActiveWorldInfo {
   const visualTheme = storeState.visualTheme || 'default';
-  const isSpecialTheme = visualTheme !== 'default';
+  // High contrast and minimal dark are the only special accessibility themes that replace biome landscape graphics
+  const isAccessibilityTheme = visualTheme === 'high-contrast' || visualTheme === 'minimal-dark';
+  const isSpecialTheme = isAccessibilityTheme;
 
-  // 1. Campaign Mode: Dynamically advances biomes every 10 levels (Level 1-10: Meadow, 11-20: Moon, etc.)
-  if (storeState.mode === 'campaign') {
-    const zoneIdx = Math.floor(Math.max(0, (storeState.level || 1) - 1) / 10) % 20;
+  // 1. If player has explicitly equipped a World environment from the Shop, respect it universally!
+  if (storeState.equippedBackground) {
+    const worldId = storeState.equippedBackground;
+    const worldIndex = Math.abs(parseInt(worldId.replace('bg-', '').replace('campaign-', '')) || 0) % 20;
     return {
-      worldId: `campaign-${zoneIdx}`,
-      worldIndex: zoneIdx,
-      worldName: WORLD_NAMES[zoneIdx] || `Zone ${zoneIdx + 1}`,
+      worldId,
+      worldIndex,
+      worldName: WORLD_NAMES[worldIndex] || 'Cosmic Expanse',
       visualTheme,
-      isSpecialTheme,
+      isSpecialTheme: isAccessibilityTheme,
+      matchingSkinId: `skin-${worldIndex}`,
+      matchingPlateId: `plate-${worldIndex}`,
+      matchingBoomId: `boom-${worldIndex}`,
     };
   }
 
-  // 2. Tournament Mode: Matches the tournament's official target zone
+  // 2. Special Visual Theme overrides (when no background is explicitly equipped)
+  if (visualTheme === 'cyberpunk') {
+    return {
+      worldId: 'bg-14',
+      worldIndex: 14,
+      worldName: WORLD_NAMES[14] || 'Cyberpunk Megacity',
+      visualTheme,
+      isSpecialTheme: false,
+      matchingSkinId: 'skin-14',
+      matchingPlateId: 'plate-14',
+      matchingBoomId: 'boom-14',
+    };
+  } else if (visualTheme === 'solar-gold') {
+    return {
+      worldId: 'bg-13',
+      worldIndex: 13,
+      worldName: WORLD_NAMES[13] || 'Golden El Dorado',
+      visualTheme,
+      isSpecialTheme: false,
+      matchingSkinId: 'skin-13',
+      matchingPlateId: 'plate-13',
+      matchingBoomId: 'boom-13',
+    };
+  } else if (visualTheme === 'deep-cosmos') {
+    return {
+      worldId: 'bg-3',
+      worldIndex: 3,
+      worldName: WORLD_NAMES[3] || 'Deep Space Nebula',
+      visualTheme,
+      isSpecialTheme: false,
+      matchingSkinId: 'skin-3',
+      matchingPlateId: 'plate-3',
+      matchingBoomId: 'boom-3',
+    };
+  } else if (isAccessibilityTheme) {
+    return {
+      worldId: 'bg-0',
+      worldIndex: 0,
+      worldName: visualTheme === 'high-contrast' ? 'High-Contrast Void' : 'Obsidian Minimal',
+      visualTheme,
+      isSpecialTheme: true,
+      matchingSkinId: 'skin-0',
+      matchingPlateId: 'plate-0',
+      matchingBoomId: 'boom-0',
+    };
+  }
+
+  // 3. Tournament Mode: Matches the tournament's official target zone
   if (storeState.mode === 'tournament' && storeState.activeTournament) {
     const t = storeState.activeTournament;
     let zoneIdx = 0;
@@ -1134,20 +1190,34 @@ export function resolveActiveWorld(storeState: {
       worldName: WORLD_NAMES[zoneIdx] || `Tournament Realm`,
       visualTheme,
       isSpecialTheme,
+      matchingSkinId: `skin-${zoneIdx}`,
+      matchingPlateId: `plate-${zoneIdx}`,
+      matchingBoomId: `boom-${zoneIdx}`,
     };
   }
 
-  // 3. Endless / Daily / Academy / Shop / Menu Modes
-  let worldId = storeState.equippedBackground || 'bg-0';
-  let worldIndex = Math.abs(parseInt(worldId.replace('bg-', '').replace('campaign-', '')) || 0) % 20;
+  // 4. Campaign Mode default progression (when no custom world is equipped in Shop)
+  if (storeState.mode === 'campaign') {
+    const zoneIdx = Math.floor(Math.max(0, (storeState.level || 1) - 1) / 10) % 20;
+    return {
+      worldId: `campaign-${zoneIdx}`,
+      worldIndex: zoneIdx,
+      worldName: WORLD_NAMES[zoneIdx] || `Zone ${zoneIdx + 1}`,
+      visualTheme,
+      isSpecialTheme,
+      matchingSkinId: `skin-${zoneIdx}`,
+      matchingPlateId: `plate-${zoneIdx}`,
+      matchingBoomId: `boom-${zoneIdx}`,
+    };
+  }
 
-  // In endless mode, cycle every 15 levels if player hasn't locked an equipped background
+  // 5. Endless Mode progressive rotation (when no custom world is equipped)
+  let worldId = 'bg-0';
+  let worldIndex = 0;
   if (storeState.mode === 'endless' && storeState.state === 'playing') {
-    if (!storeState.equippedBackground || storeState.equippedBackground === 'bg-0') {
-      const endlessZone = Math.floor(Math.max(0, storeState.level - 1) / 15) % 20;
-      worldId = `campaign-${endlessZone}`;
-      worldIndex = endlessZone;
-    }
+    const endlessZone = Math.floor(Math.max(0, storeState.level - 1) / 15) % 20;
+    worldId = `campaign-${endlessZone}`;
+    worldIndex = endlessZone;
   }
 
   return {
@@ -1156,6 +1226,9 @@ export function resolveActiveWorld(storeState: {
     worldName: WORLD_NAMES[worldIndex] || 'Cosmic Expanse',
     visualTheme,
     isSpecialTheme,
+    matchingSkinId: `skin-${worldIndex}`,
+    matchingPlateId: `plate-${worldIndex}`,
+    matchingBoomId: `boom-${worldIndex}`,
   };
 }
 
@@ -1419,7 +1492,16 @@ export class EnvironmentRenderer {
     gameState: string = 'idle',
     towerTilt: number = 0
   ) {
-    if (!ctx || !Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+    if (
+      !ctx ||
+      !ctx.canvas ||
+      ctx.canvas.width <= 0 ||
+      ctx.canvas.height <= 0 ||
+      !Number.isFinite(w) ||
+      !Number.isFinite(h) ||
+      w <= 0 ||
+      h <= 0
+    ) {
       return;
     }
     const safeTime = Number.isFinite(time) ? time : 0;
@@ -1468,23 +1550,31 @@ export class EnvironmentRenderer {
       const progress = Math.min(1.0, elapsed / this.transitionDuration);
       this.transitionAlpha = progress;
 
-      // Ensure offscreen canvas matches size
-      if (this.offscreenCanvas.width !== w || this.offscreenCanvas.height !== h) {
-        this.offscreenCanvas.width = w;
-        this.offscreenCanvas.height = h;
+      // Ensure offscreen canvas matches valid size
+      const targetW = Math.max(1, Math.floor(w));
+      const targetH = Math.max(1, Math.floor(h));
+      if (this.offscreenCanvas.width !== targetW || this.offscreenCanvas.height !== targetH) {
+        this.offscreenCanvas.width = targetW;
+        this.offscreenCanvas.height = targetH;
       }
 
       // 1. Render previous world onto main canvas
       renderCinematicWorld(ctx, w, h, this.previousWorldId, safeTime, false, this.currentParallaxState || undefined);
 
       // 2. Render new world onto offscreen canvas and blend with alpha
-      this.offscreenCtx.clearRect(0, 0, w, h);
-      renderCinematicWorld(this.offscreenCtx, w, h, this.currentWorldId, safeTime, false, this.currentParallaxState || undefined);
+      this.offscreenCtx.clearRect(0, 0, targetW, targetH);
+      renderCinematicWorld(this.offscreenCtx, targetW, targetH, this.currentWorldId, safeTime, false, this.currentParallaxState || undefined);
 
-      ctx.save();
-      ctx.globalAlpha = this.transitionAlpha;
-      ctx.drawImage(this.offscreenCanvas, 0, 0);
-      ctx.restore();
+      if (this.offscreenCanvas.width > 0 && this.offscreenCanvas.height > 0) {
+        try {
+          ctx.save();
+          ctx.globalAlpha = this.transitionAlpha;
+          ctx.drawImage(this.offscreenCanvas, 0, 0);
+          ctx.restore();
+        } catch {
+          // Safeguard against transient canvas sizing
+        }
+      }
 
       if (progress >= 1.0) {
         this.isTransitioning = false;
@@ -1601,7 +1691,7 @@ export class EnvironmentRenderer {
   /**
    * Applies Environmental Lighting, Depth-Dependent Haze, Emissive Bloom, Parallax Clouds, Milestones, and Weather Particles
    */
-  private applyPostProcessingPasses(
+  public applyPostProcessingPasses(
     ctx: CanvasRenderingContext2D,
     w: number,
     h: number,
@@ -2526,17 +2616,23 @@ export class EnvironmentRenderer {
     profile: WorldAtmosphereProfile
   ) {
     if (!this.bloomCanvas || !this.bloomCtx) return;
-
-    ctx.save();
+    if (!ctx || !ctx.canvas || ctx.canvas.width <= 0 || ctx.canvas.height <= 0) return;
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return;
 
     const bloomScale = 0.25; // 1/4 downscale for peak 60 FPS performance
     const bw = Math.max(1, Math.floor(w * bloomScale));
     const bh = Math.max(1, Math.floor(h * bloomScale));
 
+    if (bw <= 0 || bh <= 0) return;
+
     if (this.bloomCanvas.width !== bw || this.bloomCanvas.height !== bh) {
       this.bloomCanvas.width = bw;
       this.bloomCanvas.height = bh;
     }
+
+    if (this.bloomCanvas.width <= 0 || this.bloomCanvas.height <= 0) return;
+
+    ctx.save();
 
     // 1. Copy main canvas into downsampled bloom buffer with brightness extraction filter
     this.bloomCtx.clearRect(0, 0, bw, bh);
@@ -2549,15 +2645,23 @@ export class EnvironmentRenderer {
       if ('filter' in this.bloomCtx) {
         this.bloomCtx.filter = 'none';
       }
-    } catch (e) {
-      this.bloomCtx.drawImage(ctx.canvas, 0, 0, w, h, 0, 0, bw, bh);
+    } catch {
+      try {
+        this.bloomCtx.drawImage(ctx.canvas, 0, 0, w, h, 0, 0, bw, bh);
+      } catch {
+        // Safe catch for zero-dimension or unsupported context
+      }
     }
 
     // 2. Composite soft blurred bloom back over main canvas using screen blend mode
-    ctx.globalCompositeOperation = 'screen';
     const finalAlpha = Math.min(0.75, this.bloomIntensity * profile.emissiveIntensity * 1.25);
-    ctx.globalAlpha = finalAlpha;
-    ctx.drawImage(this.bloomCanvas, 0, 0, bw, bh, 0, 0, w, h);
+    try {
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = finalAlpha;
+      ctx.drawImage(this.bloomCanvas, 0, 0, bw, bh, 0, 0, w, h);
+    } catch {
+      // Safe catch
+    }
 
     // 3. Emissive Atmospheric Spill Light: Add subtle radiant diffusion tint
     const horizonRatio = Number.isFinite(profile.horizonRatio) ? profile.horizonRatio : 0.65;

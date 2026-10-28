@@ -1,6 +1,6 @@
 {
-  "name": "Build or Boom Game",
-  "description": "A fast, colorful memory and timing game where you build structures while avoiding bombs.",
+  "name": "TOWER//SHIFT",
+  "description": "TOWER//SHIFT — Precision physics tower stacking and deflection. BUILD. BALANCE. DEFLECT. ASCEND.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

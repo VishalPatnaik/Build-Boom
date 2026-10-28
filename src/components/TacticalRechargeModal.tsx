@@ -283,7 +283,7 @@ export function TacticalRechargeModal({
               </div>
             )}
 
-            {/* Direct Navigation to Architect Academy */}
+            {/* Direct Navigation to Shift Lab */}
             <button
               type="button"
               onClick={() => {
@@ -296,7 +296,7 @@ export function TacticalRechargeModal({
             >
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-cyan-400" />
-                <span>Upgrade Perks in Tech Academy</span>
+                <span>Upgrade Perks in Shift Lab</span>
               </div>
               <ChevronRight className="w-4 h-4" />
             </button>

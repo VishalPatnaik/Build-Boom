@@ -4,6 +4,7 @@ import { useGameStore } from '../../game/store';
 import { Tournament, GlobalLeaderboardEntry } from '../../game/tournamentTypes';
 import { DEFAULT_FALLBACK_TOURNAMENTS, DEFAULT_FALLBACK_LEADERBOARD, DEFAULT_FALLBACK_TOURNAMENT_LEADERBOARD } from '../../game/tournamentFallbacks';
 import { ZONE_NAMES } from '../campaign/WorldDefinitions';
+import { screenFadeSlideVariants } from '../../utils/screenTransitions';
 import { 
   Trophy, 
   Flame, 
@@ -213,9 +214,10 @@ export function TournamentHub() {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
+      variants={screenFadeSlideVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="relative flex flex-col w-full h-full max-w-2xl mx-auto p-4 z-10 text-white font-display overflow-hidden rounded-[32px] sm:rounded-[36px] bg-gradient-to-b from-slate-950/95 via-[#0c1228]/95 to-slate-950/95 border-2 border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-xl"
     >
       {/* Decorative Blueprint Grid Underlay */}
@@ -270,21 +272,29 @@ export function TournamentHub() {
         </div>
 
         {/* Coins Treasury Cylinder */}
-        <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-950/70 via-black/80 to-amber-950/70 px-3 py-1.5 rounded-2xl border-2 border-yellow-400/50 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.15)]">
+        <button
+          type="button"
+          onClick={() => {
+            useGameStore.getState().setShowIAP(true);
+          }}
+          className="flex items-center gap-1.5 bg-gradient-to-r from-amber-950/70 via-black/80 to-amber-950/70 hover:from-amber-900/80 hover:to-amber-900/80 px-3 py-1.5 rounded-2xl border-2 border-yellow-400/50 hover:border-yellow-400 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.15)] cursor-pointer active:scale-95 transition-all"
+          title="Architect Store - Buy Coins & Packages"
+        >
           <Coins className="w-4 h-4 text-[#FFD700] fill-[#FFD700] drop-shadow-sm" />
           <span className="font-black text-sm text-[#FFD700] tabular-nums">{coins.toLocaleString()}</span>
-        </div>
+          <span className="text-[10px] text-yellow-300 font-bold ml-0.5">+</span>
+        </button>
       </div>
 
       {/* TITLE & TACTICAL SWITCHBOARD TABS */}
       <div className="text-center shrink-0 mb-3 relative z-20">
         <h1 
-          className="text-4xl md:text-5xl font-black uppercase text-[#FFD700] drop-shadow-[0_4px_0_#B8860B] leading-none tracking-wide"
+          className="text-4xl md:text-5xl font-black uppercase text-[#FFD700] drop-shadow-[0_4px_0_#B8860B] leading-none tracking-wide font-mono"
           style={{ WebkitTextStroke: '1.5px #8B4513' }}
         >
-          TOURNAMENTS
+          SHIFT ARENA
         </h1>
-        <p className="text-white/80 font-bold text-xs uppercase tracking-wider mt-0.5">
+        <p className="text-white/80 font-bold text-xs uppercase tracking-wider mt-0.5 font-mono">
           Compete Globally • Win Exclusive Trophies & Coin Prizes
         </p>
 
@@ -592,7 +602,7 @@ export function TournamentHub() {
                             className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-2 border-white text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_4px_0_#1e3a8a] flex items-center gap-1.5 cursor-pointer active:translate-y-1 active:shadow-none"
                           >
                             <Lock className="w-3.5 h-3.5 text-yellow-300" />
-                            <span>Unlock in Campaign</span>
+                            <span>Unlock in Shift Odyssey</span>
                           </motion.button>
                         )}
                       </div>
@@ -634,21 +644,21 @@ export function TournamentHub() {
               </div>
             </div>
 
-            {/* Sub Tabs: Endless vs Tournament vs Campaign */}
+            {/* Sub Tabs: ORBITAL SHIFT vs SHIFT ARENA vs SHIFT ODYSSEY */}
             <div className="relative flex items-center justify-between gap-1.5 bg-black/60 p-1.5 rounded-2xl border-2 border-white/15 shadow-[inset_0_2px_6px_rgba(0,0,0,0.8)] backdrop-blur-md">
               <button
                 onClick={() => {
                   setLeaderboardCategory('endless');
                   setSearchQuery('');
                 }}
-                className={`flex-1 py-2 px-2 rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 py-2 px-2 rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer font-mono ${
                   leaderboardCategory === 'endless'
                     ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-[0_2px_0_#4338ca,inset_0_1px_0_rgba(255,255,255,0.3)]'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <span>♾️</span>
-                <span className="truncate">Endless Tower</span>
+                <span className="truncate">Orbital Shift</span>
               </button>
 
               <button
@@ -656,14 +666,14 @@ export function TournamentHub() {
                   setLeaderboardCategory('tournament');
                   setSearchQuery('');
                 }}
-                className={`flex-1 py-2 px-2 rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 py-2 px-2 rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer font-mono ${
                   leaderboardCategory === 'tournament'
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_2px_0_#b45309,inset_0_1px_0_rgba(255,255,255,0.3)]'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <span>🏆</span>
-                <span className="truncate">Championship</span>
+                <span className="truncate">Shift Arena</span>
               </button>
 
               <button
@@ -671,14 +681,14 @@ export function TournamentHub() {
                   setLeaderboardCategory('campaign');
                   setSearchQuery('');
                 }}
-                className={`flex-1 py-2 px-2 rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 py-2 px-2 rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer font-mono ${
                   leaderboardCategory === 'campaign'
                     ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-[0_2px_0_#0284c7,inset_0_1px_0_rgba(255,255,255,0.3)]'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <span>🗺️</span>
-                <span className="truncate">Campaign Realms</span>
+                <span className="truncate">Shift Odyssey</span>
               </button>
             </div>
 

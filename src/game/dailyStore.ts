@@ -114,9 +114,9 @@ export function rollRandomCosmeticSkin(): CosmeticSkinReward {
   useGameStore.getState().unlockCosmetic(picked.id);
 
   let rarity: 'rare' | 'epic' | 'legendary' = 'rare';
-  if (picked.price >= 2000 || picked.themeIdx >= 12) {
+  if (picked.price >= 4800 * 24 || picked.themeIdx >= 12) {
     rarity = 'legendary';
-  } else if (picked.price >= 300 || picked.themeIdx >= 6) {
+  } else if (picked.price >= 720 * 24 || picked.themeIdx >= 6) {
     rarity = 'epic';
   }
 
@@ -266,17 +266,6 @@ export interface DailyStore {
   claimReward: (taskId: string) => number;
   claimBonus: () => number;
   claimStreakReward: () => StreakRewardResult;
-  simulateOpenChest: (chestId?: string) => {
-    chest: MysteryChestDefinition;
-    bonusCoins: number;
-    powerup?: {
-      type: 'stasis' | 'emp' | 'shield';
-      count: number;
-    };
-    cosmeticSkin: CosmeticSkinReward;
-  };
-  debugAdvanceStreak: () => void;
-  debugResetStreak: () => void;
 }
 
 const generateTasks = (): DailyTask[] => {
@@ -343,6 +332,7 @@ const STORAGE_KEY = 'buildOrBoomDaily_v3';
 
 const loadDailyData = () => {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return null;
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) return JSON.parse(data);
     // Legacy migration v2
@@ -365,6 +355,7 @@ const loadDailyData = () => {
 
 const saveDailyData = (data: any) => {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
     console.error('Failed to save daily data:', e);
@@ -578,58 +569,6 @@ export const useDailyStore = create<DailyStore>((set, get) => {
         multiplier: tier.multiplier,
         chestAwarded
       };
-    },
-
-    simulateOpenChest: (chestId?: string) => {
-      let chestDef: MysteryChestDefinition = MYSTERY_CHESTS.day3;
-      if (chestId === 'chest-day7' || chestId === 'apex' || chestId === 'day7') {
-        chestDef = MYSTERY_CHESTS.day7;
-      }
-
-      const bonusCoins = Math.floor(Math.random() * (chestDef.maxBonusCoins - chestDef.minBonusCoins + 1)) + chestDef.minBonusCoins;
-      let powerupInfo: { type: 'stasis' | 'emp' | 'shield'; count: number } | undefined;
-
-      if (chestDef.guaranteedPowerup && chestDef.powerupCount) {
-        powerupInfo = {
-          type: chestDef.guaranteedPowerup,
-          count: chestDef.powerupCount
-        };
-        useGameStore.getState().addPowerupCharges(chestDef.guaranteedPowerup, chestDef.powerupCount);
-      }
-
-      const cosmeticSkin = rollRandomCosmeticSkin();
-      useGameStore.getState().addCoins(bonusCoins);
-
-      return {
-        chest: chestDef,
-        bonusCoins,
-        powerup: powerupInfo,
-        cosmeticSkin
-      };
-    },
-
-    debugAdvanceStreak: () => {
-      const state = get();
-      const nextStreak = state.streakCount + 1;
-      const updated = {
-        ...state,
-        streakCount: nextStreak,
-        maxStreak: Math.max(state.maxStreak, nextStreak),
-        streakClaimedToday: false
-      };
-      saveDailyData(updated);
-      set(updated);
-    },
-
-    debugResetStreak: () => {
-      const state = get();
-      const updated = {
-        ...state,
-        streakCount: 1,
-        streakClaimedToday: false
-      };
-      saveDailyData(updated);
-      set(updated);
     }
   };
 });

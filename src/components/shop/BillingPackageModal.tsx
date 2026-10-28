@@ -11,6 +11,7 @@ import {
   Coins, 
   Zap, 
   Shield, 
+  ShieldCheck,
   Snowflake, 
   Sparkles, 
   Package, 
@@ -20,9 +21,15 @@ import {
   AlertCircle, 
   Crown,
   Flame,
-  Layers,
-  ChevronRight
+  ChevronRight,
+  RotateCcw,
+  CreditCard,
+  Wallet,
+  Lock
 } from 'lucide-react';
+import { PaymentScreenModal, PaymentRail } from './PaymentScreenModal';
+
+export type PaymentMethod = 'card' | 'gpay' | 'paypal' | 'stripe';
 
 interface BillingPackageModalProps {
   isOpen: boolean;
@@ -31,44 +38,45 @@ interface BillingPackageModalProps {
 }
 
 export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: BillingPackageModalProps) {
-  const { coins, powerups, ownedCosmetics } = useGameStore();
+  const { coins, powerups, ownedCosmetics, adsRemoved } = useGameStore();
   const [activeTab, setActiveTab] = useState<ProductType>(initialTab);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentRail>('gpay');
+  const [activePaymentProduct, setActivePaymentProduct] = useState<ProductCatalogItem | null>(null);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
   const [successResult, setSuccessResult] = useState<{ title: string; items: string[] } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const currentProducts = getProductsByType(activeTab);
-  const isDevMode = billingService.isDevMode();
 
-  const handlePurchase = async (product: ProductCatalogItem) => {
-    if (purchasingId) return;
-    setPurchasingId(product.id);
-    setErrorMessage(null);
+  const handleRestore = async () => {
+    if (isRestoring) return;
+    setIsRestoring(true);
+    setRestoreMessage(null);
+    audio.playClickSound();
+    haptics.uiTap();
+    try {
+      const res = await billingService.restorePurchases();
+      setIsRestoring(false);
+      setRestoreMessage(res.message);
+      if (res.restoredItems.length > 0) {
+        audio.playPerfectSound();
+      }
+      setTimeout(() => setRestoreMessage(null), 3500);
+    } catch {
+      setIsRestoring(false);
+      setRestoreMessage('Failed to query purchase history.');
+      setTimeout(() => setRestoreMessage(null), 3500);
+    }
+  };
+
+  const handlePurchase = (product: ProductCatalogItem) => {
     audio.playClickSound();
     haptics.vibrate([15]);
-
-    try {
-      const result = await billingService.purchaseProduct(product.id);
-      setPurchasingId(null);
-
-      if (result.success && result.grantedItems) {
-        audio.playPerfectSound();
-        haptics.vibrate([25, 40, 25]);
-        setSuccessResult({
-          title: `${product.name} Acquired!`,
-          items: result.grantedItems,
-        });
-      } else {
-        audio.playErrorSound();
-        setErrorMessage(result.message || 'Purchase could not be completed.');
-      }
-    } catch (err: any) {
-      setPurchasingId(null);
-      audio.playErrorSound();
-      setErrorMessage(err?.message || 'Transaction error.');
-    }
+    setActivePaymentProduct(product);
   };
 
   const getRarityBadgeStyle = (rarity: string) => {
@@ -99,7 +107,7 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
         {/* Backdrop Dismiss */}
         <div 
           onClick={onClose} 
@@ -113,14 +121,15 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-2xl bg-[#0f071e] border-2 border-yellow-500/50 rounded-3xl shadow-[0_0_60px_rgba(234,179,8,0.25)] flex flex-col max-h-[92vh] overflow-hidden z-10"
+          className="relative w-full max-w-2xl bg-[#0f071e] border-2 border-yellow-500/50 rounded-3xl shadow-[0_0_60px_rgba(234,179,8,0.25)] flex flex-col max-h-[94vh] overflow-hidden z-10"
         >
           {/* Top Decorative Header */}
-          <div className="relative px-5 pt-5 pb-4 border-b border-white/10 bg-gradient-to-r from-[#1c0c38] via-[#2d1254] to-[#1c0c38] shrink-0">
+          <div className="relative px-5 pt-5 pb-3 border-b border-white/10 bg-gradient-to-r from-[#1c0c38] via-[#2d1254] to-[#1c0c38] shrink-0">
             {/* Close Button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all cursor-pointer border border-white/10"
+              title="Close Store"
             >
               <X className="w-5 h-5" />
             </button>
@@ -136,14 +145,14 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl sm:text-2xl font-black text-white tracking-wider uppercase font-mono">
-                      ARCHITECT STORE
+                      TOWER//SHIFT STORE
                     </h2>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 border border-yellow-400/40">
-                      {isDevMode ? 'SANDBOX TEST' : 'OFFICIAL'}
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
+                      OFFICIAL VAULT
                     </span>
                   </div>
                   <p className="text-xs text-white/60">
-                    Official In-App Purchases & Tactical Arsenal Bundles
+                    Credit/Debit, Google Pay, PayPal, Apple Pay & Stripe
                   </p>
                 </div>
               </div>
@@ -163,42 +172,112 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
               </div>
             </div>
 
+            {/* Payment Method Selector Bar */}
+            <div className="mt-3.5 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] font-mono">
+              <div className="flex items-center gap-1.5 text-white/70">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Select Payment Method:</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedMethod('gpay'); audio.playClickSound(); }}
+                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
+                    selectedMethod === 'gpay'
+                      ? 'bg-amber-500/30 border-amber-400 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  <span>⚡</span>
+                  <span>Google Pay</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedMethod('card'); audio.playClickSound(); }}
+                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
+                    selectedMethod === 'card'
+                      ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  <CreditCard className="w-3 h-3 text-cyan-400" />
+                  <span>Card</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedMethod('paypal'); audio.playClickSound(); }}
+                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
+                    selectedMethod === 'paypal'
+                      ? 'bg-blue-500/30 border-blue-400 text-blue-200 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="font-black">🅿️</span>
+                  <span>PayPal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedMethod('stripe'); audio.playClickSound(); }}
+                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
+                    selectedMethod === 'stripe'
+                      ? 'bg-purple-500/30 border-purple-400 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="font-black">S</span>
+                  <span>Stripe</span>
+                </button>
+              </div>
+            </div>
+
             {/* Category Navigation Tabs */}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-3">
               <button
                 onClick={() => { setActiveTab('bundle'); audio.playClickSound(); }}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
                   activeTab === 'bundle'
                     ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black border-yellow-300 shadow-md shadow-yellow-500/20 font-black'
                     : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <Package className="w-4 h-4" />
+                <Package className="w-3.5 h-3.5" />
                 <span>Bundles</span>
               </button>
 
               <button
                 onClick={() => { setActiveTab('coin_pack'); audio.playClickSound(); }}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
                   activeTab === 'coin_pack'
                     ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black border-yellow-300 shadow-md shadow-yellow-500/20 font-black'
                     : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <Coins className="w-4 h-4" />
+                <Coins className="w-3.5 h-3.5" />
                 <span>Coin Packs</span>
               </button>
 
               <button
                 onClick={() => { setActiveTab('powerup_pack'); audio.playClickSound(); }}
-                className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
                   activeTab === 'powerup_pack'
                     ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black border-yellow-300 shadow-md shadow-yellow-500/20 font-black'
                     : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <Shield className="w-4 h-4" />
-                <span>Tactical Packs</span>
+                <Shield className="w-3.5 h-3.5" />
+                <span>Tactical</span>
+              </button>
+
+              <button
+                onClick={() => { setActiveTab('utility'); audio.playClickSound(); }}
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                  activeTab === 'utility'
+                    ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black border-yellow-300 shadow-md shadow-yellow-500/20 font-black'
+                    : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5" />
+                <span>VIP Pass</span>
               </button>
             </div>
           </div>
@@ -213,8 +292,17 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
               </div>
             )}
 
+            {/* Restore Status Notification */}
+            {restoreMessage && (
+              <div className="p-3 bg-cyan-500/20 border border-cyan-400/40 rounded-2xl flex items-center gap-2 text-cyan-200 text-xs font-mono">
+                <RotateCcw className="w-4 h-4 shrink-0 text-cyan-400" />
+                <span>{restoreMessage}</span>
+              </div>
+            )}
+
             {currentProducts.map((product) => {
               const isBuying = purchasingId === product.id;
+              const isAlreadyActiveVIP = product.rewards.removeAds && adsRemoved;
 
               return (
                 <motion.div
@@ -249,7 +337,10 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                       {product.iconType === 'emp' && (
                         <Zap className="w-8 h-8 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
                       )}
-                      {product.iconType === 'shield' && (
+                      {product.iconType === 'shield' && product.id === 'remove_ads' && (
+                        <ShieldCheck className="w-8 h-8 text-emerald-400 fill-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      )}
+                      {product.iconType === 'shield' && product.id !== 'remove_ads' && (
                         <Shield className="w-8 h-8 text-emerald-400 fill-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                       )}
                       {product.iconType === 'tactical' && (
@@ -288,6 +379,11 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
 
                       {/* Content Badges */}
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {product.rewards.removeAds && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono font-bold">
+                            <ShieldCheck className="w-3 h-3" />PERMANENT AD-FREE VIP
+                          </span>
+                        )}
                         {product.rewards.coins && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-[10px] font-mono font-bold">
                             <Coins className="w-3 h-3" />+{product.rewards.coins.toLocaleString()}
@@ -320,42 +416,84 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                   {/* Purchase Button */}
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10 shrink-0">
                     <div className="text-left sm:text-right">
-                      <div className="text-xs text-white/50 font-mono">
-                        {isDevMode ? 'TEST PRICE' : 'PRICE'}
+                      <div className="text-[10px] text-white/50 font-mono flex items-center sm:justify-end gap-1">
+                        <Lock className="w-2.5 h-2.5 text-emerald-400" />
+                        <span>PRICE</span>
                       </div>
                       <div className="text-lg font-black text-white font-mono">
                         {product.defaultPricePlaceholder}
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handlePurchase(product)}
-                      disabled={isBuying}
-                      className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                        product.featured || product.rarity === 'legendary'
-                          ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-black hover:brightness-110 shadow-yellow-500/25'
-                          : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:brightness-110 shadow-purple-500/25'
-                      }`}
-                    >
-                      {isBuying ? (
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <span>{isDevMode ? 'TEST BUY' : 'PURCHASE'}</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </>
-                      )}
-                    </button>
+                    {isAlreadyActiveVIP ? (
+                      <div className="px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider bg-emerald-500/20 border-2 border-emerald-400 text-emerald-300 flex items-center justify-center gap-1.5 shadow-sm font-mono">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>VIP ACTIVE</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handlePurchase(product)}
+                        disabled={isBuying}
+                        className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-mono ${
+                          selectedMethod === 'gpay'
+                            ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/30'
+                            : selectedMethod === 'paypal'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:brightness-110 shadow-blue-500/30'
+                            : selectedMethod === 'stripe'
+                            ? 'bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white hover:brightness-110 shadow-purple-500/30'
+                            : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 hover:brightness-110 shadow-cyan-500/30'
+                        }`}
+                      >
+                        {isBuying ? (
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <span>
+                              {selectedMethod === 'gpay' ? '⚡' : selectedMethod === 'paypal' ? '🅿️' : selectedMethod === 'stripe' ? 'S' : '💳'}
+                            </span>
+                            <span>
+                              {selectedMethod === 'gpay'
+                                ? `PAY ${product.defaultPricePlaceholder} WITH GPAY`
+                                : selectedMethod === 'paypal'
+                                ? `PAY ${product.defaultPricePlaceholder} WITH PAYPAL`
+                                : selectedMethod === 'stripe'
+                                ? `PAY ${product.defaultPricePlaceholder} WITH STRIPE`
+                                : `PAY ${product.defaultPricePlaceholder} WITH CARD`}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               );
             })}
           </div>
 
-          {/* Footer Note */}
-          <div className="p-3.5 bg-black/40 border-t border-white/10 text-center text-[10px] text-white/50 flex items-center justify-center gap-2 shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Secure Entitlement Delivery • Google Play Billing Architecture • Instant Account Sync</span>
+          {/* Footer Note & Restore Purchases */}
+          <div className="p-3 sm:p-3.5 bg-black/60 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0 text-[10px]">
+            <div className="text-white/60 flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
+              <span className="flex items-center gap-1 text-emerald-400 font-mono font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Verified:</span>
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">Credit/Debit</span>
+              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">Google Pay</span>
+              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">PayPal</span>
+              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">Stripe</span>
+            </div>
+            <button
+              onClick={handleRestore}
+              disabled={isRestoring}
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white font-mono text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 border border-white/15 shrink-0"
+            >
+              {isRestoring ? (
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <RotateCcw className="w-3 h-3 text-cyan-400" />
+              )}
+              <span>RESTORE PURCHASES</span>
+            </button>
           </div>
         </motion.div>
 
@@ -366,22 +504,22 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
-              className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+              className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
             >
               <div className="relative w-full max-w-sm bg-[#160a2b] border-2 border-yellow-400 p-6 rounded-3xl text-center shadow-[0_0_50px_rgba(250,204,21,0.4)]">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 mx-auto mb-3 flex items-center justify-center shadow-lg shadow-yellow-500/40">
                   <Check className="w-8 h-8 text-black stroke-[3]" />
                 </div>
                 <h3 className="text-xl font-black text-white uppercase tracking-wider font-mono mb-1">
-                  {successResult.title}
+                  TRANSACTION VERIFIED
                 </h3>
-                <p className="text-xs text-yellow-300 font-medium mb-4">
-                  All package entitlements have been verified and granted to your architect account.
+                <p className="text-sm font-bold text-yellow-300 mb-4">
+                  {successResult.title}
                 </p>
 
-                <div className="p-3 bg-black/40 rounded-xl border border-white/10 mb-5 space-y-1.5 text-left text-xs font-mono">
+                <div className="bg-black/50 border border-white/10 rounded-2xl p-3 text-left space-y-1.5 mb-5 max-h-48 overflow-y-auto">
                   {successResult.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-white/90">
+                    <div key={idx} className="flex items-center gap-2 text-xs font-mono text-white/90">
                       <Sparkles className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
                       <span>{item}</span>
                     </div>
@@ -389,8 +527,12 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                 </div>
 
                 <button
-                  onClick={() => setSuccessResult(null)}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black uppercase tracking-wider text-sm hover:brightness-110 shadow-lg shadow-yellow-500/25 cursor-pointer"
+                  onClick={() => {
+                    setSuccessResult(null);
+                    audio.playClickSound();
+                    haptics.uiTap();
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black uppercase tracking-wider text-xs font-mono shadow-md cursor-pointer hover:brightness-110 active:scale-95"
                 >
                   CLAIM & CONTINUE
                 </button>
@@ -398,6 +540,18 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Payment Screen Modal */}
+        <PaymentScreenModal
+          isOpen={!!activePaymentProduct}
+          onClose={() => setActivePaymentProduct(null)}
+          product={activePaymentProduct}
+          initialRail={selectedMethod}
+          onSuccess={(result) => {
+            setActivePaymentProduct(null);
+            setSuccessResult(result);
+          }}
+        />
       </div>
     </AnimatePresence>
   );
