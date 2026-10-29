@@ -54,14 +54,23 @@ function ellipse(ctx: Ctx, x: number, y: number, rx: number, ry: number, fill: s
 
 function outline(ctx: Ctx, color: string, width: number) {
   ctx.strokeStyle = color;
-  ctx.lineWidth = width;
+  ctx.lineWidth = Math.max(1.8, width * 1.3);
+  ctx.lineJoin = 'round';
   ctx.stroke();
 }
+
+/** Soft glossy highlight in the upper-left of a shape (cel-shaded look). */
+function gloss(ctx: Ctx, x: number, y: number, rx: number, ry: number) {
+  ellipse(ctx, x, y, rx, ry, 'rgba(255,255,255,0.38)', -0.35);
+  circle(ctx, x - rx * 0.35, y - ry * 0.1, Math.min(rx, ry) * 0.28, 'rgba(255,255,255,0.65)');
+}
+
+const INK = '#2a1f3d';
 
 /** Cute face. `s` is the eye spacing scale (roughly the face half-width). */
 function face(ctx: Ctx, x: number, y: number, s: number, mood: ObjectMood, time: number, seed: number, dark = '#1e1b2e') {
   const eyeDx = s * 0.42;
-  const eyeR = Math.max(1.2, s * 0.17);
+  const eyeR = Math.max(1.4, s * 0.2);
   const blink = (Math.floor((time + seed * 977) / 2600) % 3 === 0) && ((time + seed * 977) % 2600) < 120;
   ctx.lineCap = 'round';
 
@@ -791,6 +800,354 @@ const BLOCKS: BlockArt[] = [
     circle(ctx, hw * 0.55, -hh * 0.55, 1.3 + tw * 1.2, '#ffffff');
   },
 ];
+
+
+// ---------- redesigned characters (clearer silhouettes) ----------
+
+// 1 Astronaut: big round helmet, puffy suit floating sideways, backpack
+BLOCKS[1] = (ctx, hw, hh, time, mood) => {
+  const bob = Math.sin(time / 500) * 0.6;
+  // backpack
+  rr(ctx, hw * 0.05, -hh * 0.95 + bob, hw * 0.8, hh * 0.55, 4);
+  ctx.fillStyle = '#94a3b8';
+  ctx.fill();
+  outline(ctx, INK, 1.4);
+  // suit body
+  rr(ctx, -hw * 0.25, -hh * 0.55 + bob, hw * 1.2, hh * 1.4, hh * 0.65);
+  ctx.fillStyle = vgrad(ctx, -hh, hh, '#ffffff', '#cbd5e1');
+  ctx.fill();
+  outline(ctx, INK, 1.4);
+  // arm + glove
+  rr(ctx, hw * 0.1, hh * 0.1 + bob, hw * 0.45, hh * 0.4, hh * 0.2);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fill();
+  outline(ctx, INK, 1.2);
+  circle(ctx, hw * 0.6, hh * 0.3 + bob, hh * 0.22, '#f97316');
+  // chest panel lights
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(hw * 0.25, -hh * 0.2 + bob, 3, 3);
+  ctx.fillStyle = Math.floor(time / 400) % 2 ? '#22c55e' : '#166534';
+  ctx.fillRect(hw * 0.38, -hh * 0.2 + bob, 3, 3);
+  // helmet
+  const R = Math.min(hh * 1.05, hw * 0.55);
+  const hx = -hw * 0.45;
+  circle(ctx, hx, bob, R, '#f8fafc');
+  ctx.beginPath();
+  ctx.arc(hx, bob, R, 0, Math.PI * 2);
+  outline(ctx, INK, 1.4);
+  ctx.beginPath();
+  ctx.ellipse(hx - R * 0.05, bob + R * 0.02, R * 0.78, R * 0.68, 0, 0, Math.PI * 2);
+  const vg = ctx.createLinearGradient(0, -R, 0, R);
+  vg.addColorStop(0, '#312e81');
+  vg.addColorStop(1, '#0b1026');
+  ctx.fillStyle = vg;
+  ctx.fill();
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  face(ctx, hx - R * 0.05, bob + R * 0.05, R * 0.62, mood, time, 1, '#f8fafc');
+  ellipse(ctx, hx - R * 0.42, bob - R * 0.38, R * 0.18, R * 0.1, 'rgba(255,255,255,0.7)', -0.6);
+  // antenna
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(hx + R * 0.5, bob - R * 0.75);
+  ctx.lineTo(hx + R * 0.75, bob - R * 1.15);
+  ctx.stroke();
+  circle(ctx, hx + R * 0.75, bob - R * 1.15, 1.8, Math.floor(time / 300) % 2 ? '#ef4444' : '#fca5a5');
+};
+
+// 2 Mars Rover: chunky body on rocker wheels, camera head on a mast
+BLOCKS[2] = (ctx, hw, hh, time, mood) => {
+  const wheelR = hh * 0.36;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.7, hh * 0.62);
+  ctx.lineTo(0, hh * 0.25);
+  ctx.lineTo(hw * 0.7, hh * 0.62);
+  ctx.stroke();
+  for (const fx of [-0.7, 0, 0.7]) {
+    const wx = hw * fx;
+    circle(ctx, wx, hh * 0.64, wheelR, '#3f3f46');
+    ctx.beginPath();
+    ctx.arc(wx, hh * 0.64, wheelR, 0, Math.PI * 2);
+    outline(ctx, INK, 1.2);
+    circle(ctx, wx, hh * 0.64, wheelR * 0.4, '#a1a1aa');
+    const a = time / 160;
+    ctx.strokeStyle = '#71717a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(wx + Math.cos(a) * wheelR * 0.85, hh * 0.64 + Math.sin(a) * wheelR * 0.85);
+    ctx.lineTo(wx - Math.cos(a) * wheelR * 0.85, hh * 0.64 - Math.sin(a) * wheelR * 0.85);
+    ctx.stroke();
+  }
+  // body
+  rr(ctx, -hw * 0.85, -hh * 0.2, hw * 1.7, hh * 0.65, 5);
+  ctx.fillStyle = vgrad(ctx, -hh * 0.2, hh * 0.45, '#fdba74', '#c2410c');
+  ctx.fill();
+  outline(ctx, INK, 1.4);
+  gloss(ctx, -hw * 0.5, -hh * 0.05, hw * 0.25, hh * 0.08);
+  // solar panel deck
+  ctx.fillStyle = '#1d4ed8';
+  ctx.fillRect(hw * 0.05, -hh * 0.42, hw * 0.75, hh * 0.22);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(hw * 0.05, -hh * 0.42, hw * 0.75, hh * 0.22);
+  ctx.strokeStyle = '#93c5fd';
+  ctx.lineWidth = 0.7;
+  for (let i = 1; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(hw * 0.05 + (hw * 0.75 * i) / 4, -hh * 0.42);
+    ctx.lineTo(hw * 0.05 + (hw * 0.75 * i) / 4, -hh * 0.2);
+    ctx.stroke();
+  }
+  // mast + camera head
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.45, -hh * 0.2);
+  ctx.lineTo(-hw * 0.45, -hh * 0.55);
+  ctx.stroke();
+  const tilt = mood === 'worried' ? Math.sin(time / 60) * 0.12 : Math.sin(time / 900) * 0.06;
+  ctx.save();
+  ctx.translate(-hw * 0.45, -hh * 0.8);
+  ctx.rotate(tilt);
+  rr(ctx, -hw * 0.42, -hh * 0.42, hw * 0.84, hh * 0.72, 5);
+  ctx.fillStyle = vgrad(ctx, -hh * 0.4, hh * 0.3, '#f4f4f5', '#a1a1aa');
+  ctx.fill();
+  outline(ctx, INK, 1.3);
+  face(ctx, 0, -hh * 0.08, Math.min(hh * 0.55, hw * 0.34), mood, time, 2);
+  ctx.restore();
+};
+
+// 7 Tiny Knight: rounded helm with T-visor, plume, little shield
+BLOCKS[7] = (ctx, hw, hh, time, mood) => {
+  const sway = Math.sin(time / 300) * 0.25;
+  // plume
+  ctx.save();
+  ctx.translate(0, -hh * 0.95);
+  ctx.rotate(sway);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(hw * 0.5, -hh * 0.6, hw * 0.75, -hh * 0.05);
+  ctx.quadraticCurveTo(hw * 0.35, -hh * 0.2, 0, 0);
+  ctx.fillStyle = '#dc2626';
+  ctx.fill();
+  outline(ctx, INK, 1.1);
+  ctx.restore();
+  // helm
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.9, hh);
+  ctx.lineTo(-hw * 0.9, -hh * 0.2);
+  ctx.quadraticCurveTo(-hw * 0.9, -hh * 1.05, 0, -hh * 1.05);
+  ctx.quadraticCurveTo(hw * 0.9, -hh * 1.05, hw * 0.9, -hh * 0.2);
+  ctx.lineTo(hw * 0.9, hh);
+  ctx.closePath();
+  ctx.fillStyle = vgrad(ctx, -hh, hh, '#f1f5f9', '#64748b');
+  ctx.fill();
+  outline(ctx, INK, 1.4);
+  gloss(ctx, -hw * 0.5, -hh * 0.6, hw * 0.2, hh * 0.15);
+  // T visor
+  ctx.fillStyle = '#0f172a';
+  rr(ctx, -hw * 0.7, -hh * 0.42, hw * 1.4, hh * 0.62, 3);
+  ctx.fill();
+  ctx.fillRect(-hw * 0.09, -hh * 0.1, hw * 0.18, hh * 0.8);
+  face(ctx, 0, -hh * 0.12, Math.min(hh * 0.62, hw * 0.34), mood, time, 7, '#fde68a');
+  // rivets + shield
+  for (const fx of [-0.75, 0.75]) circle(ctx, hw * fx, hh * 0.6, 1.8, '#cbd5e1');
+  ctx.beginPath();
+  ctx.moveTo(hw * 0.75, -hh * 0.1);
+  ctx.lineTo(hw * 1.08, -hh * 0.1);
+  ctx.lineTo(hw * 1.08, hh * 0.45);
+  ctx.quadraticCurveTo(hw * 0.92, hh * 0.9, hw * 0.75, hh * 0.45);
+  ctx.closePath();
+  ctx.fillStyle = '#2563eb';
+  ctx.fill();
+  outline(ctx, INK, 1.1);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(hw * 0.89, -hh * 0.05, 2, hh * 0.6);
+};
+
+// 10 Penguin: belly-sliding penguin with flippers, beak and feet
+BLOCKS[10] = (ctx, hw, hh, time, mood) => {
+  const flap = Math.sin(time / (mood === 'flying' ? 80 : 300)) * 0.35;
+  // feet
+  for (const dy of [-0.15, 0.2]) ellipse(ctx, hw * 0.92, hh * dy + hh * 0.35, hw * 0.12, hh * 0.14, '#f97316');
+  // body
+  ctx.beginPath();
+  ctx.ellipse(hw * 0.05, hh * 0.05, hw * 0.92, hh * 0.92, 0, 0, Math.PI * 2);
+  ctx.fillStyle = vgrad(ctx, -hh, hh, '#334155', '#0f172a');
+  ctx.fill();
+  outline(ctx, INK, 1.4);
+  // white belly
+  ctx.beginPath();
+  ctx.ellipse(hw * 0.1, hh * 0.35, hw * 0.75, hh * 0.55, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#f8fafc';
+  ctx.fill();
+  // flipper
+  ellipse(ctx, hw * 0.2, -hh * 0.15, hw * 0.35, hh * 0.18, '#1e293b', -0.3 + flap);
+  // head face patch
+  circle(ctx, -hw * 0.6, -hh * 0.15, hh * 0.62, '#f8fafc');
+  face(ctx, -hw * 0.6, -hh * 0.2, Math.min(hh * 0.52, hw * 0.3), mood, time, 10);
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.92, hh * 0.05);
+  ctx.lineTo(-hw * 1.15, hh * 0.15);
+  ctx.lineTo(-hw * 0.92, hh * 0.28);
+  ctx.closePath();
+  ctx.fillStyle = '#f97316';
+  ctx.fill();
+  outline(ctx, INK, 0.8);
+  // scarf
+  rr(ctx, -hw * 0.3, -hh * 0.65, hw * 0.16, hh * 1.3, 2);
+  ctx.fillStyle = '#ef4444';
+  ctx.fill();
+  gloss(ctx, -hw * 0.1, -hh * 0.6, hw * 0.25, hh * 0.1);
+};
+
+// 11 Pirate Parrot: red head, yellow hooked beak, blue wing, long tail
+BLOCKS[11] = (ctx, hw, hh, time, mood) => {
+  const flap = Math.sin(time / (mood === 'flying' ? 60 : 200)) * 0.35;
+  // tail feathers
+  for (const [c, dy] of [['#2563eb', -0.15], ['#facc15', 0.05], ['#16a34a', 0.25]] as [string, number][]) {
+    ctx.beginPath();
+    ctx.moveTo(hw * 0.4, hh * dy);
+    ctx.lineTo(hw * 1.1, hh * (dy + 0.35));
+    ctx.lineTo(hw * 0.95, hh * (dy + 0.55));
+    ctx.closePath();
+    ctx.fillStyle = c;
+    ctx.fill();
+    outline(ctx, INK, 0.9);
+  }
+  // body
+  ctx.beginPath();
+  ctx.ellipse(hw * 0.05, hh * 0.15, hw * 0.65, hh * 0.78, 0, 0, Math.PI * 2);
+  ctx.fillStyle = vgrad(ctx, -hh, hh, '#ef4444', '#b91c1c');
+  ctx.fill();
+  outline(ctx, INK, 1.3);
+  // wing
+  ctx.save();
+  ctx.translate(hw * 0.1, 0);
+  ctx.rotate(flap);
+  ctx.beginPath();
+  ctx.ellipse(hw * 0.15, hh * 0.1, hw * 0.45, hh * 0.42, 0.3, 0, Math.PI * 2);
+  ctx.fillStyle = '#2563eb';
+  ctx.fill();
+  outline(ctx, INK, 1.1);
+  ctx.fillStyle = '#facc15';
+  ctx.beginPath();
+  ctx.ellipse(hw * 0.3, hh * 0.35, hw * 0.25, hh * 0.15, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // head
+  circle(ctx, -hw * 0.5, -hh * 0.3, hh * 0.68, '#ef4444');
+  ctx.beginPath();
+  ctx.arc(-hw * 0.5, -hh * 0.3, hh * 0.68, 0, Math.PI * 2);
+  outline(ctx, INK, 1.3);
+  ellipse(ctx, -hw * 0.5, -hh * 0.22, hh * 0.45, hh * 0.35, '#fef2f2');
+  face(ctx, -hw * 0.48, -hh * 0.3, Math.min(hh * 0.5, hw * 0.3), mood, time, 11);
+  // hooked beak
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.85, -hh * 0.35);
+  ctx.quadraticCurveTo(-hw * 1.2, -hh * 0.3, -hw * 1.0, hh * 0.15);
+  ctx.quadraticCurveTo(-hw * 0.95, -hh * 0.05, -hw * 0.8, -hh * 0.05);
+  ctx.closePath();
+  ctx.fillStyle = '#fbbf24';
+  ctx.fill();
+  outline(ctx, INK, 0.9);
+  // pirate hat
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.95, -hh * 0.82);
+  ctx.quadraticCurveTo(-hw * 0.5, -hh * 1.55, -hw * 0.05, -hh * 0.82);
+  ctx.closePath();
+  ctx.fillStyle = '#1c1917';
+  ctx.fill();
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  circle(ctx, -hw * 0.5, -hh * 1.05, 2, '#f8fafc');
+};
+
+// 15 Hazmat Duck: classic rubber duck wearing a gas mask
+BLOCKS[15] = (ctx, hw, hh, time, mood) => {
+  const bob = Math.sin(time / 400) * 0.8;
+  // body
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.4, hh * 0.9);
+  ctx.quadraticCurveTo(-hw * 0.95, hh * 0.9, -hw * 0.75, hh * 0.05);
+  ctx.quadraticCurveTo(hw * 0.2, -hh * 0.2, hw * 0.75, -hh * 0.45 + bob);
+  ctx.quadraticCurveTo(hw * 1.0, hh * 0.9, hw * 0.3, hh * 0.9);
+  ctx.closePath();
+  ctx.fillStyle = vgrad(ctx, -hh, hh, '#fde047', '#eab308');
+  ctx.fill();
+  outline(ctx, INK, 1.4);
+  ellipse(ctx, hw * 0.15, hh * 0.25, hw * 0.35, hh * 0.25, 'rgba(202,138,4,0.45)', -0.2);
+  // head
+  const hx = -hw * 0.45;
+  const hy = -hh * 0.35 + bob * 0.5;
+  circle(ctx, hx, hy, hh * 0.72, '#fde047');
+  ctx.beginPath();
+  ctx.arc(hx, hy, hh * 0.72, 0, Math.PI * 2);
+  outline(ctx, INK, 1.4);
+  gloss(ctx, hx - hh * 0.25, hy - hh * 0.35, hh * 0.2, hh * 0.12);
+  // gas mask: goggles + snout + filter
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(hx - hh * 0.72, hy - hh * 0.2, hh * 1.44, hh * 0.16);
+  face(ctx, hx, hy - hh * 0.15, Math.min(hh * 0.55, hw * 0.3), mood, time, 15, '#a3e635');
+  for (const sx of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(hx + sx * hh * 0.24, hy - hh * 0.15, hh * 0.24, 0, Math.PI * 2);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  rr(ctx, hx - hh * 0.95, hy + hh * 0.1, hh * 0.6, hh * 0.45, hh * 0.15);
+  ctx.fillStyle = '#475569';
+  ctx.fill();
+  outline(ctx, INK, 1);
+  circle(ctx, hx - hh * 0.98, hy + hh * 0.32, hh * 0.18, '#a3e635');
+  // radiation badge on body
+  const bx = hw * 0.4;
+  const by = hh * 0.35;
+  circle(ctx, bx, by, hh * 0.28, '#1f2937');
+  ctx.fillStyle = '#facc15';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.arc(bx, by, hh * 0.24, i * 2.094 - 0.35, i * 2.094 + 0.35);
+    ctx.fill();
+  }
+  circle(ctx, bx, by, hh * 0.06, '#facc15');
+};
+
+// 16 Cloud Sheep: big fluffy wool body, dark face with ears, stubby legs
+BLOCKS[16] = (ctx, hw, hh, time, mood) => {
+  for (const fx of [-0.45, -0.1, 0.3, 0.65]) {
+    rr(ctx, hw * fx - 2, hh * 0.45, 4, hh * 0.55, 2);
+    ctx.fillStyle = '#1f2937';
+    ctx.fill();
+  }
+  const puffs: [number, number, number][] = [[-0.35, 0.1, 0.62], [0.05, -0.35, 0.68], [0.5, -0.25, 0.62], [0.75, 0.15, 0.55], [0.2, 0.25, 0.7], [-0.2, -0.3, 0.55]];
+  // outline pass then fill pass so the wool reads as one fluffy silhouette
+  for (const [fx, fy, fr] of puffs) {
+    circle(ctx, hw * fx, hh * fy, hh * fr + 1.8, INK);
+  }
+  for (const [fx, fy, fr] of puffs) {
+    circle(ctx, hw * fx, hh * fy, hh * fr, '#ffffff');
+  }
+  for (const [fx, fy, fr] of puffs) circle(ctx, hw * fx - hh * fr * 0.25, hh * fy - hh * fr * 0.3, hh * fr * 0.3, 'rgba(226,232,240,0.9)');
+  // head
+  const hx = -hw * 0.72;
+  ctx.beginPath();
+  ctx.ellipse(hx, hh * 0.05, hh * 0.5, hh * 0.58, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#374151';
+  ctx.fill();
+  outline(ctx, INK, 1.2);
+  for (const sx of [-1, 1]) ellipse(ctx, hx + sx * hh * 0.5, -hh * 0.2, hh * 0.22, hh * 0.1, '#374151', sx * 0.6);
+  circle(ctx, hx, -hh * 0.45, hh * 0.25, '#ffffff');
+  face(ctx, hx, hh * 0.02, Math.min(hh * 0.42, hw * 0.25), mood, time, 16, '#f8fafc');
+  void time;
+};
 
 // ---------- the 20 hazards (never tap these) ----------
 

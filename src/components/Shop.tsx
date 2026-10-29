@@ -137,7 +137,7 @@ function LivePreviewCanvas({ previewState, worldTheme }: { previewState: any; wo
 
       // Render Block (bouncing)
       const bounceY = Math.abs(Math.sin(time / 200)) * 40;
-      renderBlock(ctx, logicalW/2 - 40, groundY - 60 - bounceY, 80, 80, previewState.skin, false, time);
+      renderBlock(ctx, logicalW/2 - 50, groundY - 52 - bounceY, 100, 50, previewState.skin, false, time);
       
       // Render Boom attacking
       const cycle = Math.floor(time / 15) % 150;
@@ -203,7 +203,7 @@ function ItemPreviewCanvas({ item, activeCategory }: { item: CosmeticDef, active
     if (activeCategory === 'background') {
       renderWorld(ctx, w, h, item.id, time, true);
     } else if (activeCategory === 'skin') {
-      renderBlock(ctx, w/2 - 22, h/2 - 22, 44, 44, item.id, false, time);
+      renderBlock(ctx, w/2 - 26, h/2 - 13, 52, 26, item.id, false, time);
     } else if (activeCategory === 'plate') {
       renderPlate(ctx, w/2 - 34, h/2 - 10, 68, 20, item.id, time);
     } else if (activeCategory === 'boom') {

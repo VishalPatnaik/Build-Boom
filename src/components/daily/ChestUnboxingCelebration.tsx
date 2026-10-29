@@ -62,7 +62,7 @@ function CosmeticBlockCanvas({ skinId }: { skinId: string }) {
       ctx.restore();
 
       // Render the actual animated block skin
-      renderBlock(ctx, w / 2 - 32, h / 2 - 38, 64, 64, skinId, false, time);
+      renderBlock(ctx, w / 2 - 40, h / 2 - 22, 80, 40, skinId, false, time);
 
       animId = requestAnimationFrame(render);
     };

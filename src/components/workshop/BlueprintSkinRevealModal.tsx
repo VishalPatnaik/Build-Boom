@@ -67,7 +67,7 @@ function BlueprintSkinCanvas({ skinId }: { skinId: string }) {
       ctx.restore();
 
       // 2. Render authentic high-fidelity skin block
-      renderBlock(ctx, w / 2 - 36, h / 2 - 42, 72, 72, skinId, false, time);
+      renderBlock(ctx, w / 2 - 44, h / 2 - 24, 88, 44, skinId, false, time);
 
       animId = requestAnimationFrame(render);
     };

@@ -305,7 +305,7 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
       ctx.scale(stretch, 1 / stretch);
 
       if (b.type === 'build') {
-        renderBlock(ctx, -15, -15, 30, 30, replay.equippedCosmetic || 'skin-0', false, time, b.archetype);
+        renderBlock(ctx, -22, -11, 44, 22, replay.equippedCosmetic || 'skin-0', false, time, b.archetype);
       } else {
         renderBoomParticle(
           ctx,

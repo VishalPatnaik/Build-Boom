@@ -187,7 +187,7 @@ export function GameBoard() {
 
   const gameOverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initGameRef = useRef<(customLevel?: number) => void>(() => {});
-  const canvasSizeRef = useRef({ w: 0, h: 0 });
+  const canvasSizeRef = useRef({ w: 0, h: 0, dpr: 1 });
 
   const handleWarpComplete = useCallback(() => {
     setWarpTransition((prev) => {
@@ -456,8 +456,8 @@ export function GameBoard() {
     triggerHapticVibrate([32, 28, 50]);
     haptics.empDefuse();
 
-    const w = canvasRef.current?.width || window.innerWidth;
-    const h = canvasRef.current?.height || window.innerHeight;
+    const w = canvasSizeRef.current.w || window.innerWidth;
+    const h = canvasSizeRef.current.h || window.innerHeight;
     const gameRadius = Math.min(w, h) * 0.45;
 
     let defusedCount = 0;
@@ -537,10 +537,14 @@ export function GameBoard() {
     const updateSize = () => {
       const w = container.clientWidth || 300;
       const h = container.clientHeight || 300;
-      canvasSizeRef.current = { w, h };
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
+      // Render at the screen's real pixel density (capped for frame rate) so art stays sharp on phones
+      const dpr = Math.min(2.5, Math.max(1, window.devicePixelRatio || 1));
+      canvasSizeRef.current = { w, h, dpr };
+      const bw = Math.round(w * dpr);
+      const bh = Math.round(h * dpr);
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw;
+        canvas.height = bh;
       }
     };
     updateSize();
@@ -572,8 +576,8 @@ export function GameBoard() {
     
     if (!targetBlock) return;
     
-    const w = canvasRef.current?.width || window.innerWidth;
-    const h = canvasRef.current?.height || window.innerHeight;
+    const w = canvasSizeRef.current.w || window.innerWidth;
+    const h = canvasSizeRef.current.h || window.innerHeight;
     const gameRadius = Math.min(w, h) * 0.45;
     
     const targetMass = getBlockMass(targetBlock);
@@ -1334,8 +1338,8 @@ export function GameBoard() {
         gs.physics.angularVelocity = 0;
         return;
       }
-      const cw = canvasRef.current?.width || 800;
-      const ch = canvasRef.current?.height || 600;
+      const cw = canvasSizeRef.current.w || 800;
+      const ch = canvasSizeRef.current.h || 600;
       if (physResult.toppleLevel >= 0 && gs.physics.shieldActive) {
         // Aegis shield catches the section that tipped; the tower below survives
         const fallen = gs.physics.stack.splice(physResult.toppleLevel);
@@ -1420,8 +1424,8 @@ export function GameBoard() {
       }
     }
 
-    const w = canvasRef.current?.width || 800;
-    const h = canvasRef.current?.height || 600;
+    const w = canvasSizeRef.current.w || 800;
+    const h = canvasSizeRef.current.h || 600;
     const gameRadius = Math.min(w, h) * 0.45;
 
     // Update blocks
@@ -1813,8 +1817,9 @@ export function GameBoard() {
     const ctx = ctxRef.current;
     if (!ctx) return;
     
-    const { w, h } = canvasSizeRef.current;
+    const { w, h, dpr } = canvasSizeRef.current;
     if (!w || !h || w <= 0 || h <= 0 || !Number.isFinite(w) || !Number.isFinite(h)) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const cx = w / 2;
     const cy = h * 0.65;
@@ -2214,7 +2219,7 @@ export function GameBoard() {
       ctx.scale(stretch, 1 / stretch);
       
       if (apparentType === 'build') {
-          renderBlock(ctx, -15, -15, 30, 30, activeSkin, false, time, b.archetype);
+          renderBlock(ctx, -22, -11, 44, 22, activeSkin, false, time, b.archetype);
           if (isHighContrastEnv) {
             ctx.save();
             ctx.strokeStyle = '#ffff00';

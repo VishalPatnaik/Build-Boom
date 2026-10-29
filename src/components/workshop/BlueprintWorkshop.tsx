@@ -49,7 +49,7 @@ function SchematicMiniCanvas({ skinId }: { skinId: string }) {
     const render = (now: number) => {
       const time = now - startTime;
       ctx.clearRect(0, 0, 56, 56);
-      renderBlock(ctx, 4, 4, 48, 48, skinId, false, time);
+      renderBlock(ctx, 2, 15, 52, 26, skinId, false, time);
       animId = requestAnimationFrame(render);
     };
 
