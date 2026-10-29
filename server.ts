@@ -20,8 +20,8 @@ const CHECKOUT_PRODUCTS: Record<string, { name: string; description?: string; un
   powerup_stasis_10: { name: "Tactical Powerup Munitions Pack (Stasis)", unitAmount: 199 },
   powerup_emp_10: { name: "Tactical Powerup Munitions Pack (EMP)", unitAmount: 199 },
   powerup_shield_10: { name: "Tactical Powerup Munitions Pack (Shield)", unitAmount: 199 },
-  bundle_starter_architect: { name: "Starter Architect Pack (350 Coins + 15 Powerups + Lunar Skin)", unitAmount: 499 },
-  bundle_tactical_architect: { name: "Tactical Architect Pack (1,000 Coins + 36 Powerups + Nebula Skin)", unitAmount: 999 },
+  bundle_starter_architect: { name: "Starter Architect Pack (350 Coins + 15 Powerups + Astronaut Skin)", unitAmount: 499 },
+  bundle_tactical_architect: { name: "Tactical Architect Pack (1,000 Coins + 36 Powerups + Little UFO Skin)", unitAmount: 999 },
   bundle_legend_architect: { name: "Legend Architect Pack (3,500 Coins + 75 Powerups + 2 Master Skins)", unitAmount: 1999 },
 };
 

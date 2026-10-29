@@ -6,6 +6,7 @@ import { generateLevel, generateEndless, generateTournament, generateSandboxLeve
 import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
+import { setTowerMood } from '../game/themedObjects';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
 import { ArrowLeft, RotateCcw, Play, Video, Home, Trophy, Crown, Medal, Zap, Shield, Compass, Plus, Coins, Vibrate, VibrateOff, Award, Sparkles, CheckCircle2, Hand, Target, Settings, Volume2, VolumeX } from 'lucide-react';
@@ -741,6 +742,7 @@ export function GameBoard() {
         gs.maxCombo = Math.max(gs.maxCombo || 0, gs.combo);
         if (impact.isPerfect) {
           gs.perfectCount = (gs.perfectCount || 0) + 1;
+          setTowerMood(gs.physics.stressLevel, true);
         }
         setBuiltCount(gs.builtCount);
         useGameStore.getState().setTowerHeight(gs.physics.stack.length);
@@ -1371,6 +1373,7 @@ export function GameBoard() {
       gs.lastUiUpdateTime = time;
       setTiltDisplay(gs.physics.tiltAngle);
       setStressDisplay(gs.physics.stressLevel);
+      setTowerMood(gs.physics.stressLevel);
       useGameStore.getState().setTowerTilt(gs.physics.tiltAngle);
     }
 
@@ -2125,7 +2128,7 @@ export function GameBoard() {
       ctx.save();
       ctx.translate(d.x, d.y + bounce);
       ctx.rotate(d.rot);
-      renderBlock(ctx, -d.halfWidth, -15, d.halfWidth * 2, 30, activeSkin, true, time, d.archetype);
+      renderBlock(ctx, -d.halfWidth, -15, d.halfWidth * 2, 30, activeSkin, true, time, d.archetype, 'falling');
       ctx.restore();
     }
 

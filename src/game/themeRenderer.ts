@@ -1,3 +1,4 @@
+import type { ObjectMood } from './themedObjects';
 import { renderCinematicWorld } from './cinematicWorlds/renderCinematicWorld';
 import { renderCinematicBlock } from './cinematicItems/renderCinematicBlock';
 import { renderCinematicPlate } from './cinematicItems/renderCinematicPlate';
@@ -80,20 +81,21 @@ export function renderBlock(
   id: string,
   isCenter: boolean,
   time: number,
-  archetype?: string
+  archetype?: string,
+  mood?: ObjectMood
 ) {
   if (!ctx || !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return;
   ctx.save();
   ctx.translate(x + w / 2, y + h / 2);
 
-  // Subtle natural idle breath
-  const bounce = Math.sin((time || 0) / 220) * 2.5;
-  const squash = 1 + Math.sin((time || 0) / 160) * 0.03;
+  // Subtle idle breath for loose items; stacked tower pieces stay seated on each other
+  const bounce = isCenter ? 0 : Math.sin((time || 0) / 220) * 2.5;
+  const squash = isCenter ? 1 : 1 + Math.sin((time || 0) / 160) * 0.03;
   ctx.translate(0, bounce);
   ctx.scale(1 / squash, squash);
 
   // Delegate to console-grade block renderer
-  renderCinematicBlock(ctx, w, h, id, isCenter, time, archetype);
+  renderCinematicBlock(ctx, w, h, id, isCenter, time, archetype, mood);
 
   ctx.restore();
 }

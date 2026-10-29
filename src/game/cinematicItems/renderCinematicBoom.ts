@@ -1,3 +1,4 @@
+import { drawThemedHazard } from '../themedObjects';
 import { safeCreateRadialGradient } from '../../utils/canvasUtils';
 
 export interface BoomParticleData {
@@ -37,6 +38,14 @@ export function renderCinematicBoomParticle(
   ctx.scale(baseScale, baseScale);
 
   const r = Math.max(4, p.size || 12);
+
+  // The incoming hazard itself (and shop previews) are the world's themed enemy
+  if (p.type === 'projectile' || p.type === 'main') {
+    ctx.globalAlpha /= Math.max(0.0001, life); // hazards are never faded by particle life
+    drawThemedHazard(ctx, r * 0.85, id, time);
+    ctx.restore();
+    return;
+  }
 
   // Common Shockwave expansion ring when particle type is 'ring'
   if (p.type === 'ring') {
