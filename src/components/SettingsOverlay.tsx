@@ -121,6 +121,8 @@ export function SettingsOverlay() {
     toggleHaptics,
     showFpsMonitor,
     toggleFpsMonitor,
+    sillyMode,
+    toggleSillyMode,
     playerName,
     setPlayerName,
     playerAvatar,
@@ -712,6 +714,55 @@ export function SettingsOverlay() {
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out mt-0.5 ${
                           showFpsMonitor ? 'translate-x-6' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* SILLY MODE PHYSICS CARD */}
+                <div className={`p-4 rounded-2xl border-2 backdrop-blur-md transition-all ${
+                  sillyMode
+                    ? 'bg-gradient-to-r from-amber-950/80 via-yellow-950/50 to-slate-950 border-amber-400/80 shadow-[0_0_22px_rgba(251,191,36,0.25)]'
+                    : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                }`}>
+                  <div className="flex items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 shrink-0 ${
+                        sillyMode
+                          ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                          : 'bg-slate-900 border-slate-700 text-slate-500'
+                      }`}>
+                        <Sparkles className="w-5 h-5 animate-spin-slow" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                            Silly Mode Physics 🐝✨
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/60 text-amber-300 text-[9px] font-black uppercase tracking-widest font-mono">
+                            CARTOON WIGGLE & SQUISH
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 font-sans mt-0.5">
+                          Playful cartoon physics for creative objects (bees, snowflakes, creatures). Objects flutter in flight, wiggle excitedly, and squish & stretch with elastic bounce when impacting plates!
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        haptics.uiTap();
+                        toggleSillyMode();
+                      }}
+                      className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none ${
+                        sillyMode ? 'bg-amber-400 border-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.6)]' : 'bg-slate-800 border-slate-700'
+                      }`}
+                      aria-label="Toggle silly mode physics"
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out mt-0.5 ${
+                          sillyMode ? 'translate-x-6' : 'translate-x-0.5'
                         }`}
                       />
                     </button>

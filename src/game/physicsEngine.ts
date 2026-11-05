@@ -14,16 +14,24 @@
 // blocks sideways, so sway can itself tip a badly built tower over.
 // ---------------------------------------------------------------------------
 
-/** Half width of a tower block, in tower-space pixels (blocks render 60 wide). */
-export const BLOCK_HALF_WIDTH = 30;
-/** Half width of the foundation plate the first block rests on. */
-export const BASE_HALF_WIDTH = 42;
-/** Vertical spacing between stacked layers, matching the renderer. */
-export const LAYER_HEIGHT = 20;
+// All lengths are in screen pixels. Objects are drawn as squares as wide as their
+// footprint (a standard object is 40px). Every length below scales together, so the
+// balance and difficulty are the same as the original 60px-wide tuning.
+const SCALE = 2 / 3;
+/** Half width of a standard tower object, in tower-space pixels (objects render 40 wide). */
+export const BLOCK_HALF_WIDTH = 30 * SCALE;
+/** Half width of the foundation plate the first object rests on. */
+export const BASE_HALF_WIDTH = 42 * SCALE;
+/** Height used for the tower's flex (lean) maths. */
+export const LAYER_HEIGHT = 20 * SCALE;
+/** On-screen spacing between stacked objects; they nest slightly so the pile reads as one tower. */
+export const VISUAL_LAYER = 28;
+/** How many of the top layers are drawn (the rest are off the bottom of the screen). */
+export const MAX_VISIBLE_LAYERS = 20;
 /** Tap window: blocks can be stacked from distance +HIT_WINDOW to -HIT_WINDOW. */
 export const HIT_WINDOW = 15;
 /** Sideways slip (px) when a block is tapped at the very edge of the window. */
-export const MAX_SLIP = 26;
+export const MAX_SLIP = 26 * SCALE;
 
 export interface StackedBlock {
   x: number; // horizontal offset from the foundation centre, tower-space px
@@ -39,11 +47,11 @@ export interface StackedBlock {
 export function blockHalfWidth(archetype?: string): number {
   switch (archetype) {
     case 'titan':
-      return 40;
+      return 40 * SCALE;
     case 'gold_ingot':
-      return 24;
+      return 24 * SCALE;
     case 'prism':
-      return 22;
+      return 22 * SCALE;
     default:
       return BLOCK_HALF_WIDTH;
   }

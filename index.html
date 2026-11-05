@@ -6,6 +6,51 @@
       // Suppress Vite HMR WebSocket errors in iframe / cloud container preview
       (function() {
         if (typeof window !== 'undefined') {
+          var OrigWebSocket = window.WebSocket;
+          if (OrigWebSocket) {
+            var PatchedWebSocket = function(url, protocols) {
+              var protoStr = Array.isArray(protocols) ? protocols.join(',') : String(protocols || '');
+              var urlStr = String(url || '');
+              if (protoStr.indexOf('vite-hmr') !== -1 || protoStr.indexOf('vite-ping') !== -1 || urlStr.indexOf('token=') !== -1) {
+                var dummy = {
+                  url: urlStr,
+                  readyState: 1,
+                  protocol: protoStr,
+                  extensions: '',
+                  bufferedAmount: 0,
+                  binaryType: 'blob',
+                   CONNECTING: 0,
+                  OPEN: 1,
+                  CLOSING: 2,
+                  CLOSED: 3,
+                  send: function() {},
+                  close: function() { this.readyState = 3; },
+                  addEventListener: function(type, listener) {
+                    if (type === 'open' && typeof listener === 'function') {
+                      setTimeout(function() {
+                        try { listener({ type: 'open', target: dummy }); } catch (e) {}
+                      }, 0);
+                    }
+                  },
+                  removeEventListener: function() {},
+                  dispatchEvent: function() { return true; },
+                  onopen: null,
+                  onmessage: null,
+                  onerror: null,
+                  onclose: null
+                };
+                return dummy;
+              }
+              return protocols !== undefined ? new OrigWebSocket(url, protocols) : new OrigWebSocket(url);
+            };
+            PatchedWebSocket.prototype = OrigWebSocket.prototype;
+            PatchedWebSocket.CONNECTING = OrigWebSocket.CONNECTING;
+            PatchedWebSocket.OPEN = OrigWebSocket.OPEN;
+            PatchedWebSocket.CLOSING = OrigWebSocket.CLOSING;
+            PatchedWebSocket.CLOSED = OrigWebSocket.CLOSED;
+            window.WebSocket = PatchedWebSocket;
+          }
+
           var isWsError = function(msg) {
             if (!msg) return false;
             var str = typeof msg === 'string' ? msg : (msg.message || (msg.error && msg.error.message) || String(msg));

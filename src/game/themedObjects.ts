@@ -248,10 +248,12 @@ function archetypeOverlay(ctx: Ctx, hw: number, hh: number, archetype: string | 
     ctx.lineTo(cx - 1.5, cy - 1.5);
     ctx.fill();
   } else if (archetype === 'titan') {
-    // heavy iron frame + anchor badge
-    rr(ctx, -hw + 1, -hh + 1, hw * 2 - 2, hh * 2 - 2, 5);
-    outline(ctx, 'rgba(51,65,85,0.95)', 3);
-    for (const sx of [-1, 1]) for (const sy of [-1, 1]) circle(ctx, sx * (hw - 4), sy * (hh - 4), 1.6, '#cbd5e1');
+    // heavy steel band under the object + anchor badge
+    rr(ctx, -hw * 0.95, hh * 0.62, hw * 1.9, hh * 0.32, hh * 0.12);
+    ctx.fillStyle = vgrad(ctx, hh * 0.62, hh * 0.94, '#94a3b8', '#334155');
+    ctx.fill();
+    outline(ctx, '#1e293b', 1.2);
+    for (let k = 0; k < 4; k++) circle(ctx, -hw * 0.7 + k * hw * 0.47, hh * 0.78, 1.4, '#e2e8f0');
     circle(ctx, -hw + 7, -hh + 3, 6, '#334155');
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1.3;
@@ -1154,26 +1156,39 @@ BLOCKS[16] = (ctx, hw, hh, time, mood) => {
 type HazardArt = (ctx: Ctx, r: number, time: number) => void;
 
 const HAZARDS: HazardArt[] = [
-  // 0 Angry Wasp
+  // 0 Rotten Apple Bomb (clearly not a bee, so it never looks like the meadow's bumblebee)
   (ctx, r, time) => {
-    const flap = Math.sin(time / 25) * 0.4;
-    for (const sx of [-1, 1]) ellipse(ctx, sx * r * 0.35, -r * 0.7, r * 0.35, r * 0.5, 'rgba(226,232,240,0.85)', sx * (0.5 + flap));
+    // apple body
     ctx.beginPath();
-    ctx.ellipse(0, 0, r, r * 0.75, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#facc15';
+    ctx.moveTo(0, -r * 0.55);
+    ctx.bezierCurveTo(r * 0.55, -r * 1.05, r * 1.1, -r * 0.35, r * 0.85, r * 0.35);
+    ctx.bezierCurveTo(r * 0.65, r * 0.95, r * 0.2, r * 0.95, 0, r * 0.8);
+    ctx.bezierCurveTo(-r * 0.2, r * 0.95, -r * 0.65, r * 0.95, -r * 0.85, r * 0.35);
+    ctx.bezierCurveTo(-r * 1.1, -r * 0.35, -r * 0.55, -r * 1.05, 0, -r * 0.55);
+    ctx.closePath();
+    const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r);
+    g.addColorStop(0, '#a16207');
+    g.addColorStop(0.55, '#7c2d12');
+    g.addColorStop(1, '#3f1d0b');
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.save();
-    ctx.clip();
-    ctx.fillStyle = '#18181b';
-    for (const fx of [-0.4, 0.2]) ctx.fillRect(r * fx, -r, r * 0.25, r * 2);
-    ctx.restore();
-    ctx.fillStyle = '#18181b';
+    outline(ctx, '#1c1917', 1.3);
+    // rotten spots
+    circle(ctx, r * 0.45, r * 0.3, r * 0.14, '#365314');
+    circle(ctx, -r * 0.55, -r * 0.05, r * 0.1, '#365314');
+    // worm poking out
+    const wig = Math.sin(time / 120) * r * 0.12;
+    ctx.strokeStyle = '#f9a8d4';
+    ctx.lineWidth = r * 0.16;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(r * 0.9, -r * 0.15);
-    ctx.lineTo(r * 1.45, 0);
-    ctx.lineTo(r * 0.9, r * 0.15);
-    ctx.fill();
-    angryFace(ctx, -r * 0.35, -r * 0.05, r * 0.65, time, '#ef4444');
+    ctx.moveTo(r * 0.55, -r * 0.35);
+    ctx.quadraticCurveTo(r * 0.95 + wig, -r * 0.6, r * 1.05, -r * 0.25 + wig);
+    ctx.stroke();
+    circle(ctx, r * 1.07, -r * 0.27 + wig, r * 0.04, '#1c1917');
+    // stem with a lit fuse instead of a leaf
+    fuse(ctx, 0, -r * 0.55, r, time);
+    angryFace(ctx, 0, r * 0.1, r * 0.62, time, '#fde047');
   },
   // 1 Flaming Meteor
   (ctx, r, time) => {
@@ -1872,6 +1887,21 @@ export function drawThemedBlock(
   ctx.restore();
 }
 
+/**
+ * Marks special blocks on any object art: gold turns the object gold, crystal makes it
+ * shimmer, the heavy anchor gets a steel base. `drawArt` draws the object at (0,0).
+ */
+export function drawWithArchetype(ctx: Ctx, w: number, h: number, archetype: string | undefined, time: number, drawArt: () => void) {
+  ctx.save();
+  if (archetype === 'gold_ingot') ctx.filter = 'sepia(1) saturate(3.2) brightness(1.08)';
+  else if (archetype === 'prism') ctx.filter = `hue-rotate(${Math.round(time / 8) % 360}deg) saturate(1.6) brightness(1.12)`;
+  else if (archetype === 'titan') ctx.filter = 'saturate(0.75) contrast(1.15) brightness(0.92)';
+  drawArt();
+  ctx.filter = 'none';
+  archetypeOverlay(ctx, w / 2, h / 2, archetype, time);
+  ctx.restore();
+}
+
 /** Draws the world's hazard centred at (0,0) with radius r, plus a danger halo. */
 export function drawThemedHazard(ctx: Ctx, r: number, id: string, time: number) {
   const t = themeIndex(id, 'boom-');
@@ -1899,7 +1929,7 @@ export function drawThemedPlate(ctx: Ctx, w: number, h: number, id: string, time
 
 /** Names for the 20 themed sets (block, hazard, plate), matching the art above. */
 export const THEMED_SET_NAMES: { block: string; hazard: string; plate: string; blockDesc: string; hazardDesc: string; plateDesc: string }[] = [
-  { block: 'Bumble Bee', hazard: 'Angry Wasp', plate: 'Mossy Flower Log', blockDesc: 'A chubby striped bee that buzzes with joy on every perfect landing.', hazardDesc: 'A furious wasp. Never tap it, let it buzz past.', plateDesc: 'A hollow log carpeted in moss and wildflowers.' },
+  { block: 'Bumble Bee', hazard: 'Rotten Apple Bomb', plate: 'Mossy Flower Log', blockDesc: 'A chubby striped bee that buzzes with joy on every perfect landing.', hazardDesc: 'A rotten apple with a worm and a lit fuse. Never tap it, let it fly past.', plateDesc: 'A hollow log carpeted in moss and wildflowers.' },
   { block: 'Astronaut', hazard: 'Flaming Meteor', plate: 'Lunar Landing Pad', blockDesc: 'A tiny moonwalker in a gold-rimmed visor.', hazardDesc: 'A blazing space rock with a bad attitude.', plateDesc: 'Striped landing pad with blinking guide lights.' },
   { block: 'Mars Rover', hazard: 'Alien Spore Pod', plate: 'Rusty Launch Deck', blockDesc: 'A plucky six-wheeled rover with a solar panel hat.', hazardDesc: 'A pulsing alien pod covered in tendrils.', plateDesc: 'Riveted iron deck stained red by Martian dust.' },
   { block: 'Little UFO', hazard: 'Plasma Space Mine', plate: 'Space Station Ring', blockDesc: 'A friendly green alien in a saucer with blinking lights.', hazardDesc: 'A spiked mine crackling with plasma.', plateDesc: 'Docking ring with running lights.' },

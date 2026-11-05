@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { ReplayData, ReplayFrame, ReplayEventMarker, generateDemoReplay } from '../game/replayEngine';
 import { renderBlock, renderPlate, renderWorld, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
+import { BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, LAYER_HEIGHT, VISUAL_LAYER, MAX_VISIBLE_LAYERS } from '../game/physicsEngine';
 import { safeCreateRadialGradient } from '../utils/canvasUtils';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
@@ -255,25 +256,27 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
 
     // Center Floating Platform
     const bounce = Math.sin(time / 200) * 3;
-    renderPlate(ctx, cx - 50, cy + bounce - 5, 100, 30, replay.equippedPlate || 'plate-0', time);
+    const plateW = BASE_HALF_WIDTH * 2 + 16;
+    renderPlate(ctx, cx - plateW / 2, cy + bounce - 5, plateW, 28, replay.equippedPlate || 'plate-0', time);
 
     // Tower Stack with Structural Physics Flexion
-    const stackX = currentFrame.physics.stackX;
-    const towerLayers = stackX ? stackX.length : Math.min(currentFrame.builtCount, 30);
+    const stackX = currentFrame.physics.stackX?.slice(-MAX_VISIBLE_LAYERS);
+    const stackW = currentFrame.physics.stackW?.slice(-MAX_VISIBLE_LAYERS);
+    const towerLayers = stackX ? stackX.length : Math.min(currentFrame.builtCount, MAX_VISIBLE_LAYERS);
     const tiltRad = (currentFrame.physics.tiltAngle * Math.PI) / 180;
 
     for (let i = 0; i < towerLayers; i++) {
       const progress = (i + 1) / Math.max(1, towerLayers);
       const layerTilt = tiltRad * progress;
-      const layerOffsetX = (stackX ? stackX[i] : 0) + Math.sin(layerTilt) * (i * 20);
-      const layerOffsetY = -i * 20 * Math.cos(layerTilt);
+      const layerOffsetX = (stackX ? stackX[i] : 0) + Math.sin(layerTilt) * (i * LAYER_HEIGHT);
+      const layerOffsetY = -i * VISUAL_LAYER * Math.cos(layerTilt);
 
       ctx.save();
-      ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 10);
+      ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 4 - (stackW?.[i] || BLOCK_HALF_WIDTH));
       ctx.rotate(layerTilt);
 
-      const rhw = currentFrame.physics.stackW?.[i] || 30;
-      renderBlock(ctx, -rhw, -15, rhw * 2, 30, replay.equippedCosmetic || 'skin-0', true, time, undefined);
+      const rhw = stackW?.[i] || BLOCK_HALF_WIDTH;
+      renderBlock(ctx, -rhw, -rhw, rhw * 2, rhw * 2, replay.equippedCosmetic || 'skin-0', true, time, undefined);
       ctx.restore();
     }
 
@@ -300,13 +303,12 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
       ctx.save();
       ctx.translate(px, py);
 
-      const stretch = 1 + b.speed * 0.1;
-      ctx.rotate(b.angle);
-      ctx.scale(stretch, 1 / stretch);
-
       if (b.type === 'build') {
-        renderBlock(ctx, -22, -11, 44, 22, replay.equippedCosmetic || 'skin-0', false, time, b.archetype);
+        renderBlock(ctx, -21, -21, 42, 42, replay.equippedCosmetic || 'skin-0', false, time, b.archetype);
       } else {
+        const stretch = 1 + b.speed * 0.1;
+        ctx.rotate(b.angle);
+        ctx.scale(stretch, 1 / stretch);
         renderBoomParticle(
           ctx,
           { x: 0, y: 0, rotation: 0, life: 1, size: 18, type: 'projectile' },

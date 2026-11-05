@@ -1,3 +1,4 @@
+import { drawWithArchetype } from './themedObjects';
 import type { ObjectMood } from './themedObjects';
 import { renderCinematicWorld } from './cinematicWorlds/renderCinematicWorld';
 import { renderCinematicBlock } from './cinematicItems/renderCinematicBlock';
@@ -95,7 +96,8 @@ export function renderBlock(
   ctx.scale(1 / squash, squash);
 
   // Delegate to console-grade block renderer
-  renderCinematicBlock(ctx, w, h, id, isCenter, time, archetype, mood);
+  void mood;
+  drawWithArchetype(ctx, w, h, archetype, time, () => renderCinematicBlock(ctx, w, h, id, isCenter, time, archetype));
 
   ctx.restore();
 }

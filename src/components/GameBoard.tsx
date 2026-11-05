@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass } from '../game/LevelGenerator';
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { setTowerMood } from '../game/themedObjects';
@@ -84,6 +84,8 @@ export function GameBoard() {
     coins, 
     hapticsEnabled, 
     toggleHaptics,
+    sillyMode,
+    toggleSillyMode,
     visualTheme,
     hasCompletedCampaignTutorial,
     isTutorialActive,
@@ -355,6 +357,8 @@ export function GameBoard() {
       shake: 0,
       hasRevived: false,
       physics: initialPhys,
+      lastImpactTime: 0,
+      sillyWobble: 0,
       lastWarningTime: 0,
       lastUiUpdateTime: 0,
       debris: [],
@@ -538,7 +542,7 @@ export function GameBoard() {
       const w = container.clientWidth || 300;
       const h = container.clientHeight || 300;
       // Render at the screen's real pixel density (capped for frame rate) so art stays sharp on phones
-      const dpr = Math.min(2.5, Math.max(1, window.devicePixelRatio || 1));
+      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
       canvasSizeRef.current = { w, h, dpr };
       const bw = Math.round(w * dpr);
       const bh = Math.round(h * dpr);
@@ -656,6 +660,8 @@ export function GameBoard() {
         // Successful Placement with Physics & Archetype calculation!
         targetBlock.success = true;
         setTutorialEmergencyHold(false);
+        gs.lastImpactTime = performance.now();
+        gs.sillyWobble = 1.0;
 
         if (isTutorialActive) {
           const currentStep = useGameStore.getState().tutorialStep;
@@ -987,7 +993,7 @@ export function GameBoard() {
     const cx = w / 2;
     const cy = h * 0.65;
     const total = gs.physics.stack.length + fallen.length;
-    const firstVisible = Math.max(0, total - 30);
+    const firstVisible = Math.max(0, total - MAX_VISIBLE_LAYERS);
     const lean = gs.physics.tiltAngle >= 0 ? 1 : -1;
     fallen.forEach((b, k) => {
       const level = fromLevel + k;
@@ -997,7 +1003,7 @@ export function GameBoard() {
         halfWidth: b.halfWidth || BLOCK_HALF_WIDTH,
         archetype: b.archetype,
         x: cx + b.x + flexOffset(gs.physics.tiltAngle, level, total),
-        y: cy - 10 - visible * LAYER_HEIGHT,
+        y: cy - 4 - (b.halfWidth || BLOCK_HALF_WIDTH) - visible * VISUAL_LAYER,
         vx: overhang * (1.5 + Math.random() * 2.5) + k * 0.15 * overhang,
         vy: -2 - Math.random() * 2,
         rot: (gs.physics.tiltAngle * Math.PI) / 180,
@@ -1697,47 +1703,24 @@ export function GameBoard() {
       ctx.restore();
     }
 
-    // 2. Pulsing Perimeter Hazard Aura & Warning Beacons around the Block
-    if (proximityRatio > 0.15) {
+    // 2. Pulsing Circular Hazard Halo around the Object (Never square brackets)
+    if (proximityRatio > 0.25) {
       ctx.save();
-      const halfSize = (blockSize / 2) + 4;
+      const haloRadius = (blockSize / 2) + 6;
       ctx.strokeStyle = primaryColor;
       ctx.lineWidth = isCritical ? 2.5 : 1.5;
       ctx.globalAlpha = pulseAlpha * (isCritical ? 0.95 : 0.7);
       ctx.shadowColor = glowColor;
       ctx.shadowBlur = isCritical ? 16 : 8;
 
-      // Tactical Corner Brackets around Block
-      const bracketLen = 7;
-      // Top-left
       ctx.beginPath();
-      ctx.moveTo(px - halfSize, py - halfSize + bracketLen);
-      ctx.lineTo(px - halfSize, py - halfSize);
-      ctx.lineTo(px - halfSize + bracketLen, py - halfSize);
-      ctx.stroke();
-      // Top-right
-      ctx.beginPath();
-      ctx.moveTo(px + halfSize - bracketLen, py - halfSize);
-      ctx.lineTo(px + halfSize, py - halfSize);
-      ctx.lineTo(px + halfSize, py - halfSize + bracketLen);
-      ctx.stroke();
-      // Bottom-right
-      ctx.beginPath();
-      ctx.moveTo(px + halfSize, py + halfSize - bracketLen);
-      ctx.lineTo(px + halfSize, py + halfSize);
-      ctx.lineTo(px + halfSize - bracketLen, py + halfSize);
-      ctx.stroke();
-      // Bottom-left
-      ctx.beginPath();
-      ctx.moveTo(px - halfSize + bracketLen, py + halfSize);
-      ctx.lineTo(px - halfSize, py + halfSize);
-      ctx.lineTo(px - halfSize, py + halfSize - bracketLen);
+      ctx.arc(px, py, haloRadius, 0, Math.PI * 2);
       ctx.stroke();
 
       // Critical Hazard: Expanding Shockwave Rings
       if (isCritical) {
         const ringOffset = ((time * 0.05) % 26);
-        const ringR = halfSize + ringOffset;
+        const ringR = haloRadius + ringOffset;
         const ringAlpha = (1 - ringOffset / 26) * 0.8;
         ctx.strokeStyle = primaryColor;
         ctx.lineWidth = 1.8;
@@ -1902,7 +1885,17 @@ export function GameBoard() {
     }
 
     // Center Platform (Chunky Floating Island)
-    const bounce = Math.sin(time / 200) * 3;
+    let bounce = Math.sin(time / 200) * 3;
+    const isSillyMode = useGameStore.getState().sillyMode;
+    const impactElapsed = time - (gs.lastImpactTime || 0);
+
+    // Silly Mode: Plate Trampoline Bounce on impact
+    if (isSillyMode && gs.lastImpactTime > 0 && impactElapsed >= 0 && impactElapsed < 600) {
+      const tNorm = impactElapsed / 600;
+      const decay = Math.exp(-tNorm * 4.5);
+      const plateDip = decay * Math.sin(tNorm * Math.PI * 4) * 12;
+      bounce += plateDip;
+    }
 
     // Landing Sweet-Spot Reticle
     const reticleRadius = (15 / 100) * gameRadius;
@@ -1974,7 +1967,9 @@ export function GameBoard() {
     }
     ctx.restore();
 
-    renderPlate(ctx, cx - 50, cy + bounce - 5, 100, 30, activePlate, time);
+    // The plate is drawn the same width as the physical foundation the first object rests on
+    const plateW = BASE_HALF_WIDTH * 2 + 16;
+    renderPlate(ctx, cx - plateW / 2, cy + bounce - 5, plateW, 28, activePlate, time);
 
     // Rapid Perfect Multiplier Dynamic Canvas Resonance
     if (gs.rapidPerfectStreak >= 2) {
@@ -2016,7 +2011,7 @@ export function GameBoard() {
     // Center Tower with Structural Dynamic Flexion
     // Each block is drawn where it physically rests, plus the tower's flex
     const stack = gs.physics.stack;
-    const towerLayers = Math.min(stack.length, 30);
+    const towerLayers = Math.min(stack.length, MAX_VISIBLE_LAYERS);
     const firstVisibleLayer = stack.length - towerLayers;
     const tiltRad = (gs.physics.tiltAngle * Math.PI) / 180;
     const weakLevel = gs.physics.weakestRatio > 0.7 ? gs.physics.weakestLevel : -1;
@@ -2027,24 +2022,40 @@ export function GameBoard() {
         const layerBlock = stack[firstVisibleLayer + i];
         const blockX = layerBlock?.x ?? 0;
         const hw = layerBlock?.halfWidth || BLOCK_HALF_WIDTH;
-        const layerOffsetX = blockX + Math.sin(layerTilt) * (i * 20);
-        const layerOffsetY = - (i * 20) * Math.cos(layerTilt);
+        const layerOffsetX = blockX + Math.sin(layerTilt) * (i * LAYER_HEIGHT);
+        const layerOffsetY = - (i * VISUAL_LAYER) * Math.cos(layerTilt);
 
-        const squash = (i === towerLayers - 1 && time - gs.lastSpawnTime < 200) ? 0.8 : 1;
+        let squashX = 1;
+        let squashY = (i === towerLayers - 1 && time - gs.lastSpawnTime < 200) ? 0.8 : 1;
+        let wiggleAngle = 0;
+
+        // Silly Mode: cartoon squish, stretch & wiggle on impact (visual only; physics is unaffected)
+        if (isSillyMode && gs.lastImpactTime > 0 && impactElapsed >= 0 && impactElapsed < 750) {
+          const tNorm = impactElapsed / 750;
+          const decay = Math.exp(-tNorm * 4.2);
+          const osc = Math.sin(tNorm * Math.PI * 6);
+          const isTopBlock = i === towerLayers - 1;
+          const layerInfluence = isTopBlock ? 1.0 : Math.pow(0.75, (towerLayers - 1 - i));
+          squashX = 1 + (decay * osc * 0.42 * layerInfluence);
+          squashY = 1 - (decay * osc * 0.38 * layerInfluence);
+          wiggleAngle = decay * Math.sin(tNorm * Math.PI * 8) * 0.22 * layerInfluence;
+        }
         
         ctx.save();
-        ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 10);
-        ctx.rotate(layerTilt);
-        ctx.scale(1 / squash, squash);
+        ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 4 - hw);
+        ctx.rotate(layerTilt + wiggleAngle);
+        ctx.scale(squashX, squashY);
         
-        renderBlock(ctx, -hw, -15, hw * 2, 30, activeSkin, true, time, layerBlock?.archetype);
+        renderBlock(ctx, -hw, -hw, hw * 2, hw * 2, activeSkin, true, time, layerBlock?.archetype);
 
         // Glow the joint that is closest to giving way
         if (firstVisibleLayer + i === weakLevel && !gs.isGameOver) {
           const danger = Math.min(1, (gs.physics.weakestRatio - 0.7) / 0.3);
           ctx.strokeStyle = `rgba(255, ${Math.round(160 - danger * 120)}, 40, ${0.45 + 0.5 * Math.abs(Math.sin(time / 90))})`;
           ctx.lineWidth = 3;
-          ctx.strokeRect(-hw - 1, -16, hw * 2 + 2, 32);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, hw + 3, hw + 3, 0, 0, Math.PI * 2);
+          ctx.stroke();
         }
         
         ctx.restore();
@@ -2055,8 +2066,9 @@ export function GameBoard() {
     if (guideTarget && guideTarget.type !== 'boom' && guideTarget.distance <= HIT_WINDOW + 25 && guideTarget.distance > -HIT_WINDOW) {
       const topI = towerLayers;
       const guideTilt = tiltRad;
-      const baseX = cx + supportX(gs.physics) + Math.sin(guideTilt) * (topI * 20);
-      const gy = cy + bounce - (topI * 20) * Math.cos(guideTilt) - 10;
+      const baseX = cx + supportX(gs.physics) + Math.sin(guideTilt) * (topI * LAYER_HEIGHT);
+      const ghw = blockHalfWidth(guideTarget.archetype);
+      const gy = cy + bounce - (topI * VISUAL_LAYER) * Math.cos(guideTilt) - 4 - ghw;
       const inWindow = guideTarget.distance <= HIT_WINDOW;
       const slip = guideTarget.archetype === 'titan' ? 0 : landingSlip(Math.min(HIT_WINDOW, guideTarget.distance), guideTarget.angle, unlockedPerks['precision_optics'] || 0);
       const topHalf = stack.length ? stack[stack.length - 1].halfWidth || BLOCK_HALF_WIDTH : BLOCK_HALF_WIDTH;
@@ -2070,8 +2082,8 @@ export function GameBoard() {
       ctx.setLineDash([3, 4]);
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(0, -26);
-      ctx.lineTo(0, 14);
+      ctx.moveTo(0, -ghw - 10);
+      ctx.lineTo(0, ghw + 4);
       ctx.stroke();
       ctx.setLineDash([]);
       // ghost of the predicted landing
@@ -2079,9 +2091,10 @@ export function GameBoard() {
       ctx.strokeStyle = `rgb(${col})`;
       ctx.fillStyle = `rgba(${col}, 0.12)`;
       ctx.lineWidth = 2;
-      const ghw = blockHalfWidth(guideTarget.archetype);
-      ctx.fillRect(slip - ghw, -15, ghw * 2, 30);
-      ctx.strokeRect(slip - ghw, -15, ghw * 2, 30);
+      ctx.beginPath();
+      ctx.roundRect(slip - ghw, -ghw, ghw * 2, ghw * 2, ghw * 0.45);
+      ctx.fill();
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -2133,7 +2146,7 @@ export function GameBoard() {
       ctx.save();
       ctx.translate(d.x, d.y + bounce);
       ctx.rotate(d.rot);
-      renderBlock(ctx, -d.halfWidth, -15, d.halfWidth * 2, 30, activeSkin, true, time, d.archetype, 'falling');
+      renderBlock(ctx, -d.halfWidth, -d.halfWidth, d.halfWidth * 2, d.halfWidth * 2, activeSkin, true, time, d.archetype, 'falling');
       ctx.restore();
     }
 
@@ -2142,10 +2155,10 @@ export function GameBoard() {
       const topIdx = towerLayers - 1;
       const topProgress = (topIdx + 1) / Math.max(1, towerLayers);
       const topLayerTilt = tiltRad * topProgress;
-      const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * 20);
-      const topOffsetY = - (topIdx * 20) * Math.cos(topLayerTilt);
+      const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * LAYER_HEIGHT);
+      const topOffsetY = - (topIdx * VISUAL_LAYER) * Math.cos(topLayerTilt);
       const topPx = cx + topOffsetX;
-      const topPy = cy + bounce + topOffsetY - 10;
+      const topPy = cy + bounce + topOffsetY - 4 - BLOCK_HALF_WIDTH;
 
       const towerHazard = findNearestBoomHazard(topPx, topPy, gs.blocks, cx, cy, gameRadius);
       if (towerHazard.proximityRatio > 0.18 || (gs.physics.stressLevel || 0) > 40) {
@@ -2215,19 +2228,32 @@ export function GameBoard() {
       
       // Speed-based squash and stretch
       const stretch = 1 + (b.speed * 0.1);
-      ctx.rotate(b.angle);
-      ctx.scale(stretch, 1 / stretch);
       
+      let flightWiggle = 0;
+      let flightScalePulse = 1;
+      if (isSillyMode && apparentType === 'build') {
+        // Creative objects (bees, snowflakes) flutter & wiggle playfully in flight!
+        flightWiggle = Math.sin((time * 0.02) + (b.angle * 3)) * 0.18;
+        flightScalePulse = 1 + Math.sin(time * 0.015 + (b.angle * 2)) * 0.12;
+      }
+
       if (apparentType === 'build') {
-          renderBlock(ctx, -22, -11, 44, 22, activeSkin, false, time, b.archetype);
+          ctx.rotate(flightWiggle);
+          ctx.scale(flightScalePulse, flightScalePulse);
+          renderBlock(ctx, -21, -21, 42, 42, activeSkin, false, time, b.archetype);
           if (isHighContrastEnv) {
             ctx.save();
             ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 2.5;
-            ctx.strokeRect(-16, -16, 32, 32);
+            ctx.beginPath();
+            ctx.arc(0, 0, 22, 0, Math.PI * 2);
+            ctx.stroke();
             ctx.restore();
           }
       } else {
+          const stretch = 1 + (b.speed * 0.1);
+          ctx.rotate(b.angle);
+          ctx.scale(stretch, 1 / stretch);
           renderBoomParticle(ctx, { x: 0, y: 0, rotation: 0, life: 1, size: 18, type: 'projectile' }, time, activeBoom);
           if (isHighContrastEnv) {
             ctx.save();
@@ -2243,21 +2269,23 @@ export function GameBoard() {
 
       ctx.globalAlpha = 1.0;
 
-      // Visual Health & Tactical Hazard Proximity Indicator for Active Building Block
+      // Visual Health & Tactical Hazard Proximity Indicator only when a Boom Hazard is genuinely near
       if (apparentType === 'build' && !b.handled && b.distance > -15) {
         const hazard = findNearestBoomHazard(px, py, gs.blocks, cx, cy, gameRadius);
-        const isTarget = b === activeTargetBlock;
-        drawVisualHealthIndicator(
-          ctx,
-          px,
-          py,
-          time,
-          hazard,
-          gs.physics.stressLevel || 0,
-          isTarget,
-          isHighContrastEnv,
-          30
-        );
+        if (hazard.proximityRatio > 0.35) {
+          const isTarget = b === activeTargetBlock;
+          drawVisualHealthIndicator(
+            ctx,
+            px,
+            py,
+            time,
+            hazard,
+            gs.physics.stressLevel || 0,
+            isTarget,
+            isHighContrastEnv,
+            42
+          );
+        }
       }
 
       // Spawning Trails
@@ -2306,10 +2334,10 @@ export function GameBoard() {
         const topIdx = towerLayers - 1;
         const topProgress = (topIdx + 1) / Math.max(1, towerLayers);
         const topLayerTilt = tiltRad * topProgress;
-        const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * 20);
-        const topOffsetY = - (topIdx * 20) * Math.cos(topLayerTilt);
+        const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * LAYER_HEIGHT);
+        const topOffsetY = - (topIdx * VISUAL_LAYER) * Math.cos(topLayerTilt);
         const topPx = cx + topOffsetX;
-        const topPy = cy + bounce + topOffsetY - 10;
+        const topPy = cy + bounce + topOffsetY - 4 - BLOCK_HALF_WIDTH;
         const towerHazard = findNearestBoomHazard(topPx, topPy, gs.blocks, cx, cy, gameRadius);
         if (towerHazard.proximityRatio > maxHazardProximity) {
           maxHazardProximity = towerHazard.proximityRatio;
@@ -2481,6 +2509,26 @@ export function GameBoard() {
             ) : (
               <VolumeX className="w-6 h-6" />
             )}
+          </button>
+
+          {/* Quick Silly Mode Physics Toggle */}
+          <button
+            onClick={() => {
+              toggleSillyMode();
+              haptics.uiTap();
+              if (!sillyMode) {
+                audio.playBuildSound(1.3);
+              }
+            }}
+            className={`p-3.5 backdrop-blur-md border-2 rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer ${
+              sillyMode
+                ? 'bg-amber-950/50 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                : 'bg-black/30 border-white/10 text-white/40 hover:bg-black/50'
+            }`}
+            title={sillyMode ? 'Silly Mode Physics: ON (Wiggle & Squish)' : 'Silly Mode Physics: OFF'}
+            aria-label="Toggle Silly Mode Physics"
+          >
+            <Sparkles className={`w-6 h-6 ${sillyMode ? 'text-amber-300' : ''}`} />
           </button>
 
           {/* Quick Settings Button */}
