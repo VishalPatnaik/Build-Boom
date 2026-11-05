@@ -1,9 +1,9 @@
 import { safeCreateRadialGradient } from '../../utils/canvasUtils';
 
 /**
- * CONSOLE-GRADE THEMED BLOCK RENDERING (20 DISTINCT SKINS)
- * Every skin is rendered with authentic material physics, 3D lighting, internal refraction,
- * and biome-specific craftsmanship matching COLLECTIONS definitions.
+ * CONSOLE-GRADE 3D STANDALONE OBJECT RENDERING (20 DISTINCT 3D OBJECTS)
+ * Every item is a true standalone 3D object with organic silhouette, 3D volumetric shading,
+ * specular highlights, contact shadows, and animated life — NEVER a rectangular block.
  */
 export function renderCinematicBlock(
   ctx: CanvasRenderingContext2D,
@@ -14,784 +14,1353 @@ export function renderCinematicBlock(
   time: number,
   archetype?: string
 ) {
-  const hw = w / 2;
-  const hh = h / 2;
+  // Enforce uniform 1:1 3D object proportions so objects never stretch into flat bricks
+  const r = Math.min(w, h) * 0.52;
+  const hw = r;
+  const hh = r;
   const t = Math.abs(parseInt((id || '').replace('skin-', '')) || 0) % 20;
 
+  ctx.save();
+
   switch (t) {
-    // 0: Meadow — Amber Honeycomb Gemstone
+    // 0: Spring Meadow — 3D Realistic Bumblebee ("bee fly")
     case 0: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#fef08a');
-      grad.addColorStop(0.35, '#f59e0b');
-      grad.addColorStop(0.75, '#d97706');
-      grad.addColorStop(1, '#78350f');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#f59e0b';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
+      const flapSpeed = 0.085;
+      const wingFlap = Math.sin((time || 0) * flapSpeed);
+      const bodyHover = Math.sin((time || 0) * 0.007) * 2;
+      const eyeShimmer = Math.sin((time || 0) * 0.003) * 0.5 + 0.5;
 
-      // Honeycomb cell facets pattern
-      ctx.strokeStyle = 'rgba(254, 240, 138, 0.7)';
-      ctx.lineWidth = 1.4;
-      const hexR = Math.min(hw * 0.45, hh * 0.55);
-      const drawHex = (cx: number, cy: number, r: number) => {
-        ctx.beginPath();
-        for (let a = 0; a < 6; a++) {
-          const ang = (a * Math.PI) / 3;
-          const px = cx + Math.cos(ang) * r;
-          const py = cy + Math.sin(ang) * r;
-          if (a === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      };
-      drawHex(0, 0, hexR);
-      drawHex(-hw * 0.5, 0, hexR * 0.75);
-      drawHex(hw * 0.5, 0, hexR * 0.75);
-
-      // Trapped golden resin inclusion with refraction glint
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(-hw * 0.28, -hh * 0.32, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
-
-    // 1: Lunar Surface — Sculpted Cratered Lunar Basalt
-    case 1: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#cbd5e1');
-      grad.addColorStop(0.4, '#64748b');
-      grad.addColorStop(0.85, '#334155');
-      grad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
-      ctx.fill();
-
-      // Textured craters with raised rim & shadowed floor
-      const craters = [
-        { x: -hw * 0.35, y: -hh * 0.25, r: 7 },
-        { x: hw * 0.3, y: hh * 0.2, r: 9 },
-        { x: -hw * 0.05, y: hh * 0.35, r: 5 },
-      ];
-      craters.forEach(c => {
-        // Deep crater shadow
-        ctx.fillStyle = '#090d16';
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-        ctx.fill();
-        // Central peak
-        ctx.fillStyle = '#94a3b8';
-        ctx.beginPath();
-        ctx.arc(c.x - 0.5, c.y - 0.5, c.r * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-        // Stark white sunlit crater rim
-        ctx.strokeStyle = '#f8fafc';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, Math.PI * 0.7, Math.PI * 1.8);
-        ctx.stroke();
-      });
-
-      // Micrometeorite nickel inclusions
-      ctx.fillStyle = '#38bdf8';
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      ctx.arc(hw * 0.1, -hh * 0.4, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
-
-    // 2: Martian Canyon — Striated Martian Hematite
-    case 2: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#fb923c');
-      grad.addColorStop(0.4, '#ea580c');
-      grad.addColorStop(0.8, '#9a3412');
-      grad.addColorStop(1, '#431407');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
-
-      // Geological sediment strata lines
-      ctx.strokeStyle = '#fdba74';
-      ctx.lineWidth = 1.5;
-      [-hh * 0.45, -hh * 0.1, hh * 0.25].forEach((ly, i) => {
-        ctx.beginPath();
-        ctx.moveTo(-hw + 3, ly);
-        ctx.quadraticCurveTo(0, ly + (i % 2 === 0 ? 3 : -3), hw - 3, ly + 1);
-        ctx.stroke();
-      });
-
-      // Dark hematite mineral nodules
-      ctx.fillStyle = '#1c0702';
-      [[-hw * 0.35, hh * 0.1], [hw * 0.35, -hh * 0.25]].forEach(([nx, ny]) => {
-        ctx.beginPath();
-        ctx.arc(nx, ny, 3, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      break;
-    }
-
-    // 3: Deep Space Nebula — Cosmic Meteorite with Galaxy Swirl
-    case 3: {
-      const grad = safeCreateRadialGradient(ctx, 0, 0, 2, 0, 0, Math.max(3, hw));
-      if (grad) {
-        grad.addColorStop(0, '#c084fc');
-        grad.addColorStop(0.45, '#6b21a8');
-        grad.addColorStop(0.85, '#2e1065');
-        grad.addColorStop(1, '#05010a');
-        ctx.fillStyle = grad;
-      } else {
-        ctx.fillStyle = '#581c87';
-      }
-      ctx.shadowColor = '#c084fc';
-      ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
-
-      // Swirling galactic spiral arm
       ctx.save();
-      ctx.rotate(time * 0.0008);
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+      ctx.translate(0, bodyHover);
+
+      // 1. Soft Elliptical Contact Shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+      ctx.beginPath();
+      ctx.ellipse(0, hh * 0.92, hw * 0.68, hh * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Realistic 3D Jointed Insect Legs Underneath
+      ctx.strokeStyle = '#09090b';
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const legSway = Math.sin((time || 0) * 0.012) * 1.5;
+
+      // Forelegs
+      ctx.beginPath();
+      ctx.moveTo(-hw * 0.35, -hh * 0.1);
+      ctx.lineTo(-hw * 0.68 + legSway, hh * 0.18);
+      ctx.lineTo(-hw * 0.78 + legSway, hh * 0.55);
+      ctx.moveTo(hw * 0.35, -hh * 0.1);
+      ctx.lineTo(hw * 0.68 - legSway, hh * 0.18);
+      ctx.lineTo(hw * 0.78 - legSway, hh * 0.55);
+      ctx.stroke();
+
+      // Midlegs
+      ctx.beginPath();
+      ctx.moveTo(-hw * 0.32, hh * 0.15);
+      ctx.lineTo(-hw * 0.74, hh * 0.48 + legSway);
+      ctx.lineTo(-hw * 0.84, hh * 0.82);
+      ctx.moveTo(hw * 0.32, hh * 0.15);
+      ctx.lineTo(hw * 0.74, hh * 0.48 - legSway);
+      ctx.lineTo(hw * 0.84, hh * 0.82);
+      ctx.stroke();
+
+      // Hindlegs with golden pollen baskets (corbiculae)
+      ctx.beginPath();
+      ctx.moveTo(-hw * 0.22, hh * 0.38);
+      ctx.lineTo(-hw * 0.52, hh * 0.82 - legSway);
+      ctx.lineTo(-hw * 0.62, hh * 1.05);
+      ctx.moveTo(hw * 0.22, hh * 0.38);
+      ctx.lineTo(hw * 0.52, hh * 0.82 + legSway);
+      ctx.lineTo(hw * 0.62, hh * 1.05);
+      ctx.stroke();
+
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.ellipse(-hw * 0.52, hh * 0.8 - legSway, 3.2, 2, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(hw * 0.52, hh * 0.8 + legSway, 3.2, 2, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. 3D Plump Abdomen (Segmented Oval Body with Tergites)
+      const abdY = hh * 0.2;
+      const abdRadiusX = hw * 0.68;
+      const abdRadiusY = hh * 0.72;
+
+      ctx.save();
+      ctx.translate(0, abdY);
+
+      // Chitinous Stinger at Posterior Apex
+      ctx.fillStyle = '#09090b';
+      ctx.beginPath();
+      ctx.moveTo(-2.5, abdRadiusY * 0.85);
+      ctx.lineTo(0, abdRadiusY + 6.5);
+      ctx.lineTo(2.5, abdRadiusY * 0.85);
+      ctx.closePath();
+      ctx.fill();
+
+      // Base 3D Shaded Oval Body
+      const abdGrad = safeCreateRadialGradient(ctx, -abdRadiusX * 0.25, -abdRadiusY * 0.25, 2, 0, 0, abdRadiusX);
+      if (abdGrad) {
+        abdGrad.addColorStop(0, '#fef08a');
+        abdGrad.addColorStop(0.35, '#facc15');
+        abdGrad.addColorStop(0.7, '#d97706');
+        abdGrad.addColorStop(1, '#78350f');
+        ctx.fillStyle = abdGrad;
+      } else {
+        ctx.fillStyle = '#facc15';
+      }
+      ctx.beginPath();
+      ctx.ellipse(0, 0, abdRadiusX, abdRadiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Clip to abdomen for authentic 3D curved abdominal stripes
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, abdRadiusX, abdRadiusY, 0, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.ellipse(0, -abdRadiusY * 0.45, abdRadiusX * 1.05, abdRadiusY * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.ellipse(0, -abdRadiusY * 0.1, abdRadiusX * 1.05, abdRadiusY * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#09090b';
+      ctx.beginPath();
+      ctx.ellipse(0, abdRadiusY * 0.28, abdRadiusX * 1.05, abdRadiusY * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath();
+      ctx.ellipse(0, abdRadiusY * 0.65, abdRadiusX * 0.9, abdRadiusY * 0.28, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3D Spherical Volume Highlight across Dorsum
+      const dorsumGlint = ctx.createLinearGradient(-abdRadiusX, 0, abdRadiusX, 0);
+      dorsumGlint.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+      dorsumGlint.addColorStop(0.22, 'rgba(255, 255, 255, 0.38)');
+      dorsumGlint.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+      dorsumGlint.addColorStop(0.85, 'rgba(0, 0, 0, 0.35)');
+      dorsumGlint.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+      ctx.fillStyle = dorsumGlint;
+      ctx.fillRect(-abdRadiusX, -abdRadiusY, abdRadiusX * 2, abdRadiusY * 2);
+      ctx.restore();
+
+      // Fine Fur Fringe Stippling along Abdomen Rim
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.65)';
+      ctx.lineWidth = 0.8;
+      for (let a = 0; a < Math.PI * 2; a += 0.28) {
+        const px = Math.cos(a) * abdRadiusX;
+        const py = Math.sin(a) * abdRadiusY;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + Math.cos(a) * 2.4, py + Math.sin(a) * 2.4);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 4. 3D Compact Rounded Thorax
+      const thY = -hh * 0.26;
+      const thRadiusX = hw * 0.56;
+      const thRadiusY = hh * 0.42;
+
+      const thGrad = safeCreateRadialGradient(ctx, -thRadiusX * 0.25, thY - thRadiusY * 0.3, 2, 0, thY, thRadiusX);
+      if (thGrad) {
+        thGrad.addColorStop(0, '#fef08a');
+        thGrad.addColorStop(0.32, '#f59e0b');
+        thGrad.addColorStop(0.72, '#78350f');
+        thGrad.addColorStop(1, '#18181b');
+        ctx.fillStyle = thGrad;
+      } else {
+        ctx.fillStyle = '#b45309';
+      }
+      ctx.beginPath();
+      ctx.ellipse(0, thY, thRadiusX, thRadiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. 3D Head & Faceted Compound Eyes
+      const headY = -hh * 0.68;
+      const headRadiusX = hw * 0.38;
+      const headRadiusY = hh * 0.3;
+
+      const headGrad = safeCreateRadialGradient(ctx, -headRadiusX * 0.3, headY - headRadiusY * 0.2, 2, 0, headY, headRadiusX);
+      if (headGrad) {
+        headGrad.addColorStop(0, '#3f3f46');
+        headGrad.addColorStop(0.6, '#18181b');
+        headGrad.addColorStop(1, '#09090b');
+        ctx.fillStyle = headGrad;
+      } else {
+        ctx.fillStyle = '#18181b';
+      }
+      ctx.beginPath();
+      ctx.ellipse(0, headY, headRadiusX, headRadiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const eyeR_X = headRadiusX * 0.42;
+      const eyeR_Y = headRadiusY * 0.58;
+      const eyeY = headY + 1;
+
+      [-1, 1].forEach((dir) => {
+        ctx.save();
+        ctx.translate(dir * headRadiusX * 0.72, eyeY);
+        ctx.rotate(dir * 0.25);
+        ctx.fillStyle = '#18181b';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, eyeR_X, eyeR_Y, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.7 + eyeShimmer * 0.25})`;
+        ctx.beginPath();
+        ctx.ellipse(-eyeR_X * 0.3, -eyeR_Y * 0.3, eyeR_X * 0.35, eyeR_Y * 0.25, dir * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Curved Sensor Antennae
+      const antWiggle = Math.sin((time || 0) * 0.015) * 2;
+      ctx.strokeStyle = '#09090b';
       ctx.lineWidth = 1.6;
       ctx.beginPath();
-      for (let a = 0; a < Math.PI * 3; a += 0.2) {
-        const rad = (a / (Math.PI * 3)) * (hw * 0.7);
-        const sx = Math.cos(a) * rad;
-        const sy = Math.sin(a) * rad;
-        if (a === 0) ctx.moveTo(sx, sy);
-        else ctx.lineTo(sx, sy);
+      ctx.moveTo(-headRadiusX * 0.3, headY - headRadiusY * 0.7);
+      ctx.quadraticCurveTo(-headRadiusX * 0.7 + antWiggle, headY - headRadiusY * 1.5, -headRadiusX * 1.1 + antWiggle, headY - headRadiusY * 1.4);
+      ctx.moveTo(headRadiusX * 0.3, headY - headRadiusY * 0.7);
+      ctx.quadraticCurveTo(headRadiusX * 0.7 - antWiggle, headY - headRadiusY * 1.5, headRadiusX * 1.1 - antWiggle, headY - headRadiusY * 1.4);
+      ctx.stroke();
+
+      // 6. Realistic 3D Gossamer Veined Wings (Dual Pairs)
+      const wingSweep = 0.35 + wingFlap * 0.55;
+      const wingLength = hw * 1.15;
+      const wingBreadth = hh * 0.82;
+
+      [-1, 1].forEach((side) => {
+        ctx.save();
+        ctx.translate(side * thRadiusX * 0.65, thY - 2);
+        ctx.rotate(side * wingSweep);
+
+        // Hindwing
+        ctx.fillStyle = 'rgba(224, 242, 254, 0.52)';
+        ctx.strokeStyle = 'rgba(186, 230, 253, 0.85)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.ellipse(side * wingLength * 0.35, -wingBreadth * 0.2, wingLength * 0.38, wingBreadth * 0.28, side * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Forewing
+        const foreGrad = ctx.createLinearGradient(side * wingLength, -wingBreadth, 0, 0);
+        foreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        foreGrad.addColorStop(0.35, 'rgba(224, 242, 254, 0.82)');
+        foreGrad.addColorStop(0.75, 'rgba(186, 230, 253, 0.52)');
+        foreGrad.addColorStop(1, 'rgba(125, 211, 252, 0.25)');
+        ctx.fillStyle = foreGrad;
+        ctx.beginPath();
+        ctx.ellipse(side * wingLength * 0.55, -wingBreadth * 0.45, wingLength * 0.55, wingBreadth * 0.38, side * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Chitin Wing Veins
+        ctx.strokeStyle = 'rgba(147, 197, 253, 0.92)';
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(side * wingLength * 0.6, -wingBreadth * 0.9, side * wingLength * 1.05, -wingBreadth * 0.6);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(side * wingLength * 0.75, -wingBreadth * 0.4);
+        ctx.moveTo(side * wingLength * 0.35, -wingBreadth * 0.22);
+        ctx.lineTo(side * wingLength * 0.6, -wingBreadth * 0.15);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      ctx.restore();
+      break;
+    }
+
+    // 1: Lunar Surface — 3D Chibi Moon Astronaut Bunny (Round Bubble Helmet & Sculpted Ears)
+    case 1: {
+      const eyeBlink = Math.sin((time || 0) * 0.0016) > 0.94 ? 0.1 : 1;
+      const earWiggle = Math.sin((time || 0) * 0.012) * 0.12;
+
+      // Contact shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+      ctx.beginPath();
+      ctx.ellipse(0, hh * 0.92, hw * 0.65, hh * 0.18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Long Sculpted 3D Bunny Ears on Top
+      [-1, 1].forEach((side) => {
+        ctx.save();
+        ctx.translate(side * hw * 0.42, -hh * 0.65);
+        ctx.rotate(side * (0.22 + earWiggle));
+        ctx.fillStyle = '#f8fafc';
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(0, -hh * 0.35, hw * 0.22, hh * 0.48, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#f472b6';
+        ctx.beginPath();
+        ctx.ellipse(0, -hh * 0.35, hw * 0.11, hh * 0.32, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Little Round Space Boots at Bottom
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.ellipse(-hw * 0.35, hh * 0.78, hw * 0.22, hh * 0.16, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(hw * 0.35, hh * 0.78, hw * 0.22, hh * 0.16, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Spherical 3D Space Helmet Dome
+      const helmetGrad = safeCreateRadialGradient(ctx, -hw * 0.28, -hh * 0.28, 2, 0, 0, hw * 0.88);
+      if (helmetGrad) {
+        helmetGrad.addColorStop(0, '#ffffff');
+        helmetGrad.addColorStop(0.55, '#e2e8f0');
+        helmetGrad.addColorStop(1, '#64748b');
+        ctx.fillStyle = helmetGrad;
+      } else {
+        ctx.fillStyle = '#e2e8f0';
       }
+      ctx.beginPath();
+      ctx.arc(0, 0, hw * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Curved Cosmic Visor Bowl
+      const visorGrad = ctx.createLinearGradient(-hw * 0.6, -hh * 0.5, hw * 0.6, hh * 0.5);
+      visorGrad.addColorStop(0, '#0c4a6e');
+      visorGrad.addColorStop(0.5, '#0284c7');
+      visorGrad.addColorStop(1, '#1e1b4b');
+      ctx.fillStyle = visorGrad;
+      ctx.strokeStyle = '#eab308';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(0, -hh * 0.04, hw * 0.68, hh * 0.56, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Cute Bunny Eyes & Pink Nose inside Visor
+      const eyeR = hw * 0.16;
+      [-hw * 0.28, hw * 0.28].forEach((ex) => {
+        ctx.save();
+        ctx.translate(ex, -hh * 0.08);
+        ctx.scale(1, eyeBlink);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, eyeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(0, 0, eyeR * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(-eyeR * 0.3, -eyeR * 0.3, eyeR * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Visor glass curved highlight
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.48)';
+      ctx.beginPath();
+      ctx.ellipse(-hw * 0.28, -hh * 0.3, hw * 0.26, hh * 0.13, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 2: Martian Canyon — 3D Sculpted Martian Meteorite Geode Boulder
+    case 2: {
+      const grad = safeCreateRadialGradient(ctx, -hw * 0.25, -hh * 0.25, 2, 0, 0, hw);
+      if (grad) {
+        grad.addColorStop(0, '#fdba74');
+        grad.addColorStop(0.4, '#ea580c');
+        grad.addColorStop(0.8, '#9a3412');
+        grad.addColorStop(1, '#431407');
+        ctx.fillStyle = grad;
+      } else {
+        ctx.fillStyle = '#ea580c';
+      }
+
+      // Organic Multi-Faceted 3D Asteroid Silhouette
+      ctx.beginPath();
+      ctx.moveTo(0, -hh * 0.92);
+      ctx.lineTo(hw * 0.68, -hh * 0.62);
+      ctx.lineTo(hw * 0.95, -hh * 0.05);
+      ctx.lineTo(hw * 0.72, hh * 0.68);
+      ctx.lineTo(hw * 0.12, hh * 0.92);
+      ctx.lineTo(-hw * 0.65, hh * 0.72);
+      ctx.lineTo(-hw * 0.92, hh * 0.1);
+      ctx.lineTo(-hw * 0.68, -hh * 0.58);
+      ctx.closePath();
+      ctx.fill();
+
+      // 3D Impact Craters & Glowing Iron-Oxide Crystal Fissures
+      ctx.fillStyle = '#431407';
+      [[-hw * 0.32, -hh * 0.22, hw * 0.18], [hw * 0.28, hh * 0.25, hw * 0.22], [-hw * 0.1, hh * 0.42, hw * 0.14]].forEach(([cx, cy, cr]) => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-hw * 0.4, -hh * 0.1);
+      ctx.lineTo(0, hh * 0.1);
+      ctx.lineTo(hw * 0.35, -hh * 0.25);
+      ctx.stroke();
+      break;
+    }
+
+    // 3: Deep Space Nebula — 3D Ringed Cosmic Planet & Orbiting Moons
+    case 3: {
+      const ringTilt = 0.32;
+
+      // Back half of planetary rings
+      ctx.save();
+      ctx.rotate(-ringTilt);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, hw * 1.18, hh * 0.34, 0, Math.PI, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
 
-      // Pulsing stardust points
-      ctx.fillStyle = '#ffffff';
-      [[-hw * 0.35, -hh * 0.25], [hw * 0.25, hh * 0.3], [0, -hh * 0.35]].forEach(([px, py], i) => {
-        const sparkle = 1.0 + 0.5 * Math.sin(time * 0.004 + i);
-        ctx.beginPath();
-        ctx.arc(px, py, sparkle, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      break;
-    }
-
-    // 4: Abyssal Coral Reef — Luminous Sea Pearl & Abalone
-    case 4: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#cffafe');
-      grad.addColorStop(0.35, '#38bdf8');
-      grad.addColorStop(0.7, '#0284c7');
-      grad.addColorStop(1, '#082f49');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#22d3ee';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
-
-      // Concentric nacre ripples
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.lineWidth = 1.2;
-      [hw * 0.3, hw * 0.55].forEach(r => {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, r, r * 0.6, 0.2, 0, Math.PI * 2);
-        ctx.stroke();
-      });
-
-      // Lustrous centered sea pearl with 3D sphere highlight
-      const pearlGrad = safeCreateRadialGradient(ctx, -2, -2, 1, 0, 0, 9);
-      if (pearlGrad) {
-        pearlGrad.addColorStop(0, '#ffffff');
-        pearlGrad.addColorStop(0.4, '#e0f2fe');
-        pearlGrad.addColorStop(0.85, '#0284c7');
-        pearlGrad.addColorStop(1, '#075985');
-        ctx.fillStyle = pearlGrad;
+      // 3D Spherical Gas-Giant Planet Core
+      const planetGrad = safeCreateRadialGradient(ctx, -hw * 0.25, -hh * 0.25, 2, 0, 0, hw * 0.72);
+      if (planetGrad) {
+        planetGrad.addColorStop(0, '#f0abfc');
+        planetGrad.addColorStop(0.35, '#a855f7');
+        planetGrad.addColorStop(0.75, '#4c1d95');
+        planetGrad.addColorStop(1, '#09021a');
+        ctx.fillStyle = planetGrad;
       } else {
-        ctx.fillStyle = '#e0f2fe';
+        ctx.fillStyle = '#9333ea';
       }
-      ctx.beginPath();
-      ctx.arc(0, 0, 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Specular pearl glint
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(-2.5, -2.5, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
-
-    // 5: Tropical Sunset Beach — Ocean Jade Pebble
-    case 5: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#5eead4');
-      grad.addColorStop(0.35, '#14b8a6');
-      grad.addColorStop(0.75, '#0f766e');
-      grad.addColorStop(1, '#134e4a');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#2dd4bf';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 8);
-      ctx.fill();
-
-      // Translucent marble veining
-      ctx.strokeStyle = 'rgba(204, 251, 241, 0.65)';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(-hw + 6, hh - 4);
-      ctx.quadraticCurveTo(-hw * 0.2, 0, hw * 0.3, -hh * 0.3);
-      ctx.lineTo(hw - 6, -hh + 5);
-      ctx.stroke();
-
-      // Inlaid golden filigree border
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 1.8;
-      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
-      break;
-    }
-
-    // 6: Volcanic Caldera — Obsidian Magma Core
-    case 6: {
-      ctx.fillStyle = '#0a0302';
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
-      ctx.fill();
-
-      // Glowing molten core beneath semi-translucent glass
-      const lavaPulse = 0.8 + 0.2 * Math.sin(time * 0.005);
-      const coreGrad = safeCreateRadialGradient(ctx, 0, 0, 2, 0, 0, hw * 0.8 * lavaPulse);
-      if (coreGrad) {
-        coreGrad.addColorStop(0, 'rgba(254, 240, 138, 0.7)');
-        coreGrad.addColorStop(0.4, 'rgba(239, 68, 68, 0.55)');
-        coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = coreGrad;
-        ctx.fill();
-      }
-
-      // Branching incandescent magma fissures
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2.4;
-      ctx.shadowColor = '#f59e0b';
+      ctx.shadowColor = '#c084fc';
       ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.moveTo(-hw + 5, -hh + 5);
-      ctx.lineTo(-hw * 0.2, -hh * 0.1);
-      ctx.lineTo(hw * 0.1, hh * 0.15);
-      ctx.lineTo(hw - 5, hh - 5);
-      ctx.moveTo(-hw * 0.2, -hh * 0.1);
-      ctx.lineTo(hw * 0.35, -hh * 0.45);
-      ctx.stroke();
+      ctx.arc(0, 0, hw * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
-      // Superheated white-yellow fissure core
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 1.2;
+      // Front half of planetary rings overlapping planet
+      ctx.save();
+      ctx.rotate(-ringTilt);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, hw * 1.18, hh * 0.34, 0, 0, Math.PI);
       ctx.stroke();
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, hw * 1.0, hh * 0.26, 0, 0, Math.PI);
+      ctx.stroke();
+      ctx.restore();
       break;
     }
 
-    // 7: Ancient Stone Citadel — Fortress Ashlar Granite
-    case 7: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#94a3b8');
-      grad.addColorStop(0.4, '#475569');
-      grad.addColorStop(0.85, '#1e293b');
-      grad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = grad;
+    // 4: Abyssal Coral Reef — 3D Realistic Baby Sea Turtle
+    case 4: {
+      const paddle = Math.sin((time || 0) * 0.018) * 0.28;
+      const eyeBlink = Math.sin((time || 0) * 0.0017) > 0.94 ? 0.1 : 1;
+
+      // 1. Sculpted Turtle Head at Top
+      ctx.fillStyle = '#14b8a6';
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 4);
+      ctx.ellipse(0, -hh * 0.78, hw * 0.3, hh * 0.28, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Heavy forged iron reinforcing strap bands
-      ctx.strokeStyle = '#020617';
-      ctx.lineWidth = 2.5;
-      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
-
-      // Square forged iron rivets with highlights
-      const rivets = [
-        [-hw + 6, -hh + 6], [hw - 6, -hh + 6],
-        [-hw + 6, hh - 6], [hw - 6, hh - 6]
-      ];
-      rivets.forEach(([rx, ry]) => {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(rx - 2, ry - 2, 4, 4);
-        ctx.fillStyle = '#cbd5e1';
-        ctx.fillRect(rx - 2, ry - 2, 2, 2);
+      // Cute Eyes on Head
+      [-hw * 0.14, hw * 0.14].forEach((ex) => {
+        ctx.save();
+        ctx.translate(ex, -hh * 0.85);
+        ctx.scale(1, eyeBlink);
+        ctx.fillStyle = '#042f2e';
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-0.8, -0.8, 1.0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       });
 
-      // Carved heraldic crest in center
-      ctx.strokeStyle = '#cbd5e1';
+      // 2. Four Animated Paddling Flippers
+      [-1, 1].forEach((side) => {
+        // Front Flippers
+        ctx.save();
+        ctx.translate(side * hw * 0.62, -hh * 0.25);
+        ctx.rotate(side * (0.45 + paddle));
+        ctx.fillStyle = '#0d9488';
+        ctx.strokeStyle = '#5eead4';
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.ellipse(side * hw * 0.28, 0, hw * 0.36, hh * 0.16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Hind Flippers
+        ctx.save();
+        ctx.translate(side * hw * 0.48, hh * 0.55);
+        ctx.rotate(side * (-0.5 - paddle * 0.6));
+        ctx.fillStyle = '#0f766e';
+        ctx.beginPath();
+        ctx.ellipse(side * hw * 0.16, hh * 0.1, hw * 0.22, hh * 0.12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // 3. Domed 3D Oval Carapace Shell (Never a rectangle!)
+      const shellGrad = safeCreateRadialGradient(ctx, -hw * 0.2, -hh * 0.15, 2, 0, hh * 0.08, hw * 0.78);
+      if (shellGrad) {
+        shellGrad.addColorStop(0, '#5eead4');
+        shellGrad.addColorStop(0.4, '#0d9488');
+        shellGrad.addColorStop(0.85, '#115e59');
+        shellGrad.addColorStop(1, '#042f2e');
+        ctx.fillStyle = shellGrad;
+      } else {
+        ctx.fillStyle = '#0d9488';
+      }
+      ctx.beginPath();
+      ctx.ellipse(0, hh * 0.08, hw * 0.68, hh * 0.72, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hexagonal Carapace Scute Pattern
+      ctx.strokeStyle = 'rgba(204, 251, 241, 0.55)';
       ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.moveTo(0, -hh * 0.4);
-      ctx.lineTo(hw * 0.25, -hh * 0.1);
-      ctx.lineTo(0, hh * 0.4);
-      ctx.lineTo(-hw * 0.25, -hh * 0.1);
+      for (let a = 0; a < 6; a++) {
+        const ang = (a * Math.PI) / 3;
+        const px = Math.cos(ang) * hw * 0.32;
+        const py = hh * 0.08 + Math.sin(ang) * hh * 0.32;
+        if (a === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
       ctx.closePath();
       ctx.stroke();
       break;
     }
 
-    // 8: Enchanted Redwood — Petrified Heartwood
-    case 8: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#166534');
-      grad.addColorStop(0.45, '#14532d');
-      grad.addColorStop(0.85, '#052e16');
-      grad.addColorStop(1, '#021a0c');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#22c55e';
-      ctx.shadowBlur = 10;
+    // 5: Tropical Sunset Beach — 3D Iridescent Scallop Seashell & Glowing Pearl
+    case 5: {
+      const shellGrad = safeCreateRadialGradient(ctx, 0, -hh * 0.2, 2, 0, 0, hw);
+      if (shellGrad) {
+        shellGrad.addColorStop(0, '#fef08a');
+        shellGrad.addColorStop(0.4, '#fb923c');
+        shellGrad.addColorStop(0.8, '#f43f5e');
+        shellGrad.addColorStop(1, '#881337');
+        ctx.fillStyle = shellGrad;
+      } else {
+        ctx.fillStyle = '#fb7185';
+      }
+
+      // Fluted Scallop Shell Fan Lobes
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.moveTo(0, hh * 0.85);
+      for (let i = -4; i <= 4; i++) {
+        const ang = -Math.PI * 0.5 + (i * Math.PI) / 9;
+        const lobeR = hw * (0.98 - Math.abs(i) * 0.05);
+        ctx.lineTo(Math.cos(ang) * lobeR, hh * 0.2 + Math.sin(ang) * lobeR);
+      }
+      ctx.closePath();
       ctx.fill();
 
-      // Annual tree growth rings
-      ctx.strokeStyle = 'rgba(74, 222, 128, 0.35)';
+      // Shell Fluted Rib Lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
       ctx.lineWidth = 1.2;
-      [hw * 0.3, hw * 0.55, hw * 0.8].forEach(r => {
+      for (let i = -3; i <= 3; i++) {
+        const ang = -Math.PI * 0.5 + (i * Math.PI) / 9;
         ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.stroke();
-      });
-
-      // Glowing emerald druidic heart rune
-      ctx.save();
-      ctx.strokeStyle = '#86efac';
-      ctx.shadowColor = '#4ade80';
-      ctx.shadowBlur = 12;
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.arc(0, 0, 7, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      break;
-    }
-
-    // 9: Golden Desert Oasis — Sandstone Hieroglyph
-    case 9: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#fef08a');
-      grad.addColorStop(0.4, '#eab308');
-      grad.addColorStop(0.8, '#b45309');
-      grad.addColorStop(1, '#78350f');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
-      ctx.fill();
-
-      // Deeply incised Winged Sun Disk / Eye of Horus relief
-      ctx.strokeStyle = '#78350f';
-      ctx.lineWidth = 2.0;
-      ctx.beginPath();
-      ctx.arc(0, 0, 6, 0, Math.PI * 2);
-      ctx.stroke();
-      // Sun rays
-      for (let a = 0; a < 8; a++) {
-        const ang = (a * Math.PI) / 4;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(ang) * 8, Math.sin(ang) * 8);
-        ctx.lineTo(Math.cos(ang) * 12, Math.sin(ang) * 12);
+        ctx.moveTo(0, hh * 0.78);
+        ctx.lineTo(Math.cos(ang) * hw * 0.82, hh * 0.2 + Math.sin(ang) * hw * 0.82);
         ctx.stroke();
       }
 
-      // Gold leaf inlay in the eye center
-      ctx.fillStyle = '#fde047';
+      // 3D Iridescent Mother-of-Pearl Sphere inside Shell
+      const pearlGrad = safeCreateRadialGradient(ctx, -hw * 0.1, hh * 0.1, 1, 0, hh * 0.22, hw * 0.34);
+      if (pearlGrad) {
+        pearlGrad.addColorStop(0, '#ffffff');
+        pearlGrad.addColorStop(0.5, '#e0f2fe');
+        pearlGrad.addColorStop(1, '#94a3b8');
+        ctx.fillStyle = pearlGrad;
+      } else {
+        ctx.fillStyle = '#ffffff';
+      }
+      ctx.beginPath();
+      ctx.arc(0, hh * 0.22, hw * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // 6: Volcanic Caldera — 3D Molten Lava Bomb Sphere
+    case 6: {
+      const lavaPulse = 0.85 + 0.15 * Math.sin((time || 0) * 0.006);
+      const coreGrad = safeCreateRadialGradient(ctx, 0, 0, 2, 0, 0, hw * 0.95);
+      if (coreGrad) {
+        coreGrad.addColorStop(0, '#fef08a');
+        coreGrad.addColorStop(0.4, '#ef4444');
+        coreGrad.addColorStop(0.75, '#7f1d1d');
+        coreGrad.addColorStop(1, '#1c0a07');
+        ctx.fillStyle = coreGrad;
+      } else {
+        ctx.fillStyle = '#dc2626';
+      }
+
+      // Jagged 3D Volcanic Magma Orb Silhouette
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 14 * lavaPulse;
+      ctx.beginPath();
+      for (let i = 0; i < 12; i++) {
+        const ang = (i * Math.PI * 2) / 12;
+        const rad = hw * (i % 2 === 0 ? 0.94 : 0.78);
+        const px = Math.cos(ang) * rad;
+        const py = Math.sin(ang) * rad;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Glowing Incandescent Magma Veins
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(-hw * 0.45, -hh * 0.35);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(hw * 0.48, hh * 0.32);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(hw * 0.35, -hh * 0.42);
+      ctx.stroke();
+      break;
+    }
+
+    // 7: Ancient Stone Citadel — 3D Royal Knight Heater Shield & Golden Crest
+    case 7: {
+      const shieldGrad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      shieldGrad.addColorStop(0, '#cbd5e1');
+      shieldGrad.addColorStop(0.45, '#475569');
+      shieldGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = shieldGrad;
+
+      // Classic Curved Medieval Knight Shield Silhouette
+      ctx.beginPath();
+      ctx.moveTo(0, -hh * 0.9);
+      ctx.quadraticCurveTo(hw * 0.6, -hh * 0.9, hw * 0.85, -hh * 0.65);
+      ctx.quadraticCurveTo(hw * 0.88, hh * 0.25, 0, hh * 0.95);
+      ctx.quadraticCurveTo(-hw * 0.88, hh * 0.25, -hw * 0.85, -hh * 0.65);
+      ctx.quadraticCurveTo(-hw * 0.6, -hh * 0.9, 0, -hh * 0.9);
+      ctx.closePath();
+      ctx.fill();
+
+      // Gold Forged Shield Rim & Royal Cross Crest
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.moveTo(0, -hh * 0.45);
+      ctx.lineTo(hw * 0.25, 0);
+      ctx.lineTo(0, hh * 0.45);
+      ctx.lineTo(-hw * 0.25, 0);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+
+    // 8: Enchanted Redwood — 3D Bioluminescent Magic Forest Toadstool Mushroom
+    case 8: {
+      // Curved Ivory Mushroom Stalk
+      const stalkGrad = ctx.createLinearGradient(-hw * 0.3, 0, hw * 0.3, 0);
+      stalkGrad.addColorStop(0, '#d6d3d1');
+      stalkGrad.addColorStop(0.4, '#fafaf9');
+      stalkGrad.addColorStop(1, '#78716c');
+      ctx.fillStyle = stalkGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, hh * 0.42, hw * 0.32, hh * 0.48, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Plump 3D Bioluminescent Emerald Mushroom Cap
+      const capGrad = safeCreateRadialGradient(ctx, -hw * 0.25, -hh * 0.35, 2, 0, -hh * 0.15, hw * 0.95);
+      if (capGrad) {
+        capGrad.addColorStop(0, '#86efac');
+        capGrad.addColorStop(0.45, '#10b981');
+        capGrad.addColorStop(0.85, '#047857');
+        capGrad.addColorStop(1, '#022c22');
+        ctx.fillStyle = capGrad;
+      } else {
+        ctx.fillStyle = '#10b981';
+      }
+      ctx.shadowColor = '#34d399';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.ellipse(0, -hh * 0.15, hw * 0.92, hh * 0.58, 0, Math.PI, Math.PI * 2);
+      ctx.ellipse(0, -hh * 0.15, hw * 0.92, hh * 0.22, 0, 0, Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Glowing Spores / Cap Spots
+      ctx.fillStyle = '#fef08a';
+      [[-hw * 0.42, -hh * 0.3], [0, -hh * 0.48], [hw * 0.42, -hh * 0.28], [-hw * 0.15, -hh * 0.18], [hw * 0.22, -hh * 0.15]].forEach(([sx, sy]) => {
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      break;
+    }
+
+    // 9: Golden Desert Oasis — 3D Royal Winged Golden Scarab Beetle
+    case 9: {
+      // Jointed Golden Scarab Legs
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1.8;
+      [-1, 1].forEach((side) => {
+        [-0.3, 0.05, 0.4].forEach((ly) => {
+          ctx.beginPath();
+          ctx.moveTo(side * hw * 0.4, hh * ly);
+          ctx.lineTo(side * hw * 0.85, hh * (ly + 0.15));
+          ctx.stroke();
+        });
+      });
+
+      // Solar Ruby Orb held at Top
+      ctx.fillStyle = '#ef4444';
       ctx.shadowColor = '#f59e0b';
       ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      ctx.arc(0, -hh * 0.78, hw * 0.22, 0, Math.PI * 2);
       ctx.fill();
-      break;
-    }
+      ctx.shadowBlur = 0;
 
-    // 10: Frozen Arctic Tundra — Glacial Crystal Ice
-    case 10: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#f0f9ff');
-      grad.addColorStop(0.35, '#bae6fd');
-      grad.addColorStop(0.7, '#38bdf8');
-      grad.addColorStop(1, '#0284c7');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 14;
+      // 3D Iridescent Gold & Lapis Carapace Oval
+      const scarabGrad = safeCreateRadialGradient(ctx, -hw * 0.2, -hh * 0.1, 2, 0, hh * 0.1, hw * 0.75);
+      if (scarabGrad) {
+        scarabGrad.addColorStop(0, '#fef08a');
+        scarabGrad.addColorStop(0.45, '#eab308');
+        scarabGrad.addColorStop(0.85, '#a16207');
+        scarabGrad.addColorStop(1, '#422006');
+        ctx.fillStyle = scarabGrad;
+      } else {
+        ctx.fillStyle = '#eab308';
+      }
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
-
-      // Internal frost fracture needles
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.moveTo(-hw * 0.7, -hh * 0.6);
-      ctx.lineTo(-hw * 0.1, -hh * 0.1);
-      ctx.lineTo(hw * 0.6, hh * 0.5);
-      ctx.moveTo(-hw * 0.1, -hh * 0.1);
-      ctx.lineTo(hw * 0.45, -hh * 0.5);
-      ctx.stroke();
-
-      // Trapped air bubbles
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      [[-hw * 0.35, hh * 0.2], [hw * 0.2, hh * 0.15], [-hw * 0.1, -hh * 0.4]].forEach(([bx, by]) => {
-        ctx.beginPath();
-        ctx.arc(bx, by, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      break;
-    }
-
-    // 11: Pirate Corsair Cove — Nautical Oak Plank
-    case 11: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#b45309');
-      grad.addColorStop(0.45, '#78350f');
-      grad.addColorStop(0.85, '#451a03');
-      grad.addColorStop(1, '#1c0a03');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
+      ctx.ellipse(0, hh * 0.12, hw * 0.62, hh * 0.72, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Weathered wood grain lines
-      ctx.strokeStyle = '#27170e';
-      ctx.lineWidth = 1.4;
-      [-hh * 0.3, hh * 0.2].forEach(gy => {
-        ctx.beginPath();
-        ctx.moveTo(-hw + 4, gy);
-        ctx.lineTo(hw - 4, gy);
-        ctx.stroke();
-      });
-
-      // Brass ship rivets
-      ctx.fillStyle = '#fde047';
-      [[-hw + 6, 0], [hw - 6, 0]].forEach(([rx, ry]) => {
-        ctx.beginPath();
-        ctx.arc(rx, ry, 2.4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      // Solid brass anchor crest in center
-      ctx.strokeStyle = '#fbbf24';
+      // Elytra Wing Seam & Turquoise Inlay
+      ctx.strokeStyle = '#0284c7';
       ctx.lineWidth = 2.0;
       ctx.beginPath();
-      ctx.arc(0, -3, 4, 0, Math.PI * 2);
-      ctx.moveTo(0, 1);
-      ctx.lineTo(0, 9);
-      ctx.moveTo(-6, 6);
-      ctx.quadraticCurveTo(0, 10, 6, 6);
+      ctx.moveTo(-hw * 0.55, -hh * 0.15);
+      ctx.quadraticCurveTo(0, 0, hw * 0.55, -hh * 0.15);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, hh * 0.8);
       ctx.stroke();
       break;
     }
 
-    // 12: Candyland Confection — Ruby Sugar Jewel
+    // 10: Frozen Arctic Tundra — 3D Realistic Crystalline Snowflake ("snow flake")
+    case 10: {
+      const rot = (time || 0) * 0.0006;
+      const pulse = Math.sin((time || 0) * 0.003) * 0.06;
+      const crystalR = Math.min(hw, hh) * (1.08 + pulse);
+
+      ctx.save();
+
+      // 1. Soft Frosted Contact Shadow
+      ctx.fillStyle = 'rgba(2, 132, 199, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(0, hh * 0.9, hw * 0.72, hh * 0.18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Crystalline Ice Core Glow Aura
+      const auraGrad = safeCreateRadialGradient(ctx, 0, 0, 2, 0, 0, crystalR * 1.15);
+      if (auraGrad) {
+        auraGrad.addColorStop(0, 'rgba(224, 242, 254, 0.75)');
+        auraGrad.addColorStop(0.35, 'rgba(56, 189, 248, 0.4)');
+        auraGrad.addColorStop(0.7, 'rgba(2, 132, 199, 0.15)');
+        auraGrad.addColorStop(1, 'rgba(2, 132, 199, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, crystalR * 1.15, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.rotate(rot);
+
+      // 3. Six-Fold Radial Dendritic Crystal Arms (True 3D Snowflake)
+      for (let i = 0; i < 6; i++) {
+        ctx.save();
+        ctx.rotate((i * Math.PI) / 3);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-2.2, -crystalR * 0.85);
+        ctx.lineTo(0, -crystalR * 0.98);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(2.2, -crystalR * 0.85);
+        ctx.lineTo(0, -crystalR * 0.98);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#e0f2fe';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -crystalR);
+        ctx.stroke();
+
+        const branchY1 = -crystalR * 0.45;
+        const branchLen1 = crystalR * 0.38;
+        const branchAng = Math.PI / 3;
+
+        [-1, 1].forEach((side) => {
+          ctx.save();
+          ctx.translate(0, branchY1);
+          ctx.rotate(side * branchAng);
+          ctx.fillStyle = side === -1 ? '#ffffff' : '#7dd3fc';
+          ctx.beginPath();
+          ctx.moveTo(0, -1);
+          ctx.lineTo(branchLen1, 0);
+          ctx.lineTo(0, 1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#bae6fd';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        const branchY2 = -crystalR * 0.72;
+        const branchLen2 = crystalR * 0.24;
+        [-1, 1].forEach((side) => {
+          ctx.save();
+          ctx.translate(0, branchY2);
+          ctx.rotate(side * branchAng);
+          ctx.strokeStyle = '#e0f2fe';
+          ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(branchLen2, 0);
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        ctx.save();
+        ctx.translate(0, -crystalR * 0.95);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-2.2, -2.2, 4.4, 4.4);
+        ctx.restore();
+
+        ctx.restore();
+      }
+
+      // 4. Central 3D Hexagonal Ice Prism
+      ctx.fillStyle = 'rgba(240, 249, 255, 0.9)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      const hexR = crystalR * 0.28;
+      for (let a = 0; a < 6; a++) {
+        const ang = (a * Math.PI) / 3;
+        const px = Math.cos(ang) * hexR;
+        const py = Math.sin(ang) * hexR;
+        if (a === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+      break;
+    }
+
+    // 11: Pirate Corsair Cove — 3D Nautical Ship's Helm Steering Wheel
+    case 11: {
+      const wheelRot = (time || 0) * 0.0005;
+      ctx.save();
+      ctx.rotate(wheelRot);
+
+      // 8 Turned Mahogany Spokes & Outer Handles
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 3.0;
+      for (let i = 0; i < 8; i++) {
+        const ang = (i * Math.PI) / 4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(ang) * hw * 0.98, Math.sin(ang) * hh * 0.98);
+        ctx.stroke();
+
+        // Brass Handle Tip
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(Math.cos(ang) * hw * 0.98, Math.sin(ang) * hh * 0.98, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Carved Mahogany Wheel Rim
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 5.0;
+      ctx.beginPath();
+      ctx.arc(0, 0, hw * 0.68, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(0, 0, hw * 0.68, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Central Brass Cap Hub
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(0, 0, hw * 0.24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      break;
+    }
+
+    // 12: Candyland Confection — 3D Sculpted Translucent Strawberry Gummy Bear
     case 12: {
-      const grad = safeCreateRadialGradient(ctx, -hw * 0.25, -hh * 0.25, 2, 0, 0, Math.max(3, hw));
-      if (grad) {
-        grad.addColorStop(0, '#fbcfe8');
-        grad.addColorStop(0.3, '#f43f5e');
-        grad.addColorStop(0.7, '#be185d');
-        grad.addColorStop(1, '#701a75');
-        ctx.fillStyle = grad;
+      const eyeBlink = Math.abs(Math.sin((time || 0) * 0.003 + 1)) < 0.08 ? 0.1 : 1;
+
+      // Round Bear Ears
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath();
+      ctx.arc(-hw * 0.48, -hh * 0.68, hw * 0.26, 0, Math.PI * 2);
+      ctx.arc(hw * 0.48, -hh * 0.68, hw * 0.26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fda4af';
+      ctx.beginPath();
+      ctx.arc(-hw * 0.48, -hh * 0.68, hw * 0.13, 0, Math.PI * 2);
+      ctx.arc(hw * 0.48, -hh * 0.68, hw * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Chubby Gummy Bear Belly & Limbs (True Bear Silhouette, No Box!)
+      const gummyGrad = safeCreateRadialGradient(ctx, -hw * 0.2, -hh * 0.25, 2, 0, 0, hw);
+      if (gummyGrad) {
+        gummyGrad.addColorStop(0, '#fda4af');
+        gummyGrad.addColorStop(0.4, '#f43f5e');
+        gummyGrad.addColorStop(0.85, '#be123c');
+        gummyGrad.addColorStop(1, '#881337');
+        ctx.fillStyle = gummyGrad;
       } else {
         ctx.fillStyle = '#f43f5e';
       }
-      ctx.shadowColor = '#f43f5e';
-      ctx.shadowBlur = 14;
+
+      // Lower Chubby Torso & Feet
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.ellipse(0, hh * 0.35, hw * 0.65, hh * 0.52, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Round Head
+      ctx.beginPath();
+      ctx.ellipse(0, -hh * 0.22, hw * 0.62, hh * 0.52, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Gemstone facet cut bevels
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-      ctx.lineWidth = 1.4;
+      // Cute Muzzle & Nose
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.beginPath();
-      ctx.moveTo(-hw + 6, -hh + 6);
-      ctx.lineTo(0, -hh * 0.3);
-      ctx.lineTo(hw - 6, -hh + 6);
-      ctx.lineTo(hw * 0.4, 0);
-      ctx.lineTo(hw - 6, hh - 6);
-      ctx.lineTo(0, hh * 0.3);
-      ctx.lineTo(-hw + 6, hh - 6);
-      ctx.lineTo(-hw * 0.4, 0);
-      ctx.closePath();
-      ctx.stroke();
+      ctx.ellipse(0, -hh * 0.08, hw * 0.28, hh * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#881337';
+      ctx.beginPath();
+      ctx.ellipse(0, -hh * 0.13, 3, 2.2, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Glossy glass specular gleam glint
-      ctx.fillStyle = '#ffffff';
+      // Shiny Gummy Eyes
+      [-hw * 0.26, hw * 0.26].forEach((ex) => {
+        ctx.save();
+        ctx.translate(ex, -hh * 0.32);
+        ctx.scale(1, eyeBlink);
+        ctx.fillStyle = '#4c0519';
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-1, -1, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Candy Gloss Highlight on Belly & Forehead
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.beginPath();
-      ctx.arc(-hw * 0.35, -hh * 0.35, 3, 0, Math.PI * 2);
+      ctx.ellipse(-hw * 0.28, hh * 0.25, hw * 0.16, hh * 0.25, -0.2, 0, Math.PI * 2);
       ctx.fill();
       break;
     }
 
-    // 13: Golden El Dorado — 24K Minted Gold Bullion
+    // 13: Golden El Dorado — 3D Incan Solar Sun God Medallion Idol
     case 13: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#fef08a');
-      grad.addColorStop(0.35, '#facc15');
-      grad.addColorStop(0.7, '#ca8a04');
-      grad.addColorStop(1, '#713f12');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#facc15';
-      ctx.shadowBlur = 14;
+      // Radiant 12-Rayed Golden Sunburst Perimeter
+      ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
+      for (let i = 0; i < 24; i++) {
+        const ang = (i * Math.PI) / 12;
+        const rad = i % 2 === 0 ? hw * 0.98 : hw * 0.72;
+        const px = Math.cos(ang) * rad;
+        const py = Math.sin(ang) * rad;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
       ctx.fill();
 
-      // Stepped bullion bevel frame
-      ctx.strokeStyle = '#fef9c3';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(-hw + 3, -hh + 3, w - 6, h - 6);
-
-      // 999.9 Fineness stamp
-      ctx.fillStyle = '#713f12';
-      ctx.font = `bold ${Math.round(w * 0.24)}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('999.9', 0, 0);
-
-      // Specular gold gleam glint
-      ctx.fillStyle = '#ffffff';
+      // Inner 24K Gold Medallion Disc
+      const goldGrad = safeCreateRadialGradient(ctx, -hw * 0.2, -hh * 0.2, 2, 0, 0, hw * 0.72);
+      if (goldGrad) {
+        goldGrad.addColorStop(0, '#fef9c3');
+        goldGrad.addColorStop(0.45, '#facc15');
+        goldGrad.addColorStop(0.85, '#ca8a04');
+        goldGrad.addColorStop(1, '#713f12');
+        ctx.fillStyle = goldGrad;
+      } else {
+        ctx.fillStyle = '#facc15';
+      }
       ctx.beginPath();
-      ctx.arc(hw * 0.35, -hh * 0.35, 2.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, hw * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Turquoise Gem Inlays & Embossed Solar Eyes
+      ctx.fillStyle = '#06b6d4';
+      ctx.beginPath();
+      ctx.arc(-hw * 0.24, -hh * 0.12, 2.8, 0, Math.PI * 2);
+      ctx.arc(hw * 0.24, -hh * 0.12, 2.8, 0, Math.PI * 2);
       ctx.fill();
       break;
     }
 
-    // 14: Cyberpunk Megacity — Holo-Glass Processor
+    // 14: Cyberpunk Megacity — 3D Cyber Mecha-Kitty Drone Sphere
     case 14: {
-      ctx.fillStyle = '#05020a';
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
-      ctx.fill();
+      const earTwitch = Math.sin((time || 0) * 0.035) * 0.12;
+      const eyeBlink = Math.abs(Math.sin((time || 0) * 0.003 + 2)) < 0.07 ? 0.1 : 1;
 
-      // Neon glowing border
+      // Pointed Robotic Cat Ears
+      [-1, 1].forEach((side) => {
+        ctx.save();
+        ctx.translate(side * hw * 0.55, -hh * 0.55);
+        ctx.rotate(side * (0.25 + earTwitch));
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(-hw * 0.26, hh * 0.2);
+        ctx.lineTo(0, -hh * 0.48);
+        ctx.lineTo(hw * 0.26, hh * 0.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f43f5e';
+        ctx.beginPath();
+        ctx.moveTo(-hw * 0.14, hh * 0.15);
+        ctx.lineTo(0, -hh * 0.3);
+        ctx.lineTo(hw * 0.14, hh * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Spherical Obsidian Cyber Drone Head (No Box!)
+      const droneGrad = safeCreateRadialGradient(ctx, -hw * 0.25, -hh * 0.25, 2, 0, 0, hw * 0.85);
+      if (droneGrad) {
+        droneGrad.addColorStop(0, '#312e81');
+        droneGrad.addColorStop(0.55, '#09090b');
+        droneGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = droneGrad;
+      } else {
+        ctx.fillStyle = '#09090b';
+      }
       ctx.strokeStyle = '#00f0ff';
-      ctx.lineWidth = 2.0;
-      ctx.shadowColor = '#00f0ff';
-      ctx.shadowBlur = 10;
-      ctx.strokeRect(-hw + 2, -hh + 2, w - 4, h - 4);
-
-      // Cyan / Magenta microcircuit traces
-      ctx.strokeStyle = '#f43f5e';
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(-hw + 5, -hh * 0.3);
-      ctx.lineTo(-hw * 0.2, -hh * 0.3);
-      ctx.lineTo(0, 0);
-      ctx.lineTo(hw * 0.35, hh * 0.2);
-      ctx.lineTo(hw - 5, hh * 0.2);
+      ctx.ellipse(0, hh * 0.05, hw * 0.82, hh * 0.72, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
 
-      // Central gold micro-chip die with LED
-      ctx.fillStyle = '#eab308';
-      ctx.fillRect(-5, -5, 10, 10);
-      const blink = Math.sin(time * 0.008) > 0 ? 1 : 0.3;
-      ctx.fillStyle = '#00f0ff';
-      ctx.globalAlpha = blink;
-      ctx.fillRect(-2, -2, 4, 4);
-      ctx.globalAlpha = 1;
+      // Glowing Cyan Digital LED Eyes
+      [-hw * 0.32, hw * 0.32].forEach((ex) => {
+        ctx.save();
+        ctx.translate(ex, -hh * 0.08);
+        ctx.scale(1, eyeBlink);
+        ctx.fillStyle = '#00f0ff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, hw * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Pink Neon Kitty Nose & Whiskers
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath();
+      ctx.arc(0, hh * 0.12, 2.5, 0, Math.PI * 2);
+      ctx.fill();
       break;
     }
 
-    // 15: Toxic Wasteland — Heavy Isotope Cask
+    // 15: Toxic Wasteland — 3D Glowing Plasma Bio-Orb Sphere
     case 15: {
-      ctx.fillStyle = '#18181b';
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
-      ctx.fill();
-
-      // Industrial hazard warning stripes along top and bottom
-      ctx.fillStyle = '#eab308';
-      ctx.fillRect(-hw + 2, -hh + 2, w - 4, 4);
-      ctx.fillRect(-hw + 2, hh - 6, w - 4, 4);
-
-      // Glowing radioactive isotope chamber
-      ctx.save();
-      ctx.fillStyle = '#84cc16';
+      // Outer Glass Containment Sphere
+      const orbGrad = safeCreateRadialGradient(ctx, -hw * 0.25, -hh * 0.25, 2, 0, 0, hw * 0.88);
+      if (orbGrad) {
+        orbGrad.addColorStop(0, '#ecfccb');
+        orbGrad.addColorStop(0.4, '#84cc16');
+        orbGrad.addColorStop(0.8, '#3f6212');
+        orbGrad.addColorStop(1, '#18181b');
+        ctx.fillStyle = orbGrad;
+      } else {
+        ctx.fillStyle = '#84cc16';
+      }
       ctx.shadowColor = '#bef264';
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.arc(0, 0, hw * 0.85, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
 
-      // Trefoil radiation warning blades
-      ctx.fillStyle = '#091504';
+      // Rotating Trefoil Core inside Sphere
+      ctx.save();
+      ctx.rotate((time || 0) * 0.0015);
+      ctx.fillStyle = '#18181b';
       for (let b = 0; b < 3; b++) {
         const ang = (b * Math.PI * 2) / 3;
         ctx.beginPath();
-        ctx.arc(0, 0, 6, ang - 0.4, ang + 0.4);
+        ctx.arc(0, 0, hw * 0.48, ang - 0.38, ang + 0.38);
         ctx.lineTo(0, 0);
         ctx.closePath();
         ctx.fill();
       }
       ctx.restore();
+
+      // Glass Specular Glint
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.beginPath();
+      ctx.ellipse(-hw * 0.32, -hh * 0.35, hw * 0.22, hh * 0.12, -0.5, 0, Math.PI * 2);
+      ctx.fill();
       break;
     }
 
-    // 16: Floating Sky Islands — Aether Aerolite
+    // 16: Floating Sky Islands — 3D Winged Celestial Aether Crystal
     case 16: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#f0fdf4');
-      grad.addColorStop(0.35, '#86efac');
-      grad.addColorStop(0.7, '#38bdf8');
-      grad.addColorStop(1, '#1e3a8a');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 12;
+      const wingFlap = Math.sin((time || 0) * 0.012) * 0.22;
+
+      // Feathered White Angelic Wings on Left & Right
+      [-1, 1].forEach((side) => {
+        ctx.save();
+        ctx.translate(side * hw * 0.35, 0);
+        ctx.rotate(side * (-0.2 + wingFlap));
+        ctx.fillStyle = '#f8fafc';
+        ctx.strokeStyle = '#bae6fd';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(side * hw * 0.42, -hh * 0.15, hw * 0.45, hh * 0.24, side * -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Central Faceted Diamond Aether Crystal
+      const crysGrad = ctx.createLinearGradient(0, -hh, 0, hh);
+      crysGrad.addColorStop(0, '#ffffff');
+      crysGrad.addColorStop(0.45, '#38bdf8');
+      crysGrad.addColorStop(1, '#0284c7');
+      ctx.fillStyle = crysGrad;
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 7);
+      ctx.moveTo(0, -hh * 0.92);
+      ctx.lineTo(hw * 0.52, 0);
+      ctx.lineTo(0, hh * 0.92);
+      ctx.lineTo(-hw * 0.52, 0);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+
+    // 17: Chrono Clockwork — 3D Steampunk Brass Cogwheel & Ruby Chronometer
+    case 17: {
+      ctx.save();
+      ctx.rotate((time || 0) * 0.0012);
+
+      // 10 Machined Brass Gear Teeth
+      ctx.fillStyle = '#d97706';
+      for (let i = 0; i < 10; i++) {
+        ctx.save();
+        ctx.rotate((i * Math.PI * 2) / 10);
+        ctx.beginPath();
+        ctx.roundRect(-hw * 0.14, -hh * 0.96, hw * 0.28, hh * 0.28, 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Circular Brushed Brass Gear Body
+      const gearGrad = safeCreateRadialGradient(ctx, -hw * 0.2, -hh * 0.2, 2, 0, 0, hw * 0.8);
+      if (gearGrad) {
+        gearGrad.addColorStop(0, '#fef08a');
+        gearGrad.addColorStop(0.5, '#d97706');
+        gearGrad.addColorStop(1, '#78350f');
+        ctx.fillStyle = gearGrad;
+      } else {
+        ctx.fillStyle = '#d97706';
+      }
+      ctx.beginPath();
+      ctx.arc(0, 0, hw * 0.76, 0, Math.PI * 2);
       ctx.fill();
 
-      // Cloud aura swirls & levitation runes
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.6;
+      // Inner Spokes & Ruby Pivot Jewel
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
-      ctx.arc(0, 0, 7, 0, Math.PI);
+      ctx.arc(0, 0, hw * 0.48, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Azure aether core
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(0, 0, 3, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
-
-    // 17: Chrono Clockwork — Brass Escapement Gear
-    case 17: {
-      const grad = safeCreateRadialGradient(ctx, 0, 0, 2, 0, 0, Math.max(3, hw));
-      if (grad) {
-        grad.addColorStop(0, '#fef08a');
-        grad.addColorStop(0.45, '#d97706');
-        grad.addColorStop(0.85, '#92400e');
-        grad.addColorStop(1, '#451a03');
-        ctx.fillStyle = grad;
-      } else {
-        ctx.fillStyle = '#b45309';
-      }
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 5);
-      ctx.fill();
-
-      // Rotating gear teeth perimeter
-      ctx.save();
-      ctx.rotate(time * 0.001);
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 2.2;
-      const teeth = 8;
-      for (let i = 0; i < teeth; i++) {
-        const ang = (i * Math.PI * 2) / teeth;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(ang) * (hw * 0.5), Math.sin(ang) * (hh * 0.5));
-        ctx.lineTo(Math.cos(ang) * (hw * 0.75), Math.sin(ang) * (hh * 0.75));
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // Synthetic ruby pivot bearing at center
       ctx.fillStyle = '#f43f5e';
       ctx.shadowColor = '#f43f5e';
       ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, hw * 0.22, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
       break;
     }
 
-    // 18: Sakura Blossom Shrine — Imperial Rosewood
+    // 18: Sakura Blossom Shrine — 3D Sculpted Kitsune Fox Spirit
     case 18: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#9f1239');
-      grad.addColorStop(0.45, '#4c0519');
-      grad.addColorStop(0.85, '#1f020a');
-      grad.addColorStop(1, '#0c0004');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#f43f5e';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
+      const earTwitch = Math.sin((time || 0) * 0.03) * 0.08;
 
-      // Inlaid mother-of-pearl cherry petal crest
-      ctx.fillStyle = '#fbcfe8';
-      for (let p = 0; p < 5; p++) {
-        const ang = (p * Math.PI * 2) / 5;
-        const px = Math.cos(ang) * 6;
-        const py = Math.sin(ang) * 6;
+      // Tall Fluffy Kitsune Ears with Vermilion Tips
+      [-1, 1].forEach((side) => {
+        ctx.save();
+        ctx.translate(side * hw * 0.52, -hh * 0.48);
+        ctx.rotate(side * (0.22 + earTwitch));
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.ellipse(px, py, 3.2, 1.8, ang, 0, Math.PI * 2);
+        ctx.moveTo(-hw * 0.26, hh * 0.2);
+        ctx.lineTo(0, -hh * 0.58);
+        ctx.lineTo(hw * 0.26, hh * 0.2);
+        ctx.closePath();
         ctx.fill();
+
+        ctx.fillStyle = '#e11d48';
+        ctx.beginPath();
+        ctx.moveTo(-hw * 0.12, -hh * 0.22);
+        ctx.lineTo(0, -hh * 0.58);
+        ctx.lineTo(hw * 0.12, -hh * 0.22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Sculpted Tapered Fox Face Silhouette (Cheeks tapering to snout — No Box!)
+      const foxGrad = safeCreateRadialGradient(ctx, 0, -hh * 0.1, 2, 0, 0, hw * 0.9);
+      if (foxGrad) {
+        foxGrad.addColorStop(0, '#ffffff');
+        foxGrad.addColorStop(0.75, '#fff1f2');
+        foxGrad.addColorStop(1, '#fecdd3');
+        ctx.fillStyle = foxGrad;
+      } else {
+        ctx.fillStyle = '#ffffff';
       }
-      // Gold stamen center
-      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+      ctx.moveTo(0, -hh * 0.65);
+      ctx.quadraticCurveTo(hw * 0.85, -hh * 0.55, hw * 0.88, hh * 0.05);
+      ctx.quadraticCurveTo(hw * 0.55, hh * 0.65, 0, hh * 0.88);
+      ctx.quadraticCurveTo(-hw * 0.55, hh * 0.65, -hw * 0.88, hh * 0.05);
+      ctx.quadraticCurveTo(-hw * 0.85, -hh * 0.55, 0, -hh * 0.65);
+      ctx.closePath();
       ctx.fill();
 
-      // 24K gold maki-e border rim
-      ctx.strokeStyle = '#fde047';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(-hw + 2.5, -hh + 2.5, w - 5, h - 5);
+      // Vermilion Forehead Shrine Diamond & Fox Eyeliner
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath();
+      ctx.moveTo(0, -hh * 0.45);
+      ctx.lineTo(hw * 0.12, -hh * 0.28);
+      ctx.lineTo(0, -hh * 0.12);
+      ctx.lineTo(-hw * 0.12, -hh * 0.28);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#1e1b4b';
+      ctx.lineWidth = 2.0;
+      [-hw * 0.34, hw * 0.34].forEach((ex) => {
+        ctx.beginPath();
+        ctx.arc(ex, hh * 0.02, hw * 0.16, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+      });
+
+      // Black Fox Nose Tip
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(0, hh * 0.62, 3.0, 0, Math.PI * 2);
+      ctx.fill();
       break;
     }
 
-    // 19: The Crystalline Core — Amethyst Geode Cluster
+    // 19: The Crystalline Core — 3D Multi-Pointed Amethyst Crystal Cluster
     case 19:
     default: {
-      const grad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      grad.addColorStop(0, '#f3e8ff');
-      grad.addColorStop(0.35, '#c084fc');
-      grad.addColorStop(0.7, '#7e22ce');
-      grad.addColorStop(1, '#2e1065');
-      ctx.fillStyle = grad;
-      ctx.shadowColor = '#c084fc';
-      ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
-      ctx.fill();
+      const spires = [
+        { ang: -0.55, len: 0.78, w: 0.26, col1: '#e9d5ff', col2: '#7e22ce' },
+        { ang: 0.55, len: 0.82, w: 0.26, col1: '#f3e8ff', col2: '#6b21a8' },
+        { ang: -0.22, len: 0.92, w: 0.3, col1: '#f5d0fe', col2: '#9333ea' },
+        { ang: 0.24, len: 0.88, w: 0.28, col1: '#e9d5ff', col2: '#7e22ce' },
+        { ang: 0, len: 1.05, w: 0.36, col1: '#ffffff', col2: '#a855f7' },
+      ];
 
-      // Diamond crystal facets & refraction lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, -hh + 3);
-      ctx.lineTo(hw - 3, 0);
-      ctx.lineTo(0, hh - 3);
-      ctx.lineTo(-hw + 3, 0);
-      ctx.closePath();
-      ctx.moveTo(-hw * 0.4, 0);
-      ctx.lineTo(0, -hh * 0.4);
-      ctx.lineTo(hw * 0.4, 0);
-      ctx.lineTo(0, hh * 0.4);
-      ctx.closePath();
-      ctx.stroke();
+      spires.forEach((sp) => {
+        ctx.save();
+        ctx.translate(0, hh * 0.45);
+        ctx.rotate(sp.ang);
+        const sw = hw * sp.w;
+        const sh = hh * sp.len * 1.25;
 
-      // Prismatic diamond apex glint
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(0, -hh * 0.4, 2.5, 0, Math.PI * 2);
-      ctx.fill();
+        // Left lit crystal facet
+        ctx.fillStyle = sp.col1;
+        ctx.beginPath();
+        ctx.moveTo(0, -sh);
+        ctx.lineTo(-sw, -sh * 0.72);
+        ctx.lineTo(-sw * 0.8, 0);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Right shaded crystal facet
+        ctx.fillStyle = sp.col2;
+        ctx.beginPath();
+        ctx.moveTo(0, -sh);
+        ctx.lineTo(sw, -sh * 0.72);
+        ctx.lineTo(sw * 0.8, 0);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
       break;
     }
   }
 
-  // Polished edge highlight
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-  ctx.lineWidth = 1.0;
-  ctx.strokeRect(-hw + 1, -hh + 1, w - 2, h - 2);
+  ctx.restore();
 }

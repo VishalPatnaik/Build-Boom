@@ -23,51 +23,150 @@ export function renderCinematicPlate(
   ctx.fill();
 
   switch (t) {
-    // 0: Meadow — Mossy Stone Ledger
+    // 0: Meadow — Beehive Daisies & Ladybug Garden Platform
     case 0: {
-      // Carved natural granite slab
-      const stoneGrad = ctx.createLinearGradient(-hw, -hh, hw, hh);
-      stoneGrad.addColorStop(0, '#64748b');
-      stoneGrad.addColorStop(0.5, '#475569');
-      stoneGrad.addColorStop(1, '#1e293b');
-      ctx.fillStyle = stoneGrad;
+      // Warm honey-toned timber base deck with soft rounded edges
+      const woodGrad = ctx.createLinearGradient(-hw, -hh, hw, hh);
+      woodGrad.addColorStop(0, '#fef08a');
+      woodGrad.addColorStop(0.2, '#f59e0b');
+      woodGrad.addColorStop(0.7, '#b45309');
+      woodGrad.addColorStop(1, '#78350f');
+      ctx.fillStyle = woodGrad;
       ctx.beginPath();
-      ctx.roundRect(-hw, -hh, w, h, 6);
+      ctx.roundRect(-hw, -hh + 3, w, h - 3, 7);
       ctx.fill();
 
-      // Stone chisel joint lines
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(-hw * 0.2, -hh);
-      ctx.lineTo(-hw * 0.15, hh);
-      ctx.moveTo(hw * 0.35, -hh);
-      ctx.lineTo(hw * 0.4, hh);
-      ctx.stroke();
-
-      // Lush velvet moss layer draped over top
-      const mossGrad = ctx.createLinearGradient(0, -hh, 0, 0);
-      mossGrad.addColorStop(0, '#4ade80');
-      mossGrad.addColorStop(0.5, '#22c55e');
-      mossGrad.addColorStop(1, '#15803d');
-      ctx.fillStyle = mossGrad;
-      ctx.beginPath();
-      ctx.moveTo(-hw + 3, -hh);
-      for (let x = -hw + 3; x <= hw - 3; x += 10) {
-        const my = -hh + 6 + Math.sin(x * 0.2 + 1) * 3;
-        ctx.lineTo(x, my);
+      // Honeycomb cell engravings on the platform front
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)';
+      ctx.lineWidth = 1.2;
+      const hexR = 5.5;
+      for (let x = -hw + 14; x <= hw - 14; x += 16) {
+        ctx.beginPath();
+        for (let a = 0; a < 6; a++) {
+          const ang = (a * Math.PI) / 3;
+          const px = x + Math.cos(ang) * hexR;
+          const py = hh - 3 + Math.sin(ang) * hexR;
+          if (a === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
       }
-      ctx.lineTo(hw - 3, -hh);
+
+      // Lush grassy fringe on top edge that sways
+      const grassGrad = ctx.createLinearGradient(0, -hh, 0, 0);
+      grassGrad.addColorStop(0, '#4ade80');
+      grassGrad.addColorStop(0.5, '#22c55e');
+      grassGrad.addColorStop(1, '#15803d');
+      ctx.fillStyle = grassGrad;
+      ctx.beginPath();
+      ctx.moveTo(-hw, -hh + 5);
+      for (let x = -hw; x <= hw; x += 6) {
+        const sway = Math.sin(x * 0.4 + (time || 0) * 0.003) * 2;
+        ctx.lineTo(x, -hh + sway);
+        ctx.lineTo(x + 3, -hh + 6);
+      }
+      ctx.lineTo(hw, -hh + 6);
+      ctx.lineTo(hw, -hh + 12);
+      ctx.lineTo(-hw, -hh + 12);
       ctx.closePath();
       ctx.fill();
 
-      // Wild floral buds in crevices
-      ctx.fillStyle = '#fef08a';
-      [[-hw * 0.6, -hh + 3], [hw * 0.5, -hh + 4], [0, -hh + 5]].forEach(([fx, fy]) => {
+      // Blooming Daisies across the plate
+      const daisyPos = [-hw * 0.55, -hw * 0.15, hw * 0.35];
+      daisyPos.forEach((dx, i) => {
+        const dy = -hh + 1 + (i % 2) * 3;
+        ctx.save();
+        ctx.translate(dx, dy);
+        ctx.fillStyle = '#ffffff';
+        for (let p = 0; p < 5; p++) {
+          const ang = (p * Math.PI * 2) / 5;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(ang) * 4, Math.sin(ang) * 4, 3.5, 1.8, ang, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
-        ctx.arc(fx, fy, 2, 0, Math.PI * 2);
+        ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
       });
+
+      // Cute Little Clay Honey Pot on the left
+      ctx.save();
+      ctx.translate(-hw * 0.8, -hh + 2);
+      // Honey pot body
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 7.5, 6.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Pot rim
+      ctx.fillStyle = '#c2410c';
+      ctx.fillRect(-5.5, -6.5, 11, 2.8);
+      // Dripping golden honey
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(2, -3.5, 2.8, 0, Math.PI * 2);
+      ctx.arc(3.5, 1.5, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Cute Friendly Ladybug on the right edge
+      ctx.save();
+      ctx.translate(hw * 0.78, -hh + 2.5);
+      // Red shell
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Black head
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.arc(3.5, -1, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Black wing divider & polka dots
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-5, 0);
+      ctx.lineTo(4, 0);
+      ctx.stroke();
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.arc(-1.5, -2, 1, 0, Math.PI * 2);
+      ctx.arc(-1.5, 2, 1, 0, Math.PI * 2);
+      ctx.arc(1.5, -2.5, 0.9, 0, Math.PI * 2);
+      ctx.arc(1.5, 2.5, 0.9, 0, Math.PI * 2);
+      ctx.fill();
+      // Cute white eye glint
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(4, -1.8, 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Tiny hovering bee over honey pot ("bee fly!")
+      ctx.save();
+      const beeHoverX = -hw * 0.7 + Math.sin((time || 0) * 0.005) * 4;
+      const beeHoverY = -hh - 7 + Math.cos((time || 0) * 0.007) * 3;
+      ctx.translate(beeHoverX, beeHoverY);
+      // Tiny wings flapping
+      const miniFlap = Math.sin((time || 0) * 0.06) * 3;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
+      ctx.ellipse(-1.5, -3 + miniFlap * 0.3, 3, 1.5, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(1.5, -3 - miniFlap * 0.3, 3, 1.5, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      // Tiny yellow body
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 4, 2.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Stripe
+      ctx.fillStyle = '#18181b';
+      ctx.fillRect(-0.5, -2.5, 1.2, 5);
+      ctx.restore();
+
       break;
     }
 

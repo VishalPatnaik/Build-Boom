@@ -25,14 +25,14 @@ export const COLLECTIONS: CollectionDef[] = [
   {
     id: 'col-0', name: 'Spring Meadow', isPremium: false,
     world: { id: 'bg-0', name: 'Emerald Meadow', type: 'background', price: 0, req: 1, desc: 'Rolling emerald green hills with warm golden sunlight.', isAd: false, themeIdx: 0 },
-    block: { id: 'skin-0', name: 'Amber Honeycomb', type: 'skin', price: 0, req: 1, desc: 'Polished amber gemstone with internal hexagonal honeycomb facets.', isAd: false, themeIdx: 0 },
-    boom: { id: 'boom-0', name: 'Pollen Burst', type: 'boom', price: 0, req: 1, desc: 'Swirling golden pollen and verdant leaf motes.', isAd: false, themeIdx: 0 },
-    plate: { id: 'plate-0', name: 'Mossy Stone Ledger', type: 'plate', price: 0, req: 1, desc: 'Carved natural granite stone slab blanketed in moss.', isAd: false, themeIdx: 0 },
+    block: { id: 'skin-0', name: 'Buzzing Bumblebee', type: 'skin', price: 0, req: 1, desc: 'Adorable fuzzy bumblebee with fluttering wings, anime eyes, blushing cheeks, and daisy flower.', isAd: false, themeIdx: 0 },
+    boom: { id: 'boom-0', name: 'Bumblebee & Daisy Fly', type: 'boom', price: 0, req: 1, desc: 'Cute mini honeybees fluttering away with flapping wings, blooming daisies, and honey sparkles.', isAd: false, themeIdx: 0 },
+    plate: { id: 'plate-0', name: 'Beehive Meadow Daisies', type: 'plate', price: 0, req: 1, desc: 'Honeycomb wooden platform with blooming daisies, honey pot, ladybug, and tiny hovering bee.', isAd: false, themeIdx: 0 },
   },
   {
     id: 'col-1', name: 'Lunar Surface', isPremium: false,
     world: { id: 'bg-1', name: 'Lunar Crater Field', type: 'background', price: 350, req: 2, desc: 'Stark grey lunar regolith overlooking an Earthrise.', isAd: false, themeIdx: 1 },
-    block: { id: 'skin-1', name: 'Lunar Basalt Rock', type: 'skin', price: 200, req: 2, desc: 'Authentic cratered lunar basalt with metallic meteorite inclusions.', isAd: false, themeIdx: 1 },
+    block: { id: 'skin-1', name: 'Chibi Moon Bunny', type: 'skin', price: 200, req: 2, desc: 'Cute astronaut rabbit in space gear with twitching bunny ears and cosmic star helmet.', isAd: false, themeIdx: 1 },
     boom: { id: 'boom-1', name: 'Meteor Impact', type: 'boom', price: 250, req: 2, desc: 'Stark micrometeorite blast with lunar ejecta shards.', isAd: false, themeIdx: 1 },
     plate: { id: 'plate-1', name: 'Thermal Landing Pad', type: 'plate', price: 150, req: 2, desc: 'Gold-foil insulated lunar excursion module pad.', isAd: false, themeIdx: 1 },
   },
@@ -53,7 +53,7 @@ export const COLLECTIONS: CollectionDef[] = [
   {
     id: 'col-4', name: 'Abyssal Coral Reef', isPremium: false,
     world: { id: 'bg-4', name: 'Coral Abyss', type: 'background', price: 900, req: 5, desc: 'Deep sapphire water caustics with living coral reef shelves.', isAd: false, themeIdx: 4 },
-    block: { id: 'skin-4', name: 'Luminous Sea Pearl', type: 'skin', price: 500, req: 5, desc: 'Iridescent ocean pearl with abalone shell mother-of-pearl sheen.', isAd: false, themeIdx: 4 },
+    block: { id: 'skin-4', name: 'Baby Sea Turtle', type: 'skin', price: 500, req: 5, desc: 'Adorable turquoise sea turtle with paddling flippers, kawaii eyes, and floating sea bubbles.', isAd: false, themeIdx: 4 },
     boom: { id: 'boom-4', name: 'Cavitation Splash', type: 'boom', price: 650, req: 5, desc: 'High-speed underwater hydrodynamic burst with bubbles.', isAd: false, themeIdx: 4 },
     plate: { id: 'plate-4', name: 'Living Coral Shelf', type: 'plate', price: 400, req: 5, desc: 'Natural calcified coral ledge with bioluminescent polyps.', isAd: false, themeIdx: 4 },
   },
@@ -95,7 +95,7 @@ export const COLLECTIONS: CollectionDef[] = [
   {
     id: 'col-10', name: 'Frozen Arctic Tundra', isPremium: false,
     world: { id: 'bg-10', name: 'Arctic Glacier', type: 'background', price: 2500, req: 16, desc: 'Glacial icebergs beneath dancing emerald and cyan Aurora curtains.', isAd: false, themeIdx: 10 },
-    block: { id: 'skin-10', name: 'Glacial Crystal Ice', type: 'skin', price: 1400, req: 16, desc: 'Translucent blue glacial ice block with internal frost fractures.', isAd: false, themeIdx: 10 },
+    block: { id: 'skin-10', name: 'Crystalline Snowflake', type: 'skin', price: 1400, req: 16, desc: 'Exquisite 3D realistic crystalline ice snowflake with 6-fold dendritic arms and subzero prism refractions.', isAd: false, themeIdx: 10 },
     boom: { id: 'boom-10', name: 'Blizzard Shatter', type: 'boom', price: 1800, req: 16, desc: 'Shattering burst of crystalline ice needles and frosty vapor.', isAd: false, themeIdx: 10 },
     plate: { id: 'plate-10', name: 'Permafrost Ice Shelf', type: 'plate', price: 1150, req: 16, desc: 'Solid permafrost shelf with hanging crystalline icicles.', isAd: false, themeIdx: 10 },
   },
@@ -109,7 +109,7 @@ export const COLLECTIONS: CollectionDef[] = [
   {
     id: 'col-12', name: 'Candyland Confection', isPremium: true,
     world: { id: 'bg-12', name: 'Sugar Crystal Glaze', type: 'background', price: 3300, req: 20, desc: 'Glistening confection realm with glazed cream hills and sugar dust.', isAd: false, themeIdx: 12 },
-    block: { id: 'skin-12', name: 'Ruby Sugar Jewel', type: 'skin', price: 1850, req: 20, desc: 'Artisan translucent ruby candy crystal with glossy specular shine.', isAd: false, themeIdx: 12 },
+    block: { id: 'skin-12', name: 'Strawberry Gummy Bear', type: 'skin', price: 1850, req: 20, desc: 'Bouncy translucent ruby gummy bear with cute teddy ears, smiling muzzle, and sugar shine.', isAd: false, themeIdx: 12 },
     boom: { id: 'boom-12', name: 'Sugar Glass Burst', type: 'boom', price: 2400, req: 20, desc: 'Dazzling shattered sugar glass fragments and confectionery sparkles.', isAd: false, themeIdx: 12 },
     plate: { id: 'plate-12', name: 'Wafer Biscuit Plate', type: 'plate', price: 1500, req: 20, desc: 'Crisp chocolate wafer biscuit platform with glazed mint supports.', isAd: false, themeIdx: 12 },
   },
@@ -123,7 +123,7 @@ export const COLLECTIONS: CollectionDef[] = [
   {
     id: 'col-14', name: 'Cyberpunk Megacity', isPremium: true,
     world: { id: 'bg-14', name: 'Neo-City Skyline', type: 'background', price: 0, req: 1, desc: 'Towering skyscrapers with neon signage and rain reflections.', isAd: true, themeIdx: 14 },
-    block: { id: 'skin-14', name: 'Holo-Glass Processor', type: 'skin', price: 0, req: 1, desc: 'Tempered smoked glass module with glowing cyan/magenta circuits.', isAd: true, themeIdx: 14 },
+    block: { id: 'skin-14', name: 'Cyber Mecha-Kitty', type: 'skin', price: 0, req: 1, desc: 'Futuristic robotic kitten with glowing neon magenta ears, cyan LED whiskers, and digital eyes.', isAd: true, themeIdx: 14 },
     boom: { id: 'boom-14', name: 'Electric Arc EMP', type: 'boom', price: 0, req: 1, desc: 'High-voltage electric discharge with neon cyan lightning sparks.', isAd: true, themeIdx: 14 },
     plate: { id: 'plate-14', name: 'Neon Rooftop Gantry', type: 'plate', price: 0, req: 1, desc: 'Reinforced industrial steel gantry with hazard warning strips.', isAd: true, themeIdx: 14 },
   },
@@ -151,7 +151,7 @@ export const COLLECTIONS: CollectionDef[] = [
   {
     id: 'col-18', name: 'Sakura Blossom Shrine', isPremium: true,
     world: { id: 'bg-18', name: 'Cherry Blossom Shrine', type: 'background', price: 6000, req: 40, desc: 'Serene twilight pagoda and torii gate against Mount Fuji silhouette.', isAd: false, themeIdx: 18 },
-    block: { id: 'skin-18', name: 'Imperial Rosewood', type: 'skin', price: 3400, req: 40, desc: 'Deep polished rosewood with inlaid mother-of-pearl blossom crest.', isAd: false, themeIdx: 18 },
+    block: { id: 'skin-18', name: 'Sakura Kitsune Fox', type: 'skin', price: 3400, req: 40, desc: 'Charming mystical cherry blossom fox with pointed ears, shrine forehead marking, and sakura blossom.', isAd: false, themeIdx: 18 },
     boom: { id: 'boom-18', name: 'Cherry Petal Vortex', type: 'boom', price: 4400, req: 40, desc: 'Whirlwind spiral of vibrant cherry blossom petals and paper sparks.', isAd: false, themeIdx: 18 },
     plate: { id: 'plate-18', name: 'Vermilion Bridge Deck', type: 'plate', price: 2800, req: 40, desc: 'Traditional Japanese lacquered red bridge plank with brass caps.', isAd: false, themeIdx: 18 },
   },

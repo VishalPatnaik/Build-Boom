@@ -53,31 +53,92 @@ export function renderCinematicBoomParticle(
 
   // 20 Unique Thematic Boom Particles
   switch (t) {
-    // 0: Meadow — Pollen Burst: Swirling golden pollen & spinning green leaf motes
+    // 0: Meadow — Cute Flying Bumblebees ("bee fly") & Daisy Petals
     case 0: {
-      if (p.type === 'projectile' || p.type === 'main') {
-        // Golden dandelion pollen puff
-        ctx.fillStyle = '#fef08a';
-        ctx.shadowColor = '#eab308';
-        ctx.shadowBlur = 10;
+      const isBee = (p.type === 'projectile' || p.type === 'main' || Math.abs(Math.sin((p.x || 0) * 12.3)) > 0.45);
+      if (isBee) {
+        // CUTE MINI FLYING BEE (bee fly!)
+        const beeSize = Math.max(7, r * 0.75);
+        const wingFlap = Math.sin((time || 0) * 0.06 + (p.x || 0) * 2) * (beeSize * 0.8);
+
+        // Flapping wings (translucent cyan-white)
+        ctx.fillStyle = 'rgba(224, 242, 254, 0.9)';
+        ctx.strokeStyle = '#bae6fd';
+        ctx.lineWidth = 0.8;
+        // Left wing
         ctx.beginPath();
-        ctx.arc(0, 0, r * 0.65, 0, Math.PI * 2);
+        ctx.ellipse(-beeSize * 0.25, -beeSize * 0.55 + wingFlap * 0.2, beeSize * 0.6, beeSize * 0.35, -Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
-      } else {
-        // Organic spinning green leaf mote
-        ctx.fillStyle = '#22c55e';
-        ctx.shadowColor = '#15803d';
+        ctx.stroke();
+        // Right wing
+        ctx.beginPath();
+        ctx.ellipse(beeSize * 0.25, -beeSize * 0.55 - wingFlap * 0.2, beeSize * 0.6, beeSize * 0.35, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Chubby yellow bee body
+        ctx.fillStyle = '#facc15';
+        ctx.shadowColor = '#eab308';
         ctx.shadowBlur = 6;
         ctx.beginPath();
-        ctx.ellipse(0, 0, r * 0.8, r * 0.35, rot + time * 0.005, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, beeSize * 0.85, beeSize * 0.6, 0, 0, Math.PI * 2);
         ctx.fill();
-        // Leaf vein
-        ctx.strokeStyle = '#86efac';
+
+        // Velvety black stripes
+        ctx.fillStyle = '#18181b';
+        ctx.beginPath();
+        ctx.rect(-beeSize * 0.25, -beeSize * 0.55, beeSize * 0.22, beeSize * 1.1);
+        ctx.rect(beeSize * 0.12, -beeSize * 0.55, beeSize * 0.2, beeSize * 1.1);
+        ctx.fill();
+
+        // Tiny stinger
+        ctx.beginPath();
+        ctx.moveTo(beeSize * 0.85, -1.5);
+        ctx.lineTo(beeSize * 1.15, 0);
+        ctx.lineTo(beeSize * 0.85, 1.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cute face: black eye + white glint + blushing pink cheek
+        ctx.fillStyle = '#09090b';
+        ctx.beginPath();
+        ctx.arc(-beeSize * 0.45, -beeSize * 0.15, beeSize * 0.14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-beeSize * 0.48, -beeSize * 0.18, beeSize * 0.06, 0, Math.PI * 2);
+        ctx.fill();
+        // Pink cheek
+        ctx.fillStyle = 'rgba(244, 114, 182, 0.85)';
+        ctx.beginPath();
+        ctx.arc(-beeSize * 0.35, beeSize * 0.18, beeSize * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cute antenna
+        ctx.strokeStyle = '#18181b';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(-r * 0.6, 0);
-        ctx.lineTo(r * 0.6, 0);
+        ctx.moveTo(-beeSize * 0.4, -beeSize * 0.4);
+        ctx.quadraticCurveTo(-beeSize * 0.55, -beeSize * 0.75, -beeSize * 0.65, -beeSize * 0.65);
         ctx.stroke();
+      } else {
+        // Blooming Daisy Flower with rotating white petals and yellow heart
+        const petalCount = 5;
+        const petalR = r * 0.45;
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#fef08a';
+        ctx.shadowBlur = 6;
+        for (let i = 0; i < petalCount; i++) {
+          const a = rot + (i * Math.PI * 2) / petalCount;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(a) * petalR, Math.sin(a) * petalR, r * 0.35, r * 0.18, a, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Golden flower center
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.26, 0, Math.PI * 2);
+        ctx.fill();
       }
       break;
     }

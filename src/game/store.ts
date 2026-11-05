@@ -88,6 +88,8 @@ interface GameStore {
   toggleFpsMonitor: () => void;
   screenShakeEnabled: boolean;
   toggleScreenShake: () => void;
+  sillyMode: boolean;
+  toggleSillyMode: () => void;
 
   // Settings Overlay & Audio/Visual Preferences
   settingsModalOpen: boolean;
@@ -265,6 +267,9 @@ const loadProgress = () => {
       if (parsed.screenShakeEnabled === undefined) {
         parsed.screenShakeEnabled = true;
       }
+      if (parsed.sillyMode === undefined) {
+        parsed.sillyMode = true;
+      }
       if (parsed.musicEnabled === undefined) {
         parsed.musicEnabled = true;
       }
@@ -323,6 +328,7 @@ const loadProgress = () => {
     hapticsEnabled: true,
     showFpsMonitor: true,
     screenShakeEnabled: true,
+    sillyMode: true,
     musicEnabled: true,
     sfxEnabled: true,
     musicVolume: 0.6,
@@ -366,6 +372,7 @@ const saveProgress = (data: Partial<GameStore>) => {
       hapticsEnabled: data.hapticsEnabled !== undefined ? data.hapticsEnabled : current.hapticsEnabled,
       showFpsMonitor: data.showFpsMonitor !== undefined ? data.showFpsMonitor : current.showFpsMonitor,
       screenShakeEnabled: data.screenShakeEnabled !== undefined ? data.screenShakeEnabled : current.screenShakeEnabled,
+      sillyMode: data.sillyMode !== undefined ? data.sillyMode : current.sillyMode,
       musicEnabled: data.musicEnabled !== undefined ? data.musicEnabled : current.musicEnabled,
       sfxEnabled: data.sfxEnabled !== undefined ? data.sfxEnabled : current.sfxEnabled,
       musicVolume: data.musicVolume !== undefined ? data.musicVolume : current.musicVolume,
@@ -449,6 +456,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const next = !get().screenShakeEnabled;
     saveProgress({ screenShakeEnabled: next });
     set({ screenShakeEnabled: next });
+  },
+  sillyMode: initialProgress.sillyMode !== undefined ? initialProgress.sillyMode : true,
+  toggleSillyMode: () => {
+    const next = !get().sillyMode;
+    saveProgress({ sillyMode: next });
+    set({ sillyMode: next });
   },
 
   // Settings & Theme

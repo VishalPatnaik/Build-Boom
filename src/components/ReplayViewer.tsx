@@ -268,10 +268,10 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
       const layerOffsetY = -i * 20 * Math.cos(layerTilt);
 
       ctx.save();
-      ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 10);
+      ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 14);
       ctx.rotate(layerTilt);
 
-      renderBlock(ctx, -30, -15, 60, 30, replay.equippedCosmetic || 'skin-0', true, time, undefined);
+      renderBlock(ctx, -22, -22, 44, 44, replay.equippedCosmetic || 'skin-0', true, time, undefined);
       ctx.restore();
     }
 
@@ -298,13 +298,12 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
       ctx.save();
       ctx.translate(px, py);
 
-      const stretch = 1 + b.speed * 0.1;
-      ctx.rotate(b.angle);
-      ctx.scale(stretch, 1 / stretch);
-
       if (b.type === 'build') {
-        renderBlock(ctx, -15, -15, 30, 30, replay.equippedCosmetic || 'skin-0', false, time, b.archetype);
+        renderBlock(ctx, -21, -21, 42, 42, replay.equippedCosmetic || 'skin-0', false, time, b.archetype);
       } else {
+        const stretch = 1 + b.speed * 0.1;
+        ctx.rotate(b.angle);
+        ctx.scale(stretch, 1 / stretch);
         renderBoomParticle(
           ctx,
           { x: 0, y: 0, rotation: 0, life: 1, size: 18, type: 'projectile' },
