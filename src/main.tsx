@@ -4,9 +4,14 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
+import { startNativeApp } from './native/bootstrap';
+import { isNativeApp } from './native/platform';
 
-// Register PWA service worker for 100% offline mobile play and instant asset caching
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+// Android app start-up (no-op in browsers)
+startNativeApp();
+
+// Register PWA service worker for 100% offline mobile play and instant asset caching (web only)
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && !isNativeApp()) {
   registerSW({
     immediate: true,
     onNeedRefresh() {

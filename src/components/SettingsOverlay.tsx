@@ -41,6 +41,8 @@ import {
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { AdService } from '../ads/AdService';
+import { showAdPrivacyOptions } from '../ads/admob';
+import { isNativeApp } from '../native/platform';
 
 const SOUND_PACK_THEMES: {
   id: SoundPackTheme;
@@ -1135,32 +1137,47 @@ export function SettingsOverlay() {
                     </div>
                   </div>
 
+                  {isNativeApp() && (
+                    <button
+                      onClick={() => {
+                        audio.playClickSound();
+                        haptics.uiTap();
+                        showAdPrivacyOptions();
+                      }}
+                      className="mt-3 w-full py-2.5 px-3 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold uppercase cursor-pointer active:scale-95 transition-transform"
+                    >
+                      Ad privacy choices
+                    </button>
+                  )}
+                  {/* Ad test buttons are for development builds only (they grant free rewards) */}
+                  {import.meta.env.DEV && (
                   <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800">
-                    <button
-                      onClick={() => {
-                        audio.playClickSound();
-                        haptics.uiTap();
-                        useGameStore.getState().showReviveAd();
-                      }}
-                      className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
-                    >
-                      <Video className="w-3.5 h-3.5" />
-                      <span>Test Revive Ad</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        audio.playClickSound();
-                        haptics.uiTap();
-                        useGameStore.getState().setPendingCoins(100);
-                        useGameStore.getState().showDoubleCoinsAd();
-                      }}
-                      className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Test 2X Coins</span>
-                    </button>
-                  </div>
+                      <button
+                        onClick={() => {
+                          audio.playClickSound();
+                          haptics.uiTap();
+                          useGameStore.getState().showReviveAd();
+                        }}
+                        className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Test Revive Ad</span>
+                      </button>
+  
+                      <button
+                        onClick={() => {
+                          audio.playClickSound();
+                          haptics.uiTap();
+                          useGameStore.getState().setPendingCoins(100);
+                          useGameStore.getState().showDoubleCoinsAd();
+                        }}
+                        className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold uppercase cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Test 2X Coins</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

@@ -1,3 +1,4 @@
+import { apiUrl } from '../native/platform';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
@@ -1079,7 +1080,7 @@ export function GameBoard() {
       const maxCombo = gameStateRef.current.combo;
       useGameStore.getState().updateHighScore('tournament', currentScore);
       if (activeT) {
-        fetch(`/api/tournaments/${activeT.id}/submit`, {
+        fetch(apiUrl(`/api/tournaments/${activeT.id}/submit`), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1237,7 +1238,7 @@ export function GameBoard() {
         updateHighScore(mode, finalScore);
         if (mode === 'endless' && finalScore > 0) {
           const s = useGameStore.getState();
-          fetch('/api/leaderboard/endless/submit', {
+          fetch(apiUrl('/api/leaderboard/endless/submit'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

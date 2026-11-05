@@ -1,3 +1,4 @@
+import { isNativeApp } from '../native/platform';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Smartphone, X, Check, Share, PlusSquare } from 'lucide-react';
@@ -9,8 +10,8 @@ export function MobileAppInstallButton() {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
 
-  // When already running in standalone native mode, hide install triggers
-  if (isInstalled) {
+  // When already running as an installed app (PWA or the Android app), hide install triggers
+  if (isInstalled || isNativeApp()) {
     return null;
   }
 

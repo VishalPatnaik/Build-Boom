@@ -37,9 +37,11 @@ export function RemoveAdsOverlay() {
   const handleRestore = async () => {
     audio.playClickSound();
     setStatusMessage('Checking purchase history on Google Play / App Store...');
+    // Ask the store (Google Play in the app) to re-send owned purchases first
+    await billingService.restorePurchases().catch(() => undefined);
     const history = billingService.getPurchaseHistory();
     const hasPriorRemoveAds = history.some(t => t.productId === 'remove_ads' && t.status === 'completed');
-    if (hasPriorRemoveAds || adsRemoved) {
+    if (hasPriorRemoveAds || useGameStore.getState().adsRemoved) {
       useGameStore.getState().removeAds();
       setStatusMessage('✓ Ad Blocker VIP restored successfully!');
       audio.playBuildSound(1.2);

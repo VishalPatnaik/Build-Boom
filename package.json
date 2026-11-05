@@ -10,9 +10,17 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.cjs",
     "lint": "tsc --noEmit",
-    "test": "tsx test_adversarial.ts"
+    "test": "tsx test_adversarial.ts",
+    "build:android": "vite build --mode android && cap sync android",
+    "android:open": "cap open android"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.3.0",
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@google/genai": "^2.4.0",
     "@stripe/stripe-js": "^9.16.0",
     "@tailwindcss/vite": "^4.1.14",
@@ -20,6 +28,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "canvas-confetti": "^1.9.4",
     "compression": "^1.8.1",
+    "cordova-plugin-purchase": "^13.20.0",
     "dotenv": "^17.2.3",
     "express": "^4.22.3",
     "framer-motion": "^13.2.0",
@@ -32,6 +41,8 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.6.0",
     "@types/compression": "^1.8.1",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",

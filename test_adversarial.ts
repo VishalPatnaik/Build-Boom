@@ -1,7 +1,7 @@
 // Comprehensive Adversarial Regression Test Suite for TOWER//SHIFT
 import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor } from './src/game/physicsEngine';
 import { ALL_COSMETICS, COLLECTIONS } from './src/game/collections';
-import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider } from './src/billing/BillingService';
+import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider, billingService } from './src/billing/BillingService';
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
 import { PROGRESSION_STORAGE_KEY, PROGRESSION_SNAPSHOT_KEY, autoSaveProgression } from './src/utils/progressionStorage';
 import { useGameStore } from './src/game/store';
@@ -437,6 +437,57 @@ console.log('\n--- 7. STACKING PHYSICS ---');
   }
   assert(peakLean > 2, 'Wind gusts lean a centred tower');
 }
+
+// ----------------------------------------------------
+// 8. GOOGLE PLAY BILLING (simulated Play billing plugin)
+// ----------------------------------------------------
+console.log('\n--- 8. GOOGLE PLAY BILLING ---');
+await (async () => {
+  const finished: string[] = [];
+  let approvedCb: ((t: any) => void) | null = null;
+  let nextOrder: 'approve' | 'cancel' = 'approve';
+  let registered: any[] = [];
+  const fakeStore = {
+    register: (products: any[]) => { registered = products; },
+    when: () => { const w: any = { approved: (cb: any) => { approvedCb = cb; return w; }, productUpdated: () => w }; return w; },
+    initialize: async () => [],
+    get: (id: string) => ({ id, pricing: { price: 'A$1.49' }, getOffer: () => ({ id }) }),
+    order: async (offer: any) => {
+      if (nextOrder === 'cancel') return { code: 6777006, message: 'cancelled' };
+      setTimeout(() => approvedCb?.({ transactionId: 'GPA.123', products: [{ id: offer.id }], finish: () => finished.push(offer.id) }), 5);
+      return undefined;
+    },
+    restorePurchases: async () => {
+      approvedCb?.({ transactionId: 'GPA.R1', products: [{ id: 'remove_ads' }], finish: () => finished.push('restore:remove_ads') });
+    },
+  };
+  (globalThis as any).window = { CdvPurchase: { store: fakeStore, ProductType: { CONSUMABLE: 'consumable', NON_CONSUMABLE: 'non consumable' }, Platform: { GOOGLE_PLAY: 'android-playstore' }, ErrorCode: { PAYMENT_CANCELLED: 6777006 } } };
+
+  const play = new GooglePlayBillingProvider();
+  billingService.setProvider(play, false);
+  assert(await play.initialize(), 'Play billing connects when the plugin is present');
+  assert(registered.length === BILLING_CATALOG.length, 'Every catalog product is registered with Google Play');
+  assert(registered.find((p) => p.id === 'remove_ads')?.type === 'non consumable' && registered.find((p) => p.id === 'coins_500')?.type === 'consumable', 'Remove Ads is one-time; coin packs can be bought again');
+  assert((await play.getLocalizedPrice('coins_100')) === 'A$1.49', 'Shows the local Google Play price');
+
+  const before = useGameStore.getState().coins;
+  const res = await billingService.purchaseProduct('coins_500');
+  const after = useGameStore.getState().coins;
+  assert(res.success && after - before === (getProductById('coins_500')?.rewards.coins || 0), 'Approved Play purchase grants the coins exactly once');
+  assert(finished.includes('coins_500'), 'Purchase is finished (consumed) so it can be bought again');
+
+  nextOrder = 'cancel';
+  const coinsBefore = useGameStore.getState().coins;
+  const cancelled = await billingService.purchaseProduct('coins_100');
+  assert(!cancelled.success && cancelled.message === 'Purchase cancelled.' && useGameStore.getState().coins === coinsBefore, 'Cancelled purchase grants nothing');
+
+  useGameStore.setState({ adsRemoved: false });
+  await play.restorePurchases();
+  assert(useGameStore.getState().adsRemoved === true && finished.includes('restore:remove_ads'), 'Restore Purchases brings back Ad Blocker VIP Pass');
+
+  billingService.setProvider(new MockBillingProvider(), true);
+  delete (globalThis as any).window;
+})();
 
 console.log('\n=====================================================');
 console.log(`ADVERSARIAL TEST RUN: ${passCount} PASSED, ${failCount} FAILED`);

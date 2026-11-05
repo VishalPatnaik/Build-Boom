@@ -4,6 +4,8 @@ import { useGameStore } from '../game/store';
 import { POWERUP_CONFIG } from '../game/techTree';
 import { PERK_DEFINITIONS } from '../game/techTree';
 import { SPONSOR_CREATIVES, AdCreative } from '../ads/AdService';
+import { showRewardedAd, showInterstitialAd } from '../ads/admob';
+import { isNativeApp } from '../native/platform';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
 import { X, Check, Sparkles, Video, Play, ShieldAlert, Award } from 'lucide-react';
@@ -20,7 +22,51 @@ interface SponsorAdViewerProps {
  * the countdown CAN NEVER freeze or stall, regardless of device hitching, backgrounding,
  * or React state batching.
  */
-function SponsorAdViewer({ onComplete, onCancel, rewardLabel }: SponsorAdViewerProps) {
+/**
+ * In the Android app the reward comes from a real AdMob rewarded video.
+ * The reward is granted only when Google reports the video was watched.
+ */
+function NativeRewardedAd({ onComplete, onCancel, rewardLabel }: SponsorAdViewerProps) {
+  const [status, setStatus] = useState<'loading' | 'unavailable'>('loading');
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    showRewardedAd().then((outcome) => {
+      if (outcome === 'rewarded') {
+        audio.playPerfectSound();
+        haptics.success();
+        onComplete();
+      } else if (outcome === 'dismissed') {
+        onCancel();
+      } else {
+        setStatus('unavailable');
+      }
+    });
+  }, []);
+  return (
+    <div className="bg-[#0b1120] border-2 border-cyan-400/80 p-6 rounded-3xl max-w-sm w-full text-center text-white">
+      <div className="text-[10px] font-mono font-bold tracking-widest uppercase text-cyan-300 mb-2">Reward: {rewardLabel}</div>
+      {status === 'loading' ? (
+        <p className="text-sm text-white/80">Loading video…</p>
+      ) : (
+        <>
+          <p className="text-sm text-white/80 mb-4">No video is available right now. Check your connection and try again in a moment.</p>
+          <button onClick={onCancel} className="w-full py-3 rounded-2xl bg-slate-800 border border-slate-600 font-bold">
+            Close
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SponsorAdViewer(props: SponsorAdViewerProps) {
+  if (isNativeApp()) return <NativeRewardedAd {...props} />;
+  return <WebSponsorAdViewer {...props} />;
+}
+
+function WebSponsorAdViewer({ onComplete, onCancel, rewardLabel }: SponsorAdViewerProps) {
   const DURATION_SECONDS = 5;
   const [secondsRemaining, setSecondsRemaining] = useState(DURATION_SECONDS);
   const [isFinished, setIsFinished] = useState(false);
@@ -189,6 +235,11 @@ export function AdOverlay() {
     setIsPlayingDoubleCoinsAd(false);
     setIsPlayingShopAd(false);
 
+    if (adState === 'interstitial' && isNativeApp()) {
+      // Real full-screen AdMob ad in the app; the in-page panel below is web only
+      showInterstitialAd().finally(() => closeAd());
+      return;
+    }
     if (adState === 'interstitial') {
       setInterstitialSeconds(5);
       const startTime = Date.now();
@@ -222,7 +273,7 @@ export function AdOverlay() {
         className="relative w-full max-w-md pointer-events-auto z-10 touch-pan-y flex flex-col items-center justify-center max-h-[90vh] overflow-y-auto px-2 pb-4 sm:pb-0"
       >
         {/* INTERSTITIAL AD */}
-        {adState === 'interstitial' && (
+        {adState === 'interstitial' && !isNativeApp() && (
           <div className="bg-[#0b1120] border-2 border-cyan-400 p-6 sm:p-8 rounded-3xl w-full text-center shadow-2xl text-white">
             <div className="text-xs font-mono font-bold text-cyan-400 mb-3 uppercase tracking-widest">
               SPONSOR INTERMISSION

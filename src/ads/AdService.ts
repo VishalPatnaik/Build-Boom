@@ -2,6 +2,8 @@
 // Provides seamless rewarded ads and interstitial ads across Web, PWA, and Native Android wrappers.
 
 import { useGameStore } from '../game/store';
+import { initAds, showRewardedAd } from './admob';
+import { isNativeApp } from '../native/platform';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
 
@@ -84,15 +86,10 @@ export class AdService {
     try {
       const win = typeof window !== 'undefined' ? (window as any) : {};
       
-      // 1. Capacitor Community AdMob
-      if (win.Capacitor?.isPluginAvailable?.('AdMob')) {
-        console.log('[TOWER//SHIFT Ads] Initializing Capacitor AdMob plugin...');
-        await win.Capacitor.Plugins.AdMob.initialize({
-          requestTrackingAuthorization: true,
-          testingDevices: ['EMULATOR'],
-          initializeForTesting: true,
-        });
-      } 
+      // 1. Real AdMob in the Android app (with consent form where required)
+      if (isNativeApp()) {
+        await initAds();
+      }
       // 2. Cordova AdMob plugin
       else if (win.admob || win.AdMob) {
         console.log('[TOWER//SHIFT Ads] Initializing Cordova AdMob plugin...');
@@ -119,6 +116,7 @@ export class AdService {
 
     const hasAdFree = !!store.adsRemoved;
     const isNativeAdMob = !!(
+      isNativeApp() ||
       win.Capacitor?.isPluginAvailable?.('AdMob') ||
       win.admob ||
       win.AdMob ||
@@ -172,33 +170,11 @@ export class AdService {
       return;
     }
 
-    // 2. Native Android AdMob Bridge if active
-    const win = typeof window !== 'undefined' ? (window as any) : {};
-    if (win.Capacitor?.isPluginAvailable?.('AdMob')) {
-      try {
-        const { AdMob, RewardAdPluginEvents } = win.Capacitor.Plugins;
-        await AdMob.prepareRewardVideoAd({
-          adId: ADMOB_TEST_CONFIG.android.rewarded,
-          isTesting: true,
-        });
-
-        let rewarded = false;
-        const rewardListener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
-          rewarded = true;
-        });
-        const dismissListener = await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
-          rewardListener.remove();
-          dismissListener.remove();
-          if (rewarded) {
-            this.grantRewardImmediately(type, payload);
-          }
-        });
-
-        await AdMob.showRewardVideoAd();
-        return;
-      } catch (err) {
-        console.warn('[TOWER//SHIFT Ads] Native AdMob failed, falling back to UI sponsor ad:', err);
-      }
+    // 2. Real AdMob rewarded video in the Android app
+    if (isNativeApp()) {
+      const outcome = await showRewardedAd();
+      if (outcome === 'rewarded') this.grantRewardImmediately(type, payload);
+      return;
     }
 
     // 3. Fallback to interactive in-game AdOverlay

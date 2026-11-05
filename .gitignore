@@ -8,3 +8,4 @@ coverage/
 !.env.example
 dev-dist/
 checkout_fulfilled.json
+!.env.android.example

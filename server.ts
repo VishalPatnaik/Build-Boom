@@ -108,6 +108,21 @@ async function startServer() {
     next();
   });
 
+  // The Android app runs from https://localhost inside its WebView and calls this API
+  const APP_ORIGINS = new Set(['https://localhost', 'capacitor://localhost', 'http://localhost']);
+  app.use('/api', (req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && APP_ORIGINS.has(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Max-Age', '86400');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   // Compress text responses (the game bundle shrinks from ~0.8 MB to ~0.25 MB)
   app.use(compression());
   const httpServer = http.createServer(app);

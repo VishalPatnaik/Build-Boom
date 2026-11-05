@@ -1,3 +1,4 @@
+import { apiUrl } from '../../native/platform';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../game/store';
@@ -89,7 +90,7 @@ export function TournamentHub() {
     try {
       const endlessBest = highScores['endless'] || 0;
       if (endlessBest > 0) {
-        await fetch('/api/leaderboard/endless/submit', {
+        await fetch(apiUrl('/api/leaderboard/endless/submit'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -105,7 +106,7 @@ export function TournamentHub() {
 
       const tournamentBest = highScores['tournament'] || 0;
       if (tournamentBest > 0) {
-        await fetch('/api/leaderboard/tournament/submit', {
+        await fetch(apiUrl('/api/leaderboard/tournament/submit'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -120,7 +121,7 @@ export function TournamentHub() {
       }
 
       if (unlockedLevels > 1) {
-        await fetch('/api/leaderboard/campaign/submit', {
+        await fetch(apiUrl('/api/leaderboard/campaign/submit'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -141,7 +142,7 @@ export function TournamentHub() {
   const fetchTournaments = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/tournaments?playerId=${playerId}`);
+      const res = await fetch(apiUrl(`/api/tournaments?playerId=${playerId}`));
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
@@ -163,7 +164,7 @@ export function TournamentHub() {
   const fetchGlobalLeaderboard = async (category: 'endless' | 'tournament' | 'campaign') => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/leaderboard/${category}?playerId=${playerId}`);
+      const res = await fetch(apiUrl(`/api/leaderboard/${category}?playerId=${playerId}`));
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();

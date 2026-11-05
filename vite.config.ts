@@ -9,12 +9,14 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(), 
       tailwindcss(),
       VitePWA({
+        // The Android app ships its files inside the APK, so it needs no service worker
+        disable: mode === 'android',
         registerType: 'autoUpdate',
         includeAssets: ['apple-touch-icon.png', 'icon.svg'],
         manifest: {

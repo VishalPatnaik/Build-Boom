@@ -203,76 +203,155 @@ export class MockBillingProvider implements IBillingProvider {
 export class GooglePlayBillingProvider implements IBillingProvider {
   readonly providerName = 'Google Play Billing';
   private _connected = false;
+  private initPromise: Promise<boolean> | null = null;
+  // Purchases waiting for Google Play to approve them, keyed by product id
+  private pending = new Map<string, (r: PurchaseResult) => void>();
 
   get isConnected(): boolean {
     return this._connected;
   }
 
+  private get api(): any {
+    return typeof window !== 'undefined' ? (window as any).CdvPurchase : undefined;
+  }
+
+  /**
+   * Registers every catalog product with Google Play (Remove Ads is a one-time
+   * purchase, everything else can be bought again) and wires up approval handling.
+   */
   async initialize(): Promise<boolean> {
-    // Checks for Android runtime or Capacitor/Cordova Google Play Billing plugin
-    const win = typeof window !== 'undefined' ? (window as any) : {};
-    if (win.CdvPurchase || win.Capacitor?.isPluginAvailable?.('Purchases')) {
-      this._connected = true;
-      return true;
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = (async () => {
+      // The plugin attaches itself to window after the device is ready
+      for (let i = 0; i < 50 && !this.api; i++) await new Promise((r) => setTimeout(r, 100));
+      const api = this.api;
+      if (!api?.store) return false;
+      const { store, ProductType, Platform } = api;
+
+      store.register(
+        BILLING_CATALOG.map((p) => ({
+          id: p.id,
+          type: p.id === 'remove_ads' ? ProductType.NON_CONSUMABLE : ProductType.CONSUMABLE,
+          platform: Platform.GOOGLE_PLAY,
+        }))
+      );
+
+      store
+        .when()
+        .approved((transaction: any) => this.onApproved(transaction))
+        .productUpdated(() => undefined);
+
+      const errors = await store.initialize([Platform.GOOGLE_PLAY]);
+      this._connected = !errors || errors.length === 0 || !!store.get(BILLING_CATALOG[0]?.id, Platform.GOOGLE_PLAY);
+      return this._connected;
+    })();
+    return this.initPromise;
+  }
+
+  /**
+   * Called by Google Play for new purchases, purchases that finish later (pending
+   * payment methods) and owned purchases found at startup. Grants and then finishes
+   * (consumes) the purchase so it is never granted twice.
+   */
+  private onApproved(transaction: any) {
+    const productId: string | undefined = transaction?.products?.[0]?.id;
+    const product = productId ? getProductById(productId) : undefined;
+    if (!product) {
+      transaction?.finish?.();
+      return;
     }
-    this._connected = false;
-    return false;
+    const record: PurchaseTransaction = {
+      transactionId: transaction.transactionId || `gplay_${Date.now()}`,
+      productId: product.id,
+      timestamp: Date.now(),
+      status: 'completed',
+      provider: 'google_play',
+      signature: transaction.nativePurchase?.signature || 'google_play',
+      rewardsGranted: { ...product.rewards },
+    };
+
+    const waiting = this.pending.get(product.id);
+    if (waiting) {
+      // The buyer is on the purchase screen: the facade grants the rewards
+      this.pending.delete(product.id);
+      waiting({ success: true, productId: product.id, transaction: record });
+    } else if (product.id === 'remove_ads') {
+      // One-time purchase restored at startup (reinstall or new phone)
+      if (!useGameStore.getState().adsRemoved) EntitlementGranter.grantEntitlements(product.rewards);
+    } else {
+      // A purchase that completed while the app was closed (e.g. a pending payment)
+      EntitlementGranter.grantEntitlements(product.rewards);
+    }
+    transaction.finish();
   }
 
   async getLocalizedPrice(productId: string): Promise<string | null> {
-    const win = typeof window !== 'undefined' ? (window as any) : {};
-    if (!this._connected || !win.CdvPurchase) {
+    const api = this.api;
+    if (!this._connected || !api?.store) {
       const item = getProductById(productId);
       return item ? item.defaultPricePlaceholder : null;
     }
     try {
-      const prod = win.CdvPurchase.store.get(productId);
-      return prod?.pricing?.price || null;
+      const prod = api.store.get(productId, api.Platform.GOOGLE_PLAY);
+      return prod?.pricing?.price || getProductById(productId)?.defaultPricePlaceholder || null;
     } catch {
       return null;
     }
   }
 
   async executePurchase(product: ProductCatalogItem): Promise<PurchaseResult> {
-    const win = typeof window !== 'undefined' ? (window as any) : {};
-    if (!this._connected || !win.CdvPurchase) {
+    await this.initialize();
+    const api = this.api;
+    if (!this._connected || !api?.store) {
       return {
         success: false,
         productId: product.id,
-        errorMessage: 'Billing not connected. Google Play Store is only available on native Android releases.',
+        errorMessage: 'Google Play is not available right now. Check your connection and try again.',
+      };
+    }
+    const offer = api.store.get(product.id, api.Platform.GOOGLE_PLAY)?.getOffer();
+    if (!offer) {
+      return {
+        success: false,
+        productId: product.id,
+        errorMessage: 'This item is not available in the Play Store yet.',
       };
     }
 
-    try {
-      const order = await win.CdvPurchase.store.order(product.id);
-      if (order && order.isApproved) {
-        const transaction: PurchaseTransaction = {
-          transactionId: order.transactionId || `gplay_${Date.now()}`,
-          productId: product.id,
-          timestamp: Date.now(),
-          status: 'completed',
-          provider: 'google_play',
-          signature: order.signature,
-          rewardsGranted: { ...product.rewards },
-        };
-        return { success: true, productId: product.id, transaction };
-      }
+    const approved = new Promise<PurchaseResult>((resolve) => this.pending.set(product.id, resolve));
+    const error = await api.store.order(offer);
+    if (error) {
+      this.pending.delete(product.id);
+      const cancelled = error.code === api.ErrorCode?.PAYMENT_CANCELLED;
       return {
         success: false,
         productId: product.id,
-        errorMessage: 'Google Play transaction was cancelled or declined.',
-        userCancelled: true,
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        productId: product.id,
-        errorMessage: err?.message || 'Google Play purchase error occurred.',
+        userCancelled: cancelled,
+        errorMessage: cancelled ? 'Purchase cancelled.' : error.message || 'Google Play purchase failed.',
       };
     }
+    // Wait for Google Play's approval (a pending payment may take longer: rewards arrive later)
+    const timeout = new Promise<PurchaseResult>((resolve) =>
+      setTimeout(() => {
+        if (this.pending.has(product.id)) {
+          this.pending.delete(product.id);
+          resolve({
+            success: false,
+            productId: product.id,
+            errorMessage: 'Payment is pending. Your items will arrive as soon as Google Play confirms it.',
+          });
+        }
+      }, 120000)
+    );
+    return Promise.race([approved, timeout]);
   }
 
   async restorePurchases(): Promise<PurchaseResult[]> {
+    await this.initialize();
+    const api = this.api;
+    if (!api?.store) return [];
+    await api.store.restorePurchases();
+    // Owned one-time purchases come back through onApproved
     return [];
   }
 }
