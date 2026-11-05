@@ -1,3 +1,9 @@
+// tsx injects globalThis.__dirname as '.' which breaks ESM packages like vite-plugin-pwa
+// that check `typeof __dirname !== "undefined"`. Delete it before Vite imports.
+if (typeof (globalThis as any).__dirname !== "undefined") {
+  delete (globalThis as any).__dirname;
+}
+
 import http from "http";
 import express from "express";
 import path from "path";
