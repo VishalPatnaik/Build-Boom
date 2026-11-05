@@ -6,6 +6,7 @@ if (typeof (globalThis as any).__dirname !== "undefined") {
 
 import http from "http";
 import express from "express";
+import compression from "compression";
 import path from "path";
 import Stripe from "stripe";
 import "dotenv/config";
@@ -97,8 +98,21 @@ function tooFrequent(key: string, windowMs = 3000): boolean {
 async function startServer() {
   const app = express();
   app.set('trust proxy', true);
+  app.disable('x-powered-by');
+
+  // Basic hardening headers for every response
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    next();
+  });
+
+  // Compress text responses (the game bundle shrinks from ~0.8 MB to ~0.25 MB)
+  app.use(compression());
   const httpServer = http.createServer(app);
-  const PORT = 3000;
+  // Hosting platforms (Cloud Run, Render, Railway...) pass the port in PORT
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
 
@@ -337,9 +351,23 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    // Using express 4 wildcard route
+    // Hashed build files never change, so browsers can keep them for a year;
+    // the page, service worker and manifest must always be re-checked so updates arrive.
+    app.use(
+      express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          } else {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
+    // Unknown API routes are real 404s; everything else is the single-page app
+    app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

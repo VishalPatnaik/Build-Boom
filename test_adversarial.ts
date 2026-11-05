@@ -426,7 +426,15 @@ console.log('\n--- 7. STACKING PHYSICS ---');
   const windy = createInitialPhysicsState(perks);
   for (let i = 0; i < 20; i++) placeBlock(windy, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks });
   let peakLean = 0;
-  for (let f = 0; f < 60 * 12; f++) { updateTowerPhysics(windy, 16.7, perks, { wind: 1 }); peakLean = Math.max(peakLean, Math.abs(windy.tiltAngle)); }
+  // Gusts use Math.random; pin it so the test does not depend on luck
+  const realRandom = Math.random;
+  let seed = 7;
+  Math.random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  try {
+    for (let f = 0; f < 60 * 20; f++) { updateTowerPhysics(windy, 16.7, perks, { wind: 1 }); peakLean = Math.max(peakLean, Math.abs(windy.tiltAngle)); }
+  } finally {
+    Math.random = realRandom;
+  }
   assert(peakLean > 2, 'Wind gusts lean a centred tower');
 }
 

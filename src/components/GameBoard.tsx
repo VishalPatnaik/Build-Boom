@@ -45,7 +45,7 @@ interface Particle {
   life: number;
   color: string;
   size: number;
-  type?: 'spark' | 'ring';
+  type?: 'spark' | 'ring' | 'trail';
 }
 
 // A block that has physically fallen off the tower (rendered with gravity + spin)
@@ -2272,8 +2272,9 @@ export function GameBoard() {
       // Visual Health & Tactical Hazard Proximity Indicator only when a Boom Hazard is genuinely near
       if (apparentType === 'build' && !b.handled && b.distance > -15) {
         const hazard = findNearestBoomHazard(px, py, gs.blocks, cx, cy, gameRadius);
-        if (hazard.proximityRatio > 0.35) {
-          const isTarget = b === activeTargetBlock;
+        // Only the next object to tap gets a warning label, so the screen stays readable
+        if (hazard.proximityRatio > 0.35 && b === activeTargetBlock) {
+          const isTarget = true;
           drawVisualHealthIndicator(
             ctx,
             px,
@@ -2294,7 +2295,7 @@ export function GameBoard() {
               x: px, y: py,
               vx: -Math.cos(b.angle) * 3 + (Math.random()-0.5),
               vy: -Math.sin(b.angle) * 3 + (Math.random()-0.5),
-              life: 1.0, color, size: Math.random() * 3 + 1
+              life: 1.0, color, size: Math.random() * 3 + 1, type: 'trail'
           });
       }
     });
@@ -2311,9 +2312,21 @@ export function GameBoard() {
         continue;
       }
       
-      // Delegate particle rendering to themeRenderer
+      if (p.type === 'trail') {
+        // Flight trails are simple glowing dots so they never hide the tower or the bombs
+        ctx.globalAlpha = Math.max(0, p.life) * 0.7;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        continue;
+      }
+      // Bursts use the world's themed particle art
       renderBoomParticle(ctx, { x: p.x, y: p.y, rotation: Math.atan2(p.vy, p.vx), life: p.life, size: p.size, color: p.color, type: p.type }, time, activeBoom);
     }
+    // Keep the screen readable (and the frame rate steady): drop the oldest particles past a cap
+    if (gs.particles.length > 140) gs.particles.splice(0, gs.particles.length - 140);
 
     // Physical Tactile Response for Nearby Boom Hazards (Vibration API)
     if (state === 'playing' && !gs.isGameOver) {

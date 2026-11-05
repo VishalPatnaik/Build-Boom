@@ -95,11 +95,63 @@ export function renderBlock(
   ctx.translate(0, bounce);
   ctx.scale(1 / squash, squash);
 
-  // Delegate to console-grade block renderer
   void mood;
-  drawWithArchetype(ctx, w, h, archetype, time, () => renderCinematicBlock(ctx, w, h, id, isCenter, time, archetype));
+  const draw = (c: CanvasRenderingContext2D, t: number) =>
+    drawWithArchetype(c, w, h, archetype, t, () => renderCinematicBlock(c, w, h, id, isCenter, t, archetype));
+
+  // Tower pieces are drawn many times per frame, so they come from a small cache of
+  // pre-rendered animation frames instead of being redrawn from scratch every time.
+  if (!isCenter || !drawCachedObject(ctx, w, h, `${id}|${archetype || ''}`, time, draw)) {
+    draw(ctx, time);
+  }
 
   ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Object sprite cache
+// ---------------------------------------------------------------------------
+const SPRITE_FRAMES = 12; // animation frames kept per object
+const SPRITE_FRAME_MS = 100; // so the animation loops every 1.2 s
+const SPRITE_CACHE_LIMIT = 600;
+const spriteCache = new Map<string, HTMLCanvasElement>();
+
+function drawCachedObject(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  key: string,
+  time: number,
+  draw: (c: CanvasRenderingContext2D, t: number) => void
+): boolean {
+  if (typeof document === 'undefined' || typeof ctx.getTransform !== 'function') return false;
+  const m = ctx.getTransform();
+  // Render the sprite at the on-screen pixel density (rounded so a few sizes are shared)
+  const density = Math.min(4, Math.max(1, Math.ceil(Math.hypot(m.a, m.b) * 2) / 2));
+  const frame = Math.floor((time || 0) / SPRITE_FRAME_MS) % SPRITE_FRAMES;
+  const cacheKey = `${key}|${w}x${h}|${density}|${frame}`;
+  // Art can spill outside its footprint (wings, ears, sparkles), so leave a margin
+  const pad = Math.max(w, h) * 0.75;
+  const bw = w + pad * 2;
+  const bh = h + pad * 2;
+  let sprite = spriteCache.get(cacheKey);
+  if (!sprite) {
+    sprite = document.createElement('canvas');
+    sprite.width = Math.ceil(bw * density);
+    sprite.height = Math.ceil(bh * density);
+    const sc = sprite.getContext('2d');
+    if (!sc) return false;
+    sc.scale(density, density);
+    sc.translate(bw / 2, bh / 2);
+    draw(sc, frame * SPRITE_FRAME_MS);
+    if (spriteCache.size >= SPRITE_CACHE_LIMIT) {
+      const oldest = spriteCache.keys().next().value;
+      if (oldest !== undefined) spriteCache.delete(oldest);
+    }
+    spriteCache.set(cacheKey, sprite);
+  }
+  ctx.drawImage(sprite, -bw / 2, -bh / 2, bw, bh);
+  return true;
 }
 
 // REALISTIC THEMED LANDING PLATFORMS
