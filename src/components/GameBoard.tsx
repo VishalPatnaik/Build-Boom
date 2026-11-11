@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass } from '../game/LevelGenerator';
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, LAYER_HEIGHT, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, topSway, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { setTowerMood } from '../game/themedObjects';
@@ -248,6 +248,8 @@ export function GameBoard() {
     lastWarningTime: 0,
     lastUiUpdateTime: 0,
     debris: [] as Debris[],
+    camX: 0, // camera follows the tower's resting top (not its sway)
+    towerSink: 0, // eases the tower down one layer after each landing
     freeStasisLeft: 0,
     freeEmpLeft: 0,
   });
@@ -363,6 +365,8 @@ export function GameBoard() {
       lastWarningTime: 0,
       lastUiUpdateTime: 0,
       debris: [],
+      camX: 0,
+      towerSink: 0,
       freeStasisLeft: freeStasis,
       freeEmpLeft: freeEmp,
     };
@@ -681,9 +685,12 @@ export function GameBoard() {
           }
         }
 
+        // Where it really lands: tap timing plus wherever the swaying tower top is right now
+        const landing = landingOffsetFor(targetBlock);
+        const landingOffset = targetBlock.archetype === 'titan' ? 0 : landing.offset;
         const impact = applyBlockImpact(
           gs.physics,
-          targetBlock.distance,
+          Math.max(-HIT_WINDOW, Math.min(HIT_WINDOW, (landingOffset / MAX_SLIP) * HIT_WINDOW)),
           targetBlock.angle,
           targetBlock.archetype,
           unlockedPerks,
@@ -699,7 +706,11 @@ export function GameBoard() {
           isPerfect: impact.isPerfect,
           perks: unlockedPerks,
           forgiving: isTutorialActive,
+          landingOffset,
         });
+        // The new piece lands at the arrival point; the tower then sinks one layer to make room
+        gs.towerSink = -VISUAL_LAYER;
+        const swayMiss = Math.abs(landing.sway) > Math.abs(landing.timing);
 
         if (placement.outcome !== 'stacked') {
           spawnDebris(placement.fallen, placement.toppleLevel, w, h);
@@ -729,7 +740,7 @@ export function GameBoard() {
             audio.playCollisionSound(targetMass, { type: 'glance' });
             triggerHapticVibrate([30, 25, 45]);
             recorderRef.current.logEvent('slide', 'BLOCK SLID OFF', '#f59e0b');
-            setMessage('SLID OFF! LAND IT OVER THE TOWER');
+            setMessage(swayMiss ? 'SLID OFF! WAIT FOR THE SWAY TO SWING BACK' : 'SLID OFF! LAND IT OVER THE TOWER');
           }
           setTimeout(() => setMessage(''), 1100);
 
@@ -744,7 +755,7 @@ export function GameBoard() {
         }
 
         if (!impact.isPerfect && Math.abs(placement.slip) > BLOCK_HALF_WIDTH * 0.5 && !targetBlock.archetype?.match(/titan|gold_ingot|prism/)) {
-          setMessage(placement.slip > 0 ? 'OVERHANG ▶ BALANCE IT LEFT' : '◀ OVERHANG BALANCE IT RIGHT');
+          setMessage(swayMiss ? (placement.slip > 0 ? 'CAUGHT THE SWAY ▶ OVERHANG' : '◀ CAUGHT THE SWAY OVERHANG') : placement.slip > 0 ? 'OVERHANG ▶ BALANCE IT LEFT' : '◀ OVERHANG BALANCE IT RIGHT');
           setTimeout(() => setMessage(''), 800);
         }
 
@@ -841,8 +852,9 @@ export function GameBoard() {
           const bonusTag = currentMultiplier >= 5 ? 'APEX' : currentMultiplier >= 4 ? 'HYPER' : currentMultiplier >= 3 ? 'TRIPLE' : 'DUAL';
           const newFloater: FloatingMultiplierData = {
             id: `mult-${Date.now()}-${Math.random()}`,
-            x: px,
-            y: py,
+            // Shown well above the landing point so it never covers the swaying tower top
+            x: cx + (px - cx) * 0.3,
+            y: Math.max(70, cy - 170),
             multiplier: currentMultiplier,
             comboCount: gs.rapidPerfectStreak,
             points: deltaPoints,
@@ -895,8 +907,10 @@ export function GameBoard() {
         const heightScale = 1 + Math.min(4.5, (stackHeight / 5) * 0.85);
         const basePlacementShake = impact.isPerfect ? 5.5 : 3.8;
         const comboShakeBonus = Math.min(6, (gs.combo || 0) * 0.6);
-        const placementShake = (basePlacementShake * heightScale) + comboShakeBonus;
-        gs.shake = Math.max(gs.shake, Math.min(32, placementShake));
+        // Kept small: the tower's own physical sway is the landing feedback, and a big
+        // screen shake would hide it
+        const placementShake = (basePlacementShake * Math.min(1.6, heightScale)) * 0.45 + comboShakeBonus * 0.3;
+        gs.shake = Math.max(gs.shake, Math.min(7, placementShake));
 
         // Lightweight library particle burst for successful block stacking
         const normStackX = px / Math.max(1, w);
@@ -944,23 +958,23 @@ export function GameBoard() {
 
         if (targetBlock.archetype === 'titan') {
           audio.playTitanAnchor();
-          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#f59e0b');
+          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#f59e0b', true);
           setMessage('TITAN ANCHOR LOCKED!');
           setTimeout(() => setMessage(''), 800);
         } else if (targetBlock.archetype === 'gold_ingot') {
-          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#eab308');
+          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#eab308', true);
           setMessage('+50 GOLD BULLION!');
           setTimeout(() => setMessage(''), 800);
         } else if (targetBlock.archetype === 'prism') {
           audio.playComboSurge(3);
-          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe');
+          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe', true);
           setMessage('3X PRISM SURGE!');
           setTimeout(() => setMessage(''), 800);
         } else if (impact.isPerfect) {
           if (gs.rapidPerfectStreak < 2) {
             audio.playPerfectSound();
           }
-          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe');
+          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe', true);
           if (gs.rapidPerfectStreak >= 2) {
             setMessage(`RAPID PERFECT ${gs.rapidPerfectMultiplier}x MULTIPLIER! ⚡`);
           } else {
@@ -974,7 +988,7 @@ export function GameBoard() {
             setMessage('AEGIS SHIELD RECHARGED!');
           }
         } else {
-          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00ffcc');
+          createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00ffcc', true);
           if (impact.message && impact.message !== 'GOOD!') {
             setMessage(impact.message);
             setTimeout(() => setMessage(''), 700);
@@ -988,23 +1002,49 @@ export function GameBoard() {
     }
   };
 
+  /**
+   * On-screen pose of tower level `idx`. The top of the tower sits just under the landing
+   * point (cx, cy) where incoming objects arrive, so they land on whatever is actually there:
+   * the tower flexes from its foundation and its top swings left and right under that point.
+   */
+  const towerPose = (stack: StackedBlock[], idx: number, tiltDeg: number, cx: number, cy: number) => {
+    const gs = gameStateRef.current;
+    const n = stack.length;
+    const b = stack[idx];
+    return {
+      x: cx + ((b?.x ?? 0) - gs.camX) + flexOffset(tiltDeg, idx, n),
+      y: cy + (n - idx) * VISUAL_LAYER + gs.towerSink,
+      rot: ((tiltDeg * Math.PI) / 180) * ((idx + 1) / Math.max(1, n)),
+      hw: b?.halfWidth || BLOCK_HALF_WIDTH,
+    };
+  };
+
+  /** Where an object tapped right now lands relative to the centre of the top of the tower, px. */
+  const landingOffsetFor = (b: ActiveBlock) => {
+    const gs = gameStateRef.current;
+    const st = gs.physics.stack;
+    const timing = landingSlip(Math.max(-HIT_WINDOW, Math.min(HIT_WINDOW, b.distance)), b.angle, unlockedPerks['precision_optics'] || 0);
+    // The object arrives at the camera centre; the top of the tower is wherever it has swung to
+    const topScreen = st.length ? st[st.length - 1].x - gs.camX + topSway(gs.physics) : -gs.camX;
+    return { timing, sway: topScreen, offset: timing - topScreen };
+  };
+
   // Turns blocks that fell off the tower into tumbling debris at their on-screen positions
   const spawnDebris = (fallen: StackedBlock[], fromLevel: number, w: number, h: number) => {
     const gs = gameStateRef.current;
     const cx = w / 2;
     const cy = h * 0.65;
-    const total = gs.physics.stack.length + fallen.length;
-    const firstVisible = Math.max(0, total - MAX_VISIBLE_LAYERS);
+    const whole = [...gs.physics.stack, ...fallen];
     const lean = gs.physics.tiltAngle >= 0 ? 1 : -1;
     fallen.forEach((b, k) => {
       const level = fromLevel + k;
-      const visible = Math.max(0, level - firstVisible);
-      const overhang = Math.sign(b.x - (level > 0 ? (gs.physics.stack[level - 1]?.x ?? b.x) : 0)) || lean;
+      const overhang = Math.sign(b.x - (level > 0 ? (whole[level - 1]?.x ?? b.x) : 0)) || lean;
+      const pose = towerPose(whole, level, gs.physics.tiltAngle, cx, cy);
       gs.debris.push({
         halfWidth: b.halfWidth || BLOCK_HALF_WIDTH,
         archetype: b.archetype,
-        x: cx + b.x + flexOffset(gs.physics.tiltAngle, level, total),
-        y: cy - 4 - (b.halfWidth || BLOCK_HALF_WIDTH) - visible * VISUAL_LAYER,
+        x: pose.x,
+        y: pose.y,
         vx: overhang * (1.5 + Math.random() * 2.5) + k * 0.15 * overhang,
         vy: -2 - Math.random() * 2,
         rot: (gs.physics.tiltAngle * Math.PI) / 180,
@@ -1015,10 +1055,19 @@ export function GameBoard() {
     gs.debris = gs.debris.slice(-60);
   };
 
-  const createExplosionAtDistance = (block: ActiveBlock, gameRadius: number, w: number, h: number, baseColor: string) => {
+  const createExplosionAtDistance = (block: ActiveBlock, gameRadius: number, w: number, h: number, baseColor: string, celebrate = false) => {
       const px = w/2 + Math.cos(block.angle) * (block.distance / 100) * gameRadius;
       const py = h * 0.65 + Math.sin(block.angle) * (block.distance / 100) * gameRadius;
       const { activeBoom, activeWorldInfo } = activeCosmeticsRef.current;
+      if (celebrate) {
+        // A good landing: a light spark burst that keeps the swaying tower top visible
+        for (let i = 0; i < 12; i++) {
+          const a = (Math.PI * 2 * i) / 12;
+          gameStateRef.current.particles.push({ x: px, y: py, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3 - 1, life: 0.8, color: baseColor, size: 2.5, type: 'spark' });
+        }
+        gameStateRef.current.particles.push({ x: px, y: py, vx: 0, vy: 0, life: 1.0, color: baseColor, size: 10, type: 'ring' });
+        return;
+      }
       
       let effectColor = baseColor;
       if (block.type === 'boom') {
@@ -1335,6 +1384,17 @@ export function GameBoard() {
       forgiving: isTutorialActive,
       wind: mode === 'workshop' ? Math.max(0, Math.min(1, sandboxOptions?.wind ?? 0)) : windStrengthFor(mode, level, gs.physics.stack.length),
     });
+    // Camera eases after the tower's resting top; the sink animation settles the new piece
+    {
+      const st = gs.physics.stack;
+      const restTop = st.length ? st[st.length - 1].x : 0;
+      const camDt = Number.isFinite(dt) ? Math.max(0, dt) : 16;
+      if (!Number.isFinite(gs.camX)) gs.camX = restTop;
+      if (!Number.isFinite(gs.towerSink)) gs.towerSink = 0;
+      gs.camX += (restTop - gs.camX) * Math.min(1, camDt * 0.004);
+      gs.towerSink *= Math.exp(-camDt * 0.012);
+      if (Math.abs(gs.towerSink) < 0.2) gs.towerSink = 0;
+    }
     if (physResult.warningAlert && time - gs.lastWarningTime > 1100) {
       gs.lastWarningTime = time;
       audio.playTiltWarning();
@@ -1968,9 +2028,14 @@ export function GameBoard() {
     }
     ctx.restore();
 
-    // The plate is drawn the same width as the physical foundation the first object rests on
-    const plateW = BASE_HALF_WIDTH * 2 + 16;
-    renderPlate(ctx, cx - plateW / 2, cy + bounce - 5, plateW, 28, activePlate, time);
+    // The plate is drawn the same width as the physical foundation the first object rests on.
+    // It sits under the bottom of the tower and scrolls away below the screen as the tower grows.
+    {
+      const plateW = BASE_HALF_WIDTH * 2 + 16;
+      const n = gs.physics.stack.length;
+      const plateY = cy + (n + 1) * VISUAL_LAYER + gs.towerSink - BLOCK_HALF_WIDTH - 5;
+      if (plateY < h + 10) renderPlate(ctx, cx - gs.camX - plateW / 2, plateY + bounce, plateW, 28, activePlate, time);
+    }
 
     // Rapid Perfect Multiplier Dynamic Canvas Resonance
     if (gs.rapidPerfectStreak >= 2) {
@@ -2018,13 +2083,11 @@ export function GameBoard() {
     const weakLevel = gs.physics.weakestRatio > 0.7 ? gs.physics.weakestLevel : -1;
 
     for (let i = 0; i < towerLayers; i++) {
-        const progress = (i + 1) / Math.max(1, towerLayers);
-        const layerTilt = tiltRad * progress;
         const layerBlock = stack[firstVisibleLayer + i];
-        const blockX = layerBlock?.x ?? 0;
-        const hw = layerBlock?.halfWidth || BLOCK_HALF_WIDTH;
-        const layerOffsetX = blockX + Math.sin(layerTilt) * (i * LAYER_HEIGHT);
-        const layerOffsetY = - (i * VISUAL_LAYER) * Math.cos(layerTilt);
+        const pose = towerPose(stack, firstVisibleLayer + i, gs.physics.tiltAngle, cx, cy);
+        const hw = pose.hw;
+        const layerTilt = pose.rot;
+        if (pose.y - hw > h + 20) continue; // below the screen
 
         let squashX = 1;
         let squashY = (i === towerLayers - 1 && time - gs.lastSpawnTime < 200) ? 0.8 : 1;
@@ -2043,7 +2106,7 @@ export function GameBoard() {
         }
         
         ctx.save();
-        ctx.translate(cx + layerOffsetX, cy + bounce + layerOffsetY - 4 - hw);
+        ctx.translate(pose.x, pose.y + bounce);
         ctx.rotate(layerTilt + wiggleAngle);
         ctx.scale(squashX, squashY);
         
@@ -2060,43 +2123,6 @@ export function GameBoard() {
         }
         
         ctx.restore();
-    }
-
-    // Landing guide: where the incoming block would settle if tapped right now
-    const guideTarget = gs.isGameOver ? null : gs.blocks.reduce<ActiveBlock | null>((c, b) => (!b.handled && (!c || b.distance < c.distance) ? b : c), null);
-    if (guideTarget && guideTarget.type !== 'boom' && guideTarget.distance <= HIT_WINDOW + 25 && guideTarget.distance > -HIT_WINDOW) {
-      const topI = towerLayers;
-      const guideTilt = tiltRad;
-      const baseX = cx + supportX(gs.physics) + Math.sin(guideTilt) * (topI * LAYER_HEIGHT);
-      const ghw = blockHalfWidth(guideTarget.archetype);
-      const gy = cy + bounce - (topI * VISUAL_LAYER) * Math.cos(guideTilt) - 4 - ghw;
-      const inWindow = guideTarget.distance <= HIT_WINDOW;
-      const slip = guideTarget.archetype === 'titan' ? 0 : landingSlip(Math.min(HIT_WINDOW, guideTarget.distance), guideTarget.angle, unlockedPerks['precision_optics'] || 0);
-      const topHalf = stack.length ? stack[stack.length - 1].halfWidth || BLOCK_HALF_WIDTH : BLOCK_HALF_WIDTH;
-      const risk = Math.abs(slip) / topHalf;
-      const col = risk < 0.35 ? '0, 255, 204' : risk < 0.7 ? '250, 204, 21' : '255, 64, 64';
-      ctx.save();
-      ctx.translate(baseX, gy);
-      ctx.rotate(guideTilt);
-      // centre line of the surface below
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.setLineDash([3, 4]);
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, -ghw - 10);
-      ctx.lineTo(0, ghw + 4);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      // ghost of the predicted landing
-      ctx.globalAlpha = inWindow ? 0.9 : 0.45;
-      ctx.strokeStyle = `rgb(${col})`;
-      ctx.fillStyle = `rgba(${col}, 0.12)`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(slip - ghw, -ghw, ghw * 2, ghw * 2, ghw * 0.45);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
     }
 
     // Wind: streaks blowing across the screen plus a labelled arrow
@@ -2153,13 +2179,9 @@ export function GameBoard() {
 
     // Visual Health Indicator on Active Tower Top Block (when boom hazards approach center)
     if (towerLayers > 0) {
-      const topIdx = towerLayers - 1;
-      const topProgress = (topIdx + 1) / Math.max(1, towerLayers);
-      const topLayerTilt = tiltRad * topProgress;
-      const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * LAYER_HEIGHT);
-      const topOffsetY = - (topIdx * VISUAL_LAYER) * Math.cos(topLayerTilt);
-      const topPx = cx + topOffsetX;
-      const topPy = cy + bounce + topOffsetY - 4 - BLOCK_HALF_WIDTH;
+      const topPose = towerPose(gs.physics.stack, gs.physics.stack.length - 1, gs.physics.tiltAngle, cx, cy);
+      const topPx = topPose.x;
+      const topPy = topPose.y + bounce - topPose.hw;
 
       const towerHazard = findNearestBoomHazard(topPx, topPy, gs.blocks, cx, cy, gameRadius);
       if (towerHazard.proximityRatio > 0.18 || (gs.physics.stressLevel || 0) > 40) {
@@ -2184,7 +2206,7 @@ export function GameBoard() {
       ctx.lineWidth = 2.5;
       ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
       ctx.beginPath();
-      ctx.arc(cx, cy + bounce - (towerLayers * 10), 74, 0, Math.PI * 2);
+      ctx.arc(cx, cy + bounce + 30, 74, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
@@ -2192,7 +2214,7 @@ export function GameBoard() {
       ctx.setLineDash([8, 6]);
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.beginPath();
-      ctx.arc(cx, cy + bounce - (towerLayers * 10), 76 + Math.sin(time / 140) * 3, 0, Math.PI * 2);
+      ctx.arc(cx, cy + bounce + 30, 76 + Math.sin(time / 140) * 3, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
@@ -2313,8 +2335,9 @@ export function GameBoard() {
         continue;
       }
       
-      if (p.type === 'trail') {
-        // Flight trails are simple glowing dots so they never hide the tower or the bombs
+      if (p.type === 'trail' || p.type === 'spark') {
+        // Flight trails and landing sparks are simple glowing dots so they never hide the
+        // swaying tower top, the landing guide or the bombs
         ctx.globalAlpha = Math.max(0, p.life) * 0.7;
         ctx.fillStyle = p.color;
         ctx.beginPath();
@@ -2323,9 +2346,71 @@ export function GameBoard() {
         ctx.globalAlpha = 1;
         continue;
       }
+      if (p.type === 'ring') {
+        // Shockwave rings stay as thin outlines so the landing point remains readable
+        ctx.globalAlpha = Math.max(0, p.life) * 0.8;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size + (1 - p.life) * 60, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        continue;
+      }
       // Bursts use the world's themed particle art
       renderBoomParticle(ctx, { x: p.x, y: p.y, rotation: Math.atan2(p.vy, p.vx), life: p.life, size: p.size, color: p.color, type: p.type }, time, activeBoom);
     }
+    // Landing guide: where the incoming block would settle if tapped right now. The dashed line
+    // is the centre of the top of the tower; it swings with the sway, so tap when the ghost is green.
+    const guideTarget = gs.isGameOver ? null : gs.blocks.reduce<ActiveBlock | null>((c, b) => (!b.handled && (!c || b.distance < c.distance) ? b : c), null);
+    if (guideTarget && guideTarget.type !== 'boom' && guideTarget.distance <= HIT_WINDOW + 25 && guideTarget.distance > -HIT_WINDOW) {
+      const ghw = blockHalfWidth(guideTarget.archetype);
+      const land = landingOffsetFor(guideTarget);
+      const isTitan = guideTarget.archetype === 'titan';
+      const offset = isTitan ? 0 : land.offset;
+      const top = stack.length ? towerPose(stack, stack.length - 1, gs.physics.tiltAngle, cx, cy) : null;
+      const topHalf = top ? top.hw : BASE_HALF_WIDTH;
+      const surfaceX = cx + land.sway;
+      const gy = cy + gs.towerSink + (top ? 0 : VISUAL_LAYER * 0.5);
+      const inWindow = guideTarget.distance <= HIT_WINDOW;
+      const risk = Math.abs(offset) / topHalf;
+      const col = risk < 0.3 ? '0, 255, 204' : risk < 0.7 ? '250, 204, 21' : '255, 64, 64';
+      ctx.save();
+      // centre line of the surface below, following the swaying top
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(surfaceX, gy - ghw - 14);
+      ctx.lineTo(surfaceX, gy + ghw + 10);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // marker on the top of the tower: it rides the sway, so players can see it swing
+      ctx.fillStyle = `rgb(${col})`;
+      ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      const surfaceY = gy + (top ? VISUAL_LAYER - topHalf : ghw) + bounce;
+      ctx.moveTo(surfaceX, surfaceY + 2);
+      ctx.lineTo(surfaceX - 7, surfaceY - 9);
+      ctx.lineTo(surfaceX + 7, surfaceY - 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // ghost of the predicted landing
+      ctx.translate(surfaceX + offset, gy + bounce);
+      ctx.rotate(top ? top.rot : 0);
+      ctx.globalAlpha = inWindow ? 0.9 : 0.45;
+      ctx.strokeStyle = `rgb(${col})`;
+      ctx.fillStyle = `rgba(${col}, 0.14)`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-ghw, -ghw, ghw * 2, ghw * 2, ghw * 0.45);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Keep the screen readable (and the frame rate steady): drop the oldest particles past a cap
     if (gs.particles.length > 140) gs.particles.splice(0, gs.particles.length - 140);
 
@@ -2345,13 +2430,9 @@ export function GameBoard() {
 
       // 2. Check proximity of boom hazards to the tower receptor top deck
       if (towerLayers > 0) {
-        const topIdx = towerLayers - 1;
-        const topProgress = (topIdx + 1) / Math.max(1, towerLayers);
-        const topLayerTilt = tiltRad * topProgress;
-        const topOffsetX = (gs.physics.stack[gs.physics.stack.length - 1]?.x ?? 0) + Math.sin(topLayerTilt) * (topIdx * LAYER_HEIGHT);
-        const topOffsetY = - (topIdx * VISUAL_LAYER) * Math.cos(topLayerTilt);
-        const topPx = cx + topOffsetX;
-        const topPy = cy + bounce + topOffsetY - 4 - BLOCK_HALF_WIDTH;
+        const topPose = towerPose(gs.physics.stack, gs.physics.stack.length - 1, gs.physics.tiltAngle, cx, cy);
+        const topPx = topPose.x;
+        const topPy = topPose.y - topPose.hw;
         const towerHazard = findNearestBoomHazard(topPx, topPy, gs.blocks, cx, cy, gameRadius);
         if (towerHazard.proximityRatio > maxHazardProximity) {
           maxHazardProximity = towerHazard.proximityRatio;

@@ -1,5 +1,5 @@
 // Comprehensive Adversarial Regression Test Suite for TOWER//SHIFT
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor } from './src/game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor, topSway } from './src/game/physicsEngine';
 import { ALL_COSMETICS, COLLECTIONS } from './src/game/collections';
 import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider, billingService } from './src/billing/BillingService';
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
@@ -57,8 +57,11 @@ console.log('--- 1. PHYSICS ADVERSARIAL REGRESSION ---');
 
   // 1.4 Non-Titan Off-Center Hit Imparts Torque Normally
   const physStandard = createInitialPhysicsState({});
-  applyBlockImpact(physStandard, 8, Math.PI / 2, 'standard', {});
-  assert(physStandard.angularVelocity !== 0, 'Standard block off-center hit properly imparts angular torque');
+  applyBlockImpact(physStandard, 8, 0, 'standard', {});
+  assert(physStandard.angularVelocity < 0, 'An object arriving from the right shoves the tower left');
+  const physFromLeft = createInitialPhysicsState({});
+  applyBlockImpact(physFromLeft, 8, Math.PI, 'standard', {}, 2.4);
+  assert(physFromLeft.angularVelocity > -physStandard.angularVelocity, 'A heavier object from the left shoves it right, and harder');
 
   // 1.5 Simultaneous/Successive Mixed Impacts (Titan then Standard then Toxic)
   const physMixed = createInitialPhysicsState({});
@@ -436,6 +439,30 @@ console.log('\n--- 7. STACKING PHYSICS ---');
     Math.random = realRandom;
   }
   assert(peakLean > 2, 'Wind gusts lean a centred tower');
+
+  // The top of a tall tower swings, and where a piece lands depends on that swing
+  const swing = createInitialPhysicsState(perks);
+  for (let i = 0; i < 15; i++) placeBlock(swing, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks });
+  swing.angularVelocity = 0;
+  applyBlockImpact(swing, 0, 0, 'standard', perks, 1);
+  let peakSway = 0;
+  for (let f = 0; f < 40; f++) { updateTowerPhysics(swing, 16.7, perks); peakSway = Math.max(peakSway, Math.abs(topSway(swing))); }
+  assert(peakSway > 4, 'A side-on arrival visibly sets a tall tower swinging');
+  const swayNow = topSway(swing);
+  const caught = placeBlock(swing, { distance: 0, angle: 0, mass: 1, isPerfect: false, perks, landingOffset: -swayNow });
+  assert(Math.abs(caught.slip + swayNow) < 1e-9, 'A perfectly timed tap still lands off-centre if the top has swung away');
+  let stillSwinging = 0;
+  for (let f = 0; f < 90; f++) { updateTowerPhysics(swing, 16.7, perks); if (f > 45) stillSwinging = Math.max(stillSwinging, Math.abs(swing.angularVelocity)); }
+  assert(stillSwinging > 0.05, 'The sway carries on for a while instead of stopping dead');
+  const calm = createInitialPhysicsState({ structural_gyro: 3 });
+  const wild = createInitialPhysicsState({});
+  for (const st of [calm, wild]) { for (let i = 0; i < 15; i++) placeBlock(st, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks: {} }); st.angularVelocity = 1.5; }
+  let calmPeak = 0, wildPeak = 0;
+  for (let f = 0; f < 120; f++) {
+    updateTowerPhysics(calm, 16.7, { structural_gyro: 3 }); updateTowerPhysics(wild, 16.7, {});
+    if (f > 60) { calmPeak = Math.max(calmPeak, Math.abs(calm.tiltAngle)); wildPeak = Math.max(wildPeak, Math.abs(wild.tiltAngle)); }
+  }
+  assert(calmPeak < wildPeak * 0.6, 'Gyro Stability upgrades settle the sway faster');
 }
 
 // ----------------------------------------------------

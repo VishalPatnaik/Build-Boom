@@ -131,6 +131,23 @@ export function flexOffset(tiltDeg: number, index: number, layers: number): numb
   return Math.sin(tiltRad * progress) * (index * LAYER_HEIGHT);
 }
 
+/** How far the top of the tower has swung sideways from its resting position, px. */
+export function topSway(state: TowerPhysicsState): number {
+  const n = state.stack.length;
+  return n ? flexOffset(state.tiltAngle, n - 1, n) : 0;
+}
+
+/**
+ * Momentum an arriving object hands to the tower. It travels towards the
+ * centre, so one arriving from the right shoves the tower left, and heavy
+ * objects shove harder. Returns a change in angular velocity.
+ */
+export function arrivalPush(angle: number, mass: number): number {
+  return -Math.cos(angle) * IMPACT_PUSH * Math.pow(Math.max(0.2, mass), 0.75);
+}
+/** Strength of the shove an arriving object gives the tower. */
+export const IMPACT_PUSH = 0.7;
+
 /** Top surface x the next block will rest on. */
 export function supportX(state: TowerPhysicsState): number {
   const s = state.stack;
@@ -222,10 +239,15 @@ export function placeBlock(
     isPerfect: boolean;
     perks: Record<string, number>;
     forgiving?: boolean;
+    /**
+     * Where the block lands relative to the top of the tower, px, when the caller
+     * has measured it (timing plus the tower's sway). Defaults to timing only.
+     */
+    landingOffset?: number;
   }
 ): PlacementResult {
   const opticsTier = opts.perks['precision_optics'] || 0;
-  let slip = landingSlip(opts.distance, opts.angle, opticsTier);
+  let slip = opts.landingOffset ?? landingSlip(opts.distance, opts.angle, opticsTier);
   if (opts.archetype === 'titan') slip = 0; // anchors lock dead centre
   else if (opts.isPerfect) slip *= 0.15; // perfect taps settle almost flush
 
@@ -310,8 +332,8 @@ export function updateTowerPhysics(
   const gyroTier = perks['structural_gyro'] || 0;
   const n = state.stack.length;
 
-  // Dampening coefficient increases with gyro tech
-  const dampFactor = 0.9 + gyroTier * 0.025;
+  // The tower swings freely and settles over a few seconds; each Gyro tier settles it faster
+  const dampRate = 1.7 + gyroTier * 0.55; // per second
   // Taller towers are less stiff: the restoring spring weakens with height
   const baseSpring = 1.8 + gyroTier * 0.4;
   const spring = Math.max(0.55, baseSpring - n * 0.016);
@@ -325,7 +347,7 @@ export function updateTowerPhysics(
   const windTorque = state.wind.force * 3.5 * Math.min(2, n / 15);
 
   state.angularVelocity += (gravityTorque + windTorque - state.tiltAngle * spring) * dt;
-  state.angularVelocity *= Math.pow(dampFactor, dt * 60);
+  state.angularVelocity *= Math.exp(-dampRate * dt);
   state.tiltAngle += state.angularVelocity * dt * 20;
 
   const toppleLevel = opts.forgiving ? -1 : findToppleLevel(state);
@@ -398,12 +420,12 @@ export function applyBlockImpact(
     } else {
       state.angularVelocity *= 0.5;
     }
-  } else if (archetype !== 'titan') {
-    // Off-centre hit imparts a jolt based on arrival angle, timing, and block mass
-    const direction = Math.sin(arrivalAngle) >= 0 ? 1 : -1;
-    const timingTorque = (timingOffset / 10) * (gyroTier >= 2 ? 0.6 : 1.0);
-    const massMomentum = Math.sqrt(Math.max(0.2, mass));
-    state.angularVelocity += timingTorque * 1.5 * direction * massMomentum;
+  }
+
+  // Momentum: the arriving object shoves the tower along its direction of travel.
+  // Titan anchors grip and absorb it; Gyro tier 2+ soaks up part of every shove.
+  if (archetype !== 'titan') {
+    state.angularVelocity += arrivalPush(arrivalAngle, mass) * (gyroTier >= 2 ? 0.65 : 1);
   }
 
   return {

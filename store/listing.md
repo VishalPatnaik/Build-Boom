@@ -14,6 +14,7 @@ Tap at just the right moment to land each critter on your tower, then keep the w
 BUILD WITH REAL PHYSICS
 • Tap early and a piece lands short; tap late and it overshoots. Balance every overhang.
 • Wide anchor blocks steady the base, heavy gold blocks shift the weight, light crystals wobble.
+• Every landing shoves the tower: tall towers sway, so tap when the top swings back under the incoming piece.
 • Wind gusts push taller towers sideways in later worlds.
 • Never tap a bomb. Let it fly past.
 
