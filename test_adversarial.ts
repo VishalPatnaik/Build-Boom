@@ -1,5 +1,5 @@
 // Comprehensive Adversarial Regression Test Suite for TOWER//SHIFT
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor, topSway } from './src/game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor, topSway, swayScaleFor } from './src/game/physicsEngine';
 import { ALL_COSMETICS, COLLECTIONS } from './src/game/collections';
 import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider, billingService } from './src/billing/BillingService';
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
@@ -463,6 +463,34 @@ console.log('\n--- 7. STACKING PHYSICS ---');
     if (f > 60) { calmPeak = Math.max(calmPeak, Math.abs(calm.tiltAngle)); wildPeak = Math.max(wildPeak, Math.abs(wild.tiltAngle)); }
   }
   assert(calmPeak < wildPeak * 0.6, 'Gyro Stability upgrades settle the sway faster');
+
+  // Early campaign levels rock the tower more gently than late ones
+  assert(swayScaleFor('campaign', 1, 0) < swayScaleFor('campaign', 60, 0) && swayScaleFor('campaign', 60, 0) === 1, 'Sway push ramps up over the first 40 campaign levels');
+  const gentle = createInitialPhysicsState(perks);
+  const full = createInitialPhysicsState(perks);
+  gentle.pushScale = swayScaleFor('campaign', 1, 0);
+  applyBlockImpact(gentle, 0, 0, 'standard', perks, 1);
+  applyBlockImpact(full, 0, 0, 'standard', perks, 1);
+  assert(Math.abs(gentle.angularVelocity) < Math.abs(full.angularVelocity), 'Gentle levels shove the tower less');
+}
+
+// ----------------------------------------------------
+// 7b. AD PACING
+// ----------------------------------------------------
+console.log('\n--- 7b. AD PACING ---');
+{
+  useGameStore.setState({ adsRemoved: false, unlockedLevels: 3, levelsPlayedSinceAd: 0, lastAdTime: 0, adState: 'none' });
+  for (let i = 0; i < 8; i++) useGameStore.getState().checkAndTriggerAd(true);
+  assert(useGameStore.getState().adState === 'none', 'No full-screen ads while a new player is in the first 5 levels');
+  useGameStore.setState({ unlockedLevels: 20, levelsPlayedSinceAd: 0, lastAdTime: 0, adState: 'none' });
+  for (let i = 0; i < 3; i++) useGameStore.getState().checkAndTriggerAd(true);
+  assert(useGameStore.getState().adState === 'none', 'No full-screen ad before the 4th run');
+  useGameStore.getState().checkAndTriggerAd(true);
+  assert(useGameStore.getState().adState === 'interstitial', 'One full-screen ad after 4 runs');
+  useGameStore.setState({ adState: 'none' });
+  for (let i = 0; i < 6; i++) useGameStore.getState().checkAndTriggerAd(true);
+  assert(useGameStore.getState().adState === 'none', 'Never two full-screen ads within 3 minutes');
+  useGameStore.setState({ adState: 'none', levelsPlayedSinceAd: 0, lastAdTime: 0 });
 }
 
 // ----------------------------------------------------

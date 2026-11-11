@@ -174,6 +174,8 @@ export interface AltitudeMilestone {
   atmosphereTier: 'Surface Deck' | 'Troposphere' | 'Stratosphere' | 'Mesosphere' | 'Low Orbit';
 }
 
+const SHOW_ALTITUDE_RULER = false;
+
 export const ALTITUDE_MILESTONES: AltitudeMilestone[] = [
   { altitudeMeters: 0, title: 'Surface Deck', code: 'BASE-0', symbol: '⚓', color: '#38bdf8', atmosphereTier: 'Surface Deck' },
   { altitudeMeters: 15, title: 'Canopy Horizon', code: 'CANOPY-15', symbol: '🌲', color: '#4ade80', atmosphereTier: 'Surface Deck' },
@@ -1850,7 +1852,8 @@ export class EnvironmentRenderer {
 
     // 2. Cinematic Vertical Altitude Milestone Ruler along left screen margin
     const rulerX = 20;
-    for (let i = 0; i < ALTITUDE_MILESTONES.length; i++) {
+    // The labelled ruler is hidden: its codes (STRATA-35 …) cluttered the play area
+    for (let i = 0; i < (SHOW_ALTITUDE_RULER ? ALTITUDE_MILESTONES.length : 0); i++) {
       const milestone = ALTITUDE_MILESTONES[i];
       // Screen Y calculation: as altitude increases, milestones move downward past camera
       const screenY = h * 0.72 - (milestone.altitudeMeters - currentMeters) * 11;

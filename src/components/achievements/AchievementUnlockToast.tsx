@@ -11,17 +11,19 @@ interface Props {
 
 export function AchievementUnlockToast({ onOpenAchievements }: Props) {
   const { recentUnlockedAchievement, dismissAchievementToast } = useGameStore();
+  // Never cover the play area mid-run: unlocks wait until the run ends
+  const isPlaying = useGameStore((s) => s.state === 'playing');
 
   useEffect(() => {
-    if (recentUnlockedAchievement) {
+    if (recentUnlockedAchievement && !isPlaying) {
       const timer = setTimeout(() => {
         dismissAchievementToast();
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [recentUnlockedAchievement, dismissAchievementToast]);
+  }, [recentUnlockedAchievement, dismissAchievementToast, isPlaying]);
 
-  if (!recentUnlockedAchievement) return null;
+  if (!recentUnlockedAchievement || isPlaying) return null;
 
   const tier = TIER_COLORS[recentUnlockedAchievement.tier];
 

@@ -86,6 +86,8 @@ export interface TowerPhysicsState {
   weakestLevel: number;
   weakestRatio: number;
   wind: WindState;
+  /** Scales how hard arriving objects shove the tower (gentler in early levels). */
+  pushScale?: number;
 }
 
 export function createInitialPhysicsState(
@@ -289,6 +291,16 @@ export function rebraceTower(state: TowerPhysicsState) {
 }
 
 /**
+ * How strongly arriving objects rock the tower in a given run: gentle while players learn
+ * (early campaign, short endless towers), full strength later.
+ */
+export function swayScaleFor(mode: string, level: number, towerHeight: number): number {
+  if (mode === 'campaign') return 0.45 + 0.55 * Math.min(1, Math.max(0, (level - 1) / 40));
+  if (mode === 'endless') return 0.55 + 0.45 * Math.min(1, towerHeight / 30);
+  return 0.85;
+}
+
+/**
  * How windy a run is (0 = calm, 1 = strongest). Wind starts in world 3 of the
  * campaign and once an endless tower gets tall.
  */
@@ -425,7 +437,7 @@ export function applyBlockImpact(
   // Momentum: the arriving object shoves the tower along its direction of travel.
   // Titan anchors grip and absorb it; Gyro tier 2+ soaks up part of every shove.
   if (archetype !== 'titan') {
-    state.angularVelocity += arrivalPush(arrivalAngle, mass) * (gyroTier >= 2 ? 0.65 : 1);
+    state.angularVelocity += arrivalPush(arrivalAngle, mass) * (gyroTier >= 2 ? 0.65 : 1) * (state.pushScale ?? 1);
   }
 
   return {

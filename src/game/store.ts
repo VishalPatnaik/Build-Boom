@@ -1055,14 +1055,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     const now = Date.now();
     const timePassed = now - s.lastAdTime;
-    const cooldownMs = 45 * 1000; // 45 seconds cooldown between interstitials
+    // Gentle pacing: no full-screen ads while a new player is learning (first 5 levels),
+    // then at most one every 4 runs and never within 3 minutes of the last one
+    const cooldownMs = 3 * 60 * 1000;
     
     const newLevelsPlayed = s.levelsPlayedSinceAd + 1;
+    const stillLearning = (s.unlockedLevels || 1) <= 5;
     
-    // Trigger if cooldown has elapsed and sufficient sessions played
-    const shouldTrigger = completedLevel
-      ? (newLevelsPlayed >= 2 && timePassed >= cooldownMs)
-      : (newLevelsPlayed >= 3 && timePassed >= cooldownMs);
+    const shouldTrigger = !stillLearning && newLevelsPlayed >= 4 && timePassed >= cooldownMs;
 
     if (shouldTrigger) {
       set({ adState: 'interstitial', levelsPlayedSinceAd: 0, lastAdTime: now });

@@ -37,9 +37,9 @@ export function triggerBlockStackParticles(
   if (isPerfect) {
     // 1. Perfect alignment: brilliant shimmering star burst & radiant golden sparks
     safeConfetti({
-      particleCount: Math.min(55, 25 + combo * 5),
-      spread: 85,
-      startVelocity: 30,
+      particleCount: Math.min(24, 10 + combo * 4),
+      spread: 70,
+      startVelocity: 24,
       origin: { x: originX, y: originY },
       colors: [primary, accent, '#ffffff', '#38bdf8', '#fef08a'],
       shapes: ['star', 'circle'],
@@ -54,7 +54,7 @@ export function triggerBlockStackParticles(
     if (combo >= 2) {
       setTimeout(() => {
         safeConfetti({
-          particleCount: Math.min(30, 15 + combo * 3),
+          particleCount: Math.min(12, 6 + combo * 2),
           spread: 120,
           startVelocity: 18,
           origin: { x: originX, y: originY },

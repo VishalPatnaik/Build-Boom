@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass } from '../game/LevelGenerator';
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, topSway, blockHalfWidth, windStrengthFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, topSway, blockHalfWidth, windStrengthFor, swayScaleFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { setTowerMood } from '../game/themedObjects';
@@ -61,6 +61,11 @@ interface Debris {
   vr: number;
   life: number;
 }
+
+/** Big floating "N IN A ROW" cards covered the tower top; the HUD combo meter shows the same thing. */
+const SHOW_FLOATING_COMBO_CARDS = false;
+/** Mistakes allowed per run before it ends (bombs and a toppled tower end it at once). */
+const MAX_LIVES = 3;
 
 export function GameBoard() {
   const { 
@@ -148,6 +153,8 @@ export function GameBoard() {
   const requestRef = useRef<number>();
   
   const [builtCount, setBuiltCount] = useState(0);
+  // Hearts: a mistimed or missed piece costs one; bombs and a toppled tower still end the run
+  const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
   const [totalBlocks, setTotalBlocks] = useState(0);
   const [lostReason, setLostReason] = useState('');
   const [message, setMessage] = useState('');
@@ -248,6 +255,8 @@ export function GameBoard() {
     lastWarningTime: 0,
     lastUiUpdateTime: 0,
     debris: [] as Debris[],
+    lives: MAX_LIVES,
+    swayHintShown: false,
     camX: 0, // camera follows the tower's resting top (not its sway)
     towerSink: 0, // eases the tower down one layer after each landing
     freeStasisLeft: 0,
@@ -297,6 +306,7 @@ export function GameBoard() {
     
     setTotalBlocks(queue.length);
     setBuiltCount(0);
+    setLivesLeft(MAX_LIVES);
     useGameStore.getState().setTowerHeight(0);
     useGameStore.getState().setTowerTilt(0);
     setActiveCombo(0);
@@ -365,6 +375,8 @@ export function GameBoard() {
       lastWarningTime: 0,
       lastUiUpdateTime: 0,
       debris: [],
+      lives: MAX_LIVES,
+      swayHintShown: false,
       camX: 0,
       towerSink: 0,
       freeStasisLeft: freeStasis,
@@ -523,6 +535,8 @@ export function GameBoard() {
         
         rebraceTower(gameStateRef.current.physics);
         gameStateRef.current.hasRevived = true;
+        gameStateRef.current.lives = Math.max(gameStateRef.current.lives, 2);
+        setLivesLeft(gameStateRef.current.lives);
         setMessage(''); // Clear BOOM! text when resuming
         useGameStore.getState().clearReviveFlag();
       }
@@ -624,11 +638,17 @@ export function GameBoard() {
         setTimeout(() => setMessage(''), 1000);
         return;
       }
-      targetBlock.handled = true;
+      // A piece grabbed too early is fumbled and lost; an early tap while a bomb is the
+      // nearest object is just a wasted tap (the bomb keeps flying). Either costs a heart.
+      if (targetBlock.type === 'build') targetBlock.handled = true;
       audio.playCollisionSound(targetMass, { type: 'glance' });
       triggerHapticVibrate([45, 30, 40]);
       haptics.tooEarly();
       recorderRef.current.logEvent('early', 'TOO EARLY MISCLICK', '#ef4444');
+      if (loseLife('TOO EARLY!')) {
+        if (targetBlock.type === 'build') createExplosionAtDistance(targetBlock, gameRadius, w, h, '#f59e0b', true);
+        return;
+      }
       gameOver(false, 'TOO EARLY!');
       createExplosionAtDistance(targetBlock, gameRadius, w, h, '#ef4444');
     } else if (targetBlock.distance < -15) {
@@ -686,6 +706,7 @@ export function GameBoard() {
         }
 
         // Where it really lands: tap timing plus wherever the swaying tower top is right now
+        gs.physics.pushScale = isTutorialActive ? 0 : swayScaleFor(mode, level, gs.physics.stack.length);
         const landing = landingOffsetFor(targetBlock);
         const landingOffset = targetBlock.archetype === 'titan' ? 0 : landing.offset;
         const impact = applyBlockImpact(
@@ -757,6 +778,17 @@ export function GameBoard() {
         if (!impact.isPerfect && Math.abs(placement.slip) > BLOCK_HALF_WIDTH * 0.5 && !targetBlock.archetype?.match(/titan|gold_ingot|prism/)) {
           setMessage(swayMiss ? (placement.slip > 0 ? 'CAUGHT THE SWAY ▶ OVERHANG' : '◀ CAUGHT THE SWAY OVERHANG') : placement.slip > 0 ? 'OVERHANG ▶ BALANCE IT LEFT' : '◀ OVERHANG BALANCE IT RIGHT');
           setTimeout(() => setMessage(''), 800);
+        }
+
+        // One-time tip the first time the tower is tall enough to sway noticeably
+        if (!isTutorialActive && gs.physics.stack.length === 6 && !gs.swayHintShown) {
+          gs.swayHintShown = true;
+          let seen = false;
+          try { seen = localStorage.getItem('ts_sway_hint') === '1'; localStorage.setItem('ts_sway_hint', '1'); } catch { /* storage unavailable */ }
+          if (!seen) {
+            setMessage('THE TOWER SWAYS! TAP WHEN THE TOP SWINGS BACK');
+            setTimeout(() => setMessage(''), 2600);
+          }
         }
 
         gs.builtCount++;
@@ -847,7 +879,7 @@ export function GameBoard() {
         const py = cy + Math.sin(targetBlock.angle) * (targetBlock.distance / 100) * gameRadius;
 
         // Floating multiplier badge spawned at contact location if rapid perfect combo active
-        if (impact.isPerfect && currentMultiplier >= 2) {
+        if (SHOW_FLOATING_COMBO_CARDS && impact.isPerfect && currentMultiplier >= 2) {
           const tier = Math.min(5, Math.max(1, currentMultiplier - 1)) as 1 | 2 | 3 | 4 | 5;
           const bonusTag = currentMultiplier >= 5 ? 'APEX' : currentMultiplier >= 4 ? 'HYPER' : currentMultiplier >= 3 ? 'TRIPLE' : 'DUAL';
           const newFloater: FloatingMultiplierData = {
@@ -915,7 +947,8 @@ export function GameBoard() {
         // Lightweight library particle burst for successful block stacking
         const normStackX = px / Math.max(1, w);
         const normStackY = py / Math.max(1, h);
-        worldThemeRef.current.particles.triggerStackParticles(normStackX, normStackY, impact.isPerfect, gs.combo);
+        // Confetti only for perfect landings, so it stays special and the tower stays visible
+        if (impact.isPerfect) worldThemeRef.current.particles.triggerStackParticles(normStackX, normStackY, true, Math.min(gs.combo, 3));
 
         if (impact.bonusCoins > 0) {
           useGameStore.getState().addCoins(impact.bonusCoins);
@@ -1000,6 +1033,26 @@ export function GameBoard() {
         }
       }
     }
+  };
+
+  /**
+   * A mistake that is not fatal on its own: costs a heart and the combo. Returns true when
+   * the run carries on, false when that was the last heart.
+   */
+  const loseLife = (label: string) => {
+    const gs = gameStateRef.current;
+    gs.lives = Math.max(0, gs.lives - 1);
+    setLivesLeft(gs.lives);
+    gs.combo = 0;
+    setActiveCombo(0);
+    gs.rapidPerfectStreak = 0;
+    gs.lastPerfectTime = 0;
+    gs.rapidPerfectMultiplier = 1;
+    if (gs.lives <= 0) return false;
+    gs.shake = Math.max(gs.shake, 6);
+    setMessage(`${label} ${'♥'.repeat(gs.lives)}${'♡'.repeat(MAX_LIVES - gs.lives)}`);
+    setTimeout(() => setMessage(''), 1100);
+    return true;
   };
 
   /**
@@ -1483,6 +1536,8 @@ export function GameBoard() {
         gs.queue.shift();
         gs.blocks.push({
           ...next,
+          // Everything arrives from above or from the sides, never up from under the tower
+          angle: Math.sin(next.angle) > 0.01 ? -next.angle : next.angle,
           distance: 120, // start off-screen
           spawnedAt: time,
           handled: false
@@ -1535,10 +1590,11 @@ export function GameBoard() {
         }
         b.handled = true;
         const bMass = getBlockMass(b);
-        audio.playCollisionSound(bMass, { type: 'crash' });
+        audio.playCollisionSound(bMass, { type: 'glance' });
         triggerHapticVibrate([65, 35, 85]);
         haptics.tooEarly();
-        recorderRef.current.logEvent('boom', 'MISSED BLOCK CRASH', '#f59e0b', { mass: bMass });
+        recorderRef.current.logEvent('boom', 'MISSED BLOCK', '#f59e0b', { mass: bMass });
+        if (loseLife('MISSED!')) continue;
         gameOver(false, 'TOO LATE!');
         createExplosionAtDistance(b, gameRadius, w, h, '#f59e0b');
       }
@@ -2177,28 +2233,6 @@ export function GameBoard() {
       ctx.restore();
     }
 
-    // Visual Health Indicator on Active Tower Top Block (when boom hazards approach center)
-    if (towerLayers > 0) {
-      const topPose = towerPose(gs.physics.stack, gs.physics.stack.length - 1, gs.physics.tiltAngle, cx, cy);
-      const topPx = topPose.x;
-      const topPy = topPose.y + bounce - topPose.hw;
-
-      const towerHazard = findNearestBoomHazard(topPx, topPy, gs.blocks, cx, cy, gameRadius);
-      if (towerHazard.proximityRatio > 0.18 || (gs.physics.stressLevel || 0) > 40) {
-        drawVisualHealthIndicator(
-          ctx,
-          topPx,
-          topPy - 12,
-          time,
-          towerHazard,
-          gs.physics.stressLevel || 0,
-          false,
-          isHighContrastEnv,
-          45
-        );
-      }
-    }
-
     // Aegis Shield Kinetic Barrier Bubble
     if (gs.physics.shieldActive) {
       ctx.save();
@@ -2291,26 +2325,6 @@ export function GameBoard() {
       ctx.restore();
 
       ctx.globalAlpha = 1.0;
-
-      // Visual Health & Tactical Hazard Proximity Indicator only when a Boom Hazard is genuinely near
-      if (apparentType === 'build' && !b.handled && b.distance > -15) {
-        const hazard = findNearestBoomHazard(px, py, gs.blocks, cx, cy, gameRadius);
-        // Only the next object to tap gets a warning label, so the screen stays readable
-        if (hazard.proximityRatio > 0.35 && b === activeTargetBlock) {
-          const isTarget = true;
-          drawVisualHealthIndicator(
-            ctx,
-            px,
-            py,
-            time,
-            hazard,
-            gs.physics.stressLevel || 0,
-            isTarget,
-            isHighContrastEnv,
-            42
-          );
-        }
-      }
 
       // Spawning Trails
       if (Math.random() < 0.4 && opacity > 0.5) {
@@ -2567,65 +2581,7 @@ export function GameBoard() {
             <ArrowLeft className="w-6 h-6 stroke-[2.5]" />
           </button>
 
-          {/* Quick Haptic Toggle */}
-          <button
-            onClick={() => {
-              toggleHaptics();
-              if (!hapticsEnabled) {
-                haptics.vibrate([18, 30, 25]);
-              }
-            }}
-            className={`p-3.5 backdrop-blur-md border-2 rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer ${
-              hapticsEnabled
-                ? 'bg-black/40 border-cyan-400/50 text-cyan-300 hover:bg-cyan-950/40'
-                : 'bg-black/30 border-white/10 text-white/40 hover:bg-black/50'
-            }`}
-            title={hapticsEnabled ? 'Haptic Feedback: ON' : 'Haptic Feedback: OFF'}
-            aria-label="Toggle Haptic Feedback"
-          >
-            {hapticsEnabled ? <Vibrate className="w-6 h-6" /> : <VibrateOff className="w-6 h-6" />}
-          </button>
-
-          {/* World Background Ambience Toggle & Soundscape Status */}
-          <button
-            onClick={() => {
-              worldAmbience.toggleMute();
-            }}
-            className={`p-3.5 backdrop-blur-md border-2 rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer ${
-              worldAmbience.isPlaying && !worldAmbience.isMuted
-                ? 'bg-black/40 border-emerald-400/50 text-emerald-300 hover:bg-emerald-950/40'
-                : 'bg-black/30 border-white/10 text-white/40 hover:bg-black/50'
-            }`}
-            title={`World Ambience: ${worldAmbience.soundscapeName} (${worldAmbience.isMuted ? 'Muted' : 'Active'})`}
-            aria-label="Toggle World Ambience"
-          >
-            {worldAmbience.isPlaying && !worldAmbience.isMuted ? (
-              <Volume2 className="w-6 h-6 animate-pulse" />
-            ) : (
-              <VolumeX className="w-6 h-6" />
-            )}
-          </button>
-
-          {/* Quick Silly Mode Physics Toggle */}
-          <button
-            onClick={() => {
-              toggleSillyMode();
-              haptics.uiTap();
-              if (!sillyMode) {
-                audio.playBuildSound(1.3);
-              }
-            }}
-            className={`p-3.5 backdrop-blur-md border-2 rounded-2xl transition-all shadow-lg active:scale-95 cursor-pointer ${
-              sillyMode
-                ? 'bg-amber-950/50 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                : 'bg-black/30 border-white/10 text-white/40 hover:bg-black/50'
-            }`}
-            title={sillyMode ? 'Silly Mode Physics: ON (Wiggle & Squish)' : 'Silly Mode Physics: OFF'}
-            aria-label="Toggle Silly Mode Physics"
-          >
-            <Sparkles className={`w-6 h-6 ${sillyMode ? 'text-amber-300' : ''}`} />
-          </button>
-
+          {/* Sound, vibration and Silly Mode toggles live in Settings, keeping the HUD to one row on phones */}
           {/* Quick Settings Button */}
           <button
             onClick={() => {
@@ -2640,7 +2596,7 @@ export function GameBoard() {
         </div>
 
         {/* Center: Inclinometer Attitude Gyro & Boss Titan Gauge */}
-        <div className="flex flex-col items-center pointer-events-auto max-w-[200px] sm:max-w-xs">
+        <div className="flex flex-col items-center pointer-events-auto min-w-0 max-w-[170px] sm:max-w-xs">
           {/* Boss Titan Bar if Boss Level */}
           {isBossLevel && (
             <div className="mb-1.5 px-3 py-1 rounded-xl bg-red-950/80 border border-red-500/50 backdrop-blur-md text-center shadow-lg animate-pulse">
@@ -2669,14 +2625,14 @@ export function GameBoard() {
               style={{ color: activePalette.accent }}
             >
               <Compass className="w-3 h-3" style={{ color: activePalette.accent }} />
-              <span>GYRO STABILITY</span>
+              <span className="truncate">GYRO</span>
               <span className={`font-black tabular-nums ${stressDisplay > 70 ? 'text-rose-400 animate-ping' : stressDisplay > 40 ? 'text-amber-300' : 'text-emerald-400'}`}>
                 {tiltDisplay > 0 ? `+${tiltDisplay.toFixed(1)}°` : `${tiltDisplay.toFixed(1)}°`}
               </span>
             </div>
 
             {/* Attitude Horizon Line */}
-            <div className="w-32 sm:w-40 h-2 bg-black/60 rounded-full mt-1 relative overflow-hidden border border-white/10">
+            <div className="w-28 sm:w-40 h-2 bg-black/60 rounded-full mt-1 relative overflow-hidden border border-white/10">
               {/* Safe center bracket */}
               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-8 bg-emerald-500/20 border-x border-emerald-400/40" />
               {/* Horizon Pip */}
@@ -2692,24 +2648,23 @@ export function GameBoard() {
             </div>
           </div>
 
-          {/* Dynamic Active Combo Multiplier Indicator (Rapid Perfect Stacks) */}
-          <div className="mt-2 w-full flex justify-center">
-            {rapidComboData.active ? (
-              <ComboMultiplierIndicator
-                data={rapidComboData}
-                isHighContrast={visualTheme === 'high-contrast'}
-              />
-            ) : (
-              <ComboStreakHUD activeCombo={activeCombo} />
-            )}
-          </div>
+          {/* Compact streak chip: the old full-size cards spilled off phone screens */}
+          {(rapidComboData.active || activeCombo >= 3) && (
+            <div
+              className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black tabular-nums tracking-wide border backdrop-blur-md shadow ${
+                rapidComboData.active ? 'bg-amber-400/90 text-black border-amber-200' : 'bg-black/45 text-amber-300 border-amber-300/40'
+              }`}
+            >
+              {rapidComboData.active ? `⚡ ${rapidComboData.multiplier}x PERFECT STREAK` : `🔥 ${activeCombo} COMBO`}
+            </div>
+          )}
         </div>
         
         {/* Right: Score, Level Header & Performance Telemetry Monitor */}
         <div className="text-right pointer-events-none flex flex-col items-end gap-1">
           {/* Lightweight Frame-Rate & Memory Telemetry Monitor */}
           <div className="pointer-events-auto">
-            <PerformanceMonitor className="relative z-40" />
+            {import.meta.env.DEV && <PerformanceMonitor className="relative z-40" />}
           </div>
 
           <div className="text-white font-black uppercase tracking-wider text-xs md:text-sm flex items-center justify-end gap-1.5 drop-shadow mt-0.5">
@@ -2729,6 +2684,13 @@ export function GameBoard() {
           <div className="text-4xl md:text-5xl font-black text-white tabular-nums drop-shadow-[0_4px_0_#b45309]" style={{ WebkitTextStroke: '1.5px #f59e0b' }}>
             {score}
           </div>
+          {!isTutorialActive && (
+            <div className="flex items-center gap-0.5 text-lg leading-none drop-shadow" aria-label={`${livesLeft} of ${MAX_LIVES} hearts left`}>
+              {Array.from({ length: MAX_LIVES }, (_, i) => (
+                <span key={i} className={i < livesLeft ? 'text-rose-500' : 'text-white/25'}>{i < livesLeft ? '♥' : '♡'}</span>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -2905,10 +2867,10 @@ export function GameBoard() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.18 }}
-              className="absolute top-14 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center max-w-[92vw]"
+              className="absolute top-[calc(max(0.75rem,env(safe-area-inset-top,12px))+7.5rem)] left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center w-max max-w-[92vw]"
             >
               <div className="px-4 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/70 shadow-[0_0_20px_rgba(245,158,11,0.35)] flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-black text-[#FFD700] uppercase tracking-wider font-mono drop-shadow whitespace-nowrap">
+                <span className="text-xs sm:text-sm font-black text-[#FFD700] uppercase tracking-wider font-mono drop-shadow text-center">
                   {message}
                 </span>
               </div>
