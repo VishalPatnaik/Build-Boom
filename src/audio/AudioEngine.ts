@@ -399,6 +399,8 @@ class AudioEngine {
       archetype?: string;
       isPerfect?: boolean;
       combo?: number;
+      /** Tower height: landings ring a little higher as the tower climbs */
+      height?: number;
     }
   ) {
     if (!this.ctx || !this.sfxEnabled) return;
@@ -408,7 +410,8 @@ class AudioEngine {
     // Mass-to-pitch relationship: f ~ 1/sqrt(mass)
     const massPitch = Math.pow(1 / Math.max(0.25, mass), 0.45);
     const comboFactor = Math.min(1.8, 1 + ((options?.combo || 0) * 0.035));
-    const effectivePitch = massPitch * comboFactor;
+    const heightFactor = Math.pow(2, Math.min(5, (options?.height || 0) / 8) / 12); // up to +5 semitones
+    const effectivePitch = massPitch * comboFactor * heightFactor;
 
     switch (this.soundPack) {
       case 'retro':
@@ -1138,6 +1141,111 @@ class AudioEngine {
 
     osc.start(t);
     osc.stop(t + 0.18);
+  }
+
+  /** Wooden creak while a joint teeters past its edge. */
+  playCreak() {
+    if (!this.ctx || !this.sfxEnabled) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const lfo = this.ctx.createOscillator();
+    const lfoGain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(95, t);
+    osc.frequency.linearRampToValueAtTime(70, t + 0.45);
+    lfo.frequency.value = 23; // the stick-slip judder of a creak
+    lfoGain.gain.value = 18;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    filter.type = 'bandpass';
+    filter.frequency.value = 520;
+    filter.Q.value = 4;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.16, t + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.48);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.getDestination());
+    osc.start(t);
+    lfo.start(t);
+    osc.stop(t + 0.5);
+    lfo.stop(t + 0.5);
+  }
+
+  /** Cartoon slide-whistle down plus a soft thud: gravity wins. */
+  playGravityWhomp() {
+    if (!this.ctx || !this.sfxEnabled) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const whistle = this.ctx.createOscillator();
+    const wg = this.ctx.createGain();
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(1100, t);
+    whistle.frequency.exponentialRampToValueAtTime(180, t + 0.55);
+    wg.gain.setValueAtTime(0.0001, t);
+    wg.gain.exponentialRampToValueAtTime(0.12, t + 0.04);
+    wg.gain.exponentialRampToValueAtTime(0.001, t + 0.58);
+    whistle.connect(wg);
+    wg.connect(this.getDestination());
+    whistle.start(t);
+    whistle.stop(t + 0.6);
+    const thud = this.ctx.createOscillator();
+    const tg = this.ctx.createGain();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(120, t + 0.55);
+    thud.frequency.exponentialRampToValueAtTime(40, t + 0.85);
+    tg.gain.setValueAtTime(0.0001, t + 0.55);
+    tg.gain.exponentialRampToValueAtTime(0.35, t + 0.57);
+    tg.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+    thud.connect(tg);
+    tg.connect(this.getDestination());
+    thud.start(t + 0.55);
+    thud.stop(t + 0.92);
+  }
+
+  /** Bright little arpeggio for a new record or a heart-safe finish. */
+  playCheer() {
+    if (!this.ctx || !this.sfxEnabled) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = f;
+      const s0 = t + i * 0.08;
+      g.gain.setValueAtTime(0.0001, s0);
+      g.gain.exponentialRampToValueAtTime(0.14, s0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, s0 + 0.3);
+      osc.connect(g);
+      g.connect(this.getDestination());
+      osc.start(s0);
+      osc.stop(s0 + 0.32);
+    });
+  }
+
+  /** Soft "aww" two-note drop when a heart is lost. */
+  playHeartLost() {
+    if (!this.ctx || !this.sfxEnabled) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    [440, 330].forEach((f, i) => {
+      const osc = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = f;
+      const s0 = t + i * 0.13;
+      g.gain.setValueAtTime(0.0001, s0);
+      g.gain.exponentialRampToValueAtTime(0.13, s0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, s0 + 0.22);
+      osc.connect(g);
+      g.connect(this.getDestination());
+      osc.start(s0);
+      osc.stop(s0 + 0.24);
+    });
   }
 
   playTitanAnchor() {

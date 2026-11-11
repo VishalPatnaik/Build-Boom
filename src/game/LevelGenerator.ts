@@ -311,7 +311,7 @@ export function generateTournament(
   for (let i = 0; i < blockCount; i++) {
     const progress = i / blockCount;
     // Difficulty escalates over the tournament run
-    const boomChance = Math.min(0.60, boomChanceRatio + progress * 0.15);
+    const boomChance = Math.min(0.45, boomChanceRatio + progress * 0.15);
     const isBoom = i > 0 && rng() < boomChance;
 
     const baseSpeed = Math.max(0.35, (1.5 - progress * 0.45) / speedMultiplier);

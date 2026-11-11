@@ -315,7 +315,8 @@ const loadProgress = () => {
     trophies: { gold: 0, silver: 0, bronze: 0 },
     unlockedLevels: 1, 
     highScores: {}, 
-    hasCompletedCampaignTutorial: true,
+    // Brand-new players get the short guided tutorial on their first campaign level
+    hasCompletedCampaignTutorial: false,
     adsRemoved: false, 
     coins: 150, 
     ownedCosmetics: [], 

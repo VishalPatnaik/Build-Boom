@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../game/store';
-import { Coins, ShoppingBag, Infinity as InfinityIcon, Calendar, Play, Plus, Trophy, ShieldCheck, Zap, Vibrate, VibrateOff, ChevronRight, Flame, Settings } from 'lucide-react';
+import { Coins, ShoppingBag, Infinity as InfinityIcon, Play, Plus, Trophy, ShieldCheck, ChevronRight, Flame, Settings } from 'lucide-react';
 import { useDailyStore, getStreakMultiplier } from '../game/dailyStore';
 import { TacticalRechargeModal } from './TacticalRechargeModal';
 import { AchievementsModal } from './achievements/AchievementsModal';
@@ -326,7 +326,12 @@ export function Menu() {
                   <span className="bg-cyan-500/30 text-cyan-300 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase border border-cyan-400/40 font-mono">
                     LAST 10s
                   </span>
-                  {lastReplay && (
+                  {lastReplay && lastReplay.id === 'demo-tactical-replay' && (
+                    <span className="text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase font-mono border bg-violet-950/80 border-violet-400/60 text-violet-200">
+                      SAMPLE
+                    </span>
+                  )}
+                  {lastReplay && lastReplay.id !== 'demo-tactical-replay' && (
                     <span
                       className={`text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase font-mono border ${
                         lastReplay.finalOutcome === 'won'
@@ -338,6 +343,9 @@ export function Menu() {
                     </span>
                   )}
                 </div>
+                {lastReplay?.id === 'demo-tactical-replay' ? (
+                  <div className="text-[10px] font-mono text-cyan-200/80 truncate mt-0.5">See a sample run. Your own replays show up here!</div>
+                ) : (
                 <div className="text-[10px] font-mono text-cyan-200/80 truncate mt-0.5 flex items-center gap-1.5">
                   <span>Tilt: {lastReplay ? `${lastReplay.maxTilt}°` : '0°'}</span>
                   <span>•</span>
@@ -345,6 +353,7 @@ export function Menu() {
                   <span>•</span>
                   <span>{lastReplay ? `${lastReplay.finalScore} Pts` : '0 Pts'}</span>
                 </div>
+                )}
               </div>
             </div>
 

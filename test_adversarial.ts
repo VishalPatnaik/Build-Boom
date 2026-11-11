@@ -6,6 +6,7 @@ import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
 import { PROGRESSION_STORAGE_KEY, PROGRESSION_SNAPSHOT_KEY, autoSaveProgression } from './src/utils/progressionStorage';
 import { useGameStore } from './src/game/store';
 import { generateLevel, levelTwist } from './src/game/LevelGenerator';
+import { MAX_LIVES, TEETER_GRACE_MS, teeterStep, canLaunch, campaignStars } from './src/game/runRules';
 import { audioCrossFader } from './src/audio/AudioCrossFader';
 import { AdService } from './src/ads/AdService';
 
@@ -483,6 +484,33 @@ console.log('\n--- 7. STACKING PHYSICS ---');
   applyBlockImpact(gentle, 0, 0, 'standard', perks, 1);
   applyBlockImpact(full, 0, 0, 'standard', perks, 1);
   assert(Math.abs(gentle.angularVelocity) < Math.abs(full.angularVelocity), 'Gentle levels shove the tower less');
+}
+
+// ----------------------------------------------------
+// 7a. RUN RULES (hearts, teetering, spacing, stars)
+// ----------------------------------------------------
+console.log('\n--- 7a. RUN RULES ---');
+{
+  assert(MAX_LIVES === 3, 'A run starts with 3 hearts');
+  let t = teeterStep(0, 16, true);
+  assert(t.started && !t.falls, 'A joint past its edge starts teetering instead of falling at once');
+  for (let i = 0; i < 20; i++) t = teeterStep(t.teeterMs, 16, true);
+  assert(!t.falls && t.teeterMs < TEETER_GRACE_MS, 'It can teeter for a moment (about 0.3 s here) and still survive');
+  const back = teeterStep(t.teeterMs, 16, false);
+  assert(back.teeterMs === 0 && !back.falls, 'Swinging back in time resets the teeter');
+  let long = { teeterMs: 0, falls: false, started: false };
+  for (let i = 0; i < 40 && !long.falls; i++) long = teeterStep(long.teeterMs, 16, true);
+  assert(long.falls, 'Staying past the edge for longer than the grace period topples it');
+
+  assert(canLaunch([], 2), 'An empty sky always launches');
+  assert(!canLaunch([{ distance: 120, speed: 2 }], 2), 'Two objects never arrive at the same moment');
+  assert(canLaunch([{ distance: 60, speed: 2 }], 2), 'Objects well apart may share the sky');
+  assert(!canLaunch(Array.from({ length: 4 }, (_, i) => ({ distance: 10 + i * 30, speed: 3 })), 0.5), 'No more than 4 objects in the air');
+
+  assert(campaignStars(3, false, 80) === 3, '3 stars: all hearts and mostly perfect');
+  assert(campaignStars(2, false, 80) === 2, 'Losing a heart costs a star');
+  assert(campaignStars(3, true, 80) === 2, 'A revive costs the heart star');
+  assert(campaignStars(1, false, 10) === 1, 'Clearing always earns 1 star');
 }
 
 // ----------------------------------------------------

@@ -9,7 +9,7 @@ Stack cute critters with real physics. Keep it balanced and never tap a bomb!
 
 **Full description** (max 4000):
 
-Tap at just the right moment to land each critter on your tower, then keep the whole stack balanced as it grows. TOWER//SHIFT uses real stacking physics: every piece lands where you tapped it, heavy pieces shift the balance, and a tower that leans too far comes crashing down.
+Tap at just the right moment to land each critter on your tower, then keep the whole wobbly stack standing as it grows. TOWER//SHIFT uses real stacking physics: every piece lands where you tapped it, heavy pieces shift the balance, tall towers sway, and when your tower leans too far, gravity wins (and tells you exactly why).
 
 BUILD WITH REAL PHYSICS
 • Tap early and a piece lands short; tap late and it overshoots. Balance every overhang.
@@ -17,14 +17,15 @@ BUILD WITH REAL PHYSICS
 • Every landing shoves the tower: tall towers sway, so tap when the top swings back under the incoming piece.
 • Wind gusts push taller towers sideways in later worlds.
 • Never tap a bomb. Let it fly past.
+• Three hearts per run: a slip costs a heart, so one wobble never ends your fun.
 • Watch for tricksters: bombs disguised as critters, critters disguised as bombs, ghosts and blinkers. Every disguise glitches for a split second; spot it and earn bonus coins.
 
 20 THEMED WORLDS, 200 LEVELS
 Stack bumblebees in the Spring Meadow, moon bunnies on the Lunar Surface, sea turtles on the Coral Reef, gummy bears in Candyland, mecha-kitties in the Cyberpunk Megacity and more. Every world has its own critter, its own hazard and its own landing platform.
 
 MODES
-• Shift Odyssey: a 200-level campaign with boss levels.
-• Endless: how high can you go?
+• Shift Odyssey: a 200-level campaign with boss levels and twists like Gusty, Heavy Load, Tricksters, Calm Skies, Ghost Night and Bomb Rush. Earn up to 3 stars per level.
+• Endless: how high can you go? Beat the gold line of your best tower.
 • Shift Arena: tournaments and global leaderboards.
 • Daily Ops: daily challenges, streaks and mystery chests.
 • Shift Forge: practise with your own speed, bomb and wind settings.

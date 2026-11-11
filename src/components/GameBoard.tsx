@@ -3,18 +3,19 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
+import { MAX_LIVES, TEETER_GRACE_MS, canLaunch, teeterStep, campaignStars } from '../game/runRules';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass, levelTwist, TWIST_INFO } from '../game/LevelGenerator';
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, topSway, blockHalfWidth, windStrengthFor, swayScaleFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, flexOffset, topSway, blockHalfWidth, windStrengthFor, swayScaleFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { setTowerMood } from '../game/themedObjects';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
-import { ArrowLeft, RotateCcw, Play, Video, Home, Trophy, Crown, Medal, Zap, Shield, Compass, Plus, Coins, Vibrate, VibrateOff, Award, Sparkles, CheckCircle2, Hand, Target, Settings, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Play, Video, Home, Trophy, Shield, Compass, Plus, Coins, Award, CheckCircle2, Settings } from 'lucide-react';
 import { TacticalRechargeModal } from './TacticalRechargeModal';
 import { PowerupType } from '../game/techTree';
-import { ComboStreakHUD, FloatingScoreMultiplierItem, FloatingMultiplierData } from './FloatingFeedback';
-import { ComboMultiplierIndicator, ComboMultiplierState } from './ComboMultiplierIndicator';
+import { FloatingScoreMultiplierItem, FloatingMultiplierData } from './FloatingFeedback';
+import { ComboMultiplierState } from './ComboMultiplierIndicator';
 import { ReplayRecorder, ReplayData } from '../game/replayEngine';
 import { safeCreateRadialGradient } from '../utils/canvasUtils';
 import { EndOfLevelSummary, LevelPerformanceMetrics } from './campaign/EndOfLevelSummary';
@@ -69,10 +70,7 @@ const SHOW_FLOATING_COMBO_CARDS = false;
 /** Little cheers for a perfect landing, picked at random. */
 const PERFECT_CHEERS = ['PERFECT!', 'NAILED IT!', "CHEF'S KISS! 🤌", 'BULLSEYE! 🎯', 'BUTTERY SMOOTH!', 'TEXTBOOK!'];
 const SHOW_LANDING_RESONANCE = false;
-/** Mistakes allowed per run before it ends (bombs and a toppled tower end it at once). */
-const MAX_LIVES = 3;
-/** How long a joint can hang past its edge (from the sway) before that part of the tower falls. */
-const TEETER_GRACE_MS = 450;
+
 /** Slow motion while a first-time tip is on screen. */
 const TIP_SLOWMO_MS = 2600;
 /** Minimum gap between two first-time tips. */
@@ -842,10 +840,11 @@ export function GameBoard() {
             gs.recordAnnounced = true;
             gs.floatTexts.push({ text: '🎉 NEW RECORD! THE SKY CALLED, YOU ANSWERED', x: w / 2, y: h * 0.65 - 95, life: 1.8, color: '#fde047' });
             worldThemeRef.current.particles.triggerStackParticles(0.5, 0.55, true, 3);
-            audio.playComboSurge(3);
+            audio.playCheer();
           }
           if (n > 0 && n % 10 === 0) {
             useGameStore.getState().addCoins(5);
+            audio.playComboSurge(2);
             gs.floatTexts.push({ text: `${n} TALL! WHEEE! +5 🪙`, x: w / 2, y: h * 0.65 - 70, life: 1.3, color: '#86efac' });
           }
         }
@@ -1021,6 +1020,7 @@ export function GameBoard() {
           archetype: targetBlock.archetype,
           isPerfect: impact.isPerfect,
           combo: gs.combo,
+          height: gs.physics.stack.length,
         });
 
         // Log stack event to replay recorder
@@ -1100,6 +1100,7 @@ export function GameBoard() {
    */
   const creditGravity = (cause: 'overhang' | 'sway' | 'lean', fromLevel: number, side: number, fallen: StackedBlock[]) => {
     const gs = gameStateRef.current;
+    audio.playGravityWhomp();
     const w = canvasSizeRef.current.w || 400;
     const h = canvasSizeRef.current.h || 800;
     const whole = [...gs.physics.stack, ...fallen];
@@ -1150,6 +1151,7 @@ export function GameBoard() {
     gs.lastPerfectTime = 0;
     gs.rapidPerfectMultiplier = 1;
     if (gs.lives <= 0) return false;
+    audio.playHeartLost();
     showTip('hearts', 'OOPS, A HEART!', 'Early or missed taps cost a heart. Lose all 3 and the run ends. Tap a bomb? Instant kaboom!');
     gs.shake = Math.max(gs.shake, 6);
     setMessage(`${label} ${'♥'.repeat(gs.lives)}${'♡'.repeat(MAX_LIVES - gs.lives)}`);
@@ -1381,7 +1383,7 @@ export function GameBoard() {
         // Stars: clearing earns one, keeping every heart earns one, landing at least half the
         // pieces perfectly earns one. Best result per level is kept and shown on the map.
         const heartsKept = gs.lives >= MAX_LIVES && !gs.hasRevived;
-        const starsEarned = 1 + (heartsKept ? 1 : 0) + (accuracyPct >= 50 ? 1 : 0);
+        const starsEarned = campaignStars(gs.lives, gs.hasRevived, accuracyPct);
         updateHighScore(`stars-${level}`, starsEarned);
         gs.starHints = [
           !heartsKept ? 'keep all 3 hearts ♥' : '',
@@ -1577,21 +1579,23 @@ export function GameBoard() {
     }
     // Teetering: a joint pushed past its edge by the sway only gives way if it stays past
     // the edge for a moment. If the swing comes back in time the tower survives.
-    if (physResult.toppleLevel >= 0 && Math.abs(gs.physics.tiltAngle) < gs.physics.maxTiltAllowed && !isTutorialActive) {
-      const wasTeetering = gs.teeterMs > 0;
-      gs.teeterMs += Number.isFinite(dt) ? dt : 16;
-      if (gs.teeterMs < TEETER_GRACE_MS) {
+    {
+      const teeter = teeterStep(
+        gs.teeterMs,
+        Number.isFinite(dt) ? dt : 16,
+        physResult.toppleLevel >= 0 && Math.abs(gs.physics.tiltAngle) < gs.physics.maxTiltAllowed && !isTutorialActive
+      );
+      gs.teeterMs = teeter.teeterMs;
+      if (gs.teeterMs > 0 && !teeter.falls) {
         physResult.collapsed = false;
-        if (!wasTeetering) {
-          audio.playTiltWarning();
+        if (teeter.started) {
+          audio.playCreak();
           triggerHapticVibrate([25, 20, 25]);
           setMessage('TEETERING! HOLD YOUR BREATH… 😬');
           setTimeout(() => setMessage(''), 700);
           showTip('teeter', 'WOBBLE WARNING!', 'A crooked tower tips when it sways. Land the next pieces back over the centre to straighten it out.');
         }
       }
-    } else {
-      gs.teeterMs = 0;
     }
     if (physResult.collapsed) {
       if (isTutorialActive) {
@@ -1675,7 +1679,11 @@ export function GameBoard() {
     // Spawning logic
     if (gs.queue.length > 0) {
       const next = gs.queue[0];
-      if (time - gs.lastSpawnTime > next.delay * 1000) {
+      // Keep the sky readable: limit how many things are in the air and make sure no two
+      // arrive at the tower top at nearly the same moment (they used to pile up in Endless)
+      const inFlight = gs.blocks.filter((b) => !b.handled && b.distance > -HIT_WINDOW);
+      const crowded = !canLaunch(inFlight, next.speed);
+      if (!crowded && time - gs.lastSpawnTime > next.delay * 1000) {
         gs.queue.shift();
         gs.blocks.push({
           ...next,
@@ -1864,203 +1872,6 @@ export function GameBoard() {
     };
   };
 
-  const drawVisualHealthIndicator = (
-    ctx: CanvasRenderingContext2D,
-    px: number,
-    py: number,
-    time: number,
-    hazard: HazardProximityResult,
-    stressLevel: number,
-    isTargetBlock: boolean,
-    isHighContrast: boolean,
-    blockSize: number = 30
-  ) => {
-    const { proximityRatio, distance, boomPx, boomPy, nearestBoom } = hazard;
-
-    // Alert Levels
-    const isCritical = proximityRatio >= 0.55;
-    const isCaution = proximityRatio >= 0.20 && !isCritical;
-    const isSafe = !isCaution && !isCritical;
-
-    // Colors & Frequencies
-    let primaryColor: string;
-    let borderColor: string;
-    let glowColor: string;
-    let pulseSpeed: number;
-    let statusText: string;
-
-    if (isHighContrast) {
-      if (isCritical) {
-        primaryColor = '#ff0033';
-        borderColor = '#ffffff';
-        glowColor = 'rgba(255, 0, 51, 0.9)';
-        pulseSpeed = 0.038;
-        statusText = '🚨 BOOM HAZARD!';
-      } else if (isCaution) {
-        primaryColor = '#ffff00';
-        borderColor = '#ffffff';
-        glowColor = 'rgba(255, 255, 0, 0.75)';
-        pulseSpeed = 0.018;
-        statusText = '⚠️ CAUTION';
-      } else {
-        primaryColor = '#00ffcc';
-        borderColor = '#ffffff';
-        glowColor = 'rgba(0, 255, 204, 0.45)';
-        pulseSpeed = 0.005;
-        statusText = 'SECURE';
-      }
-    } else {
-      if (isCritical) {
-        primaryColor = '#ef4444';
-        borderColor = '#f87171';
-        glowColor = 'rgba(239, 68, 68, 0.95)';
-        pulseSpeed = 0.038; // ~18 Hz rapid emergency pulse
-        statusText = '🚨 BOOM HAZARD!';
-      } else if (isCaution) {
-        primaryColor = '#f59e0b';
-        borderColor = '#fbbf24';
-        glowColor = 'rgba(245, 158, 11, 0.75)';
-        pulseSpeed = 0.016; // ~7 Hz warning pulse
-        statusText = '⚠️ PROX CAUTION';
-      } else {
-        primaryColor = '#10b981';
-        borderColor = '#34d399';
-        glowColor = 'rgba(16, 185, 129, 0.45)';
-        pulseSpeed = 0.005; // ~2 Hz calm breathing
-        statusText = 'SECURE';
-      }
-    }
-
-    // Dynamic health percentage based on base integrity and hazard proximity
-    const baseHealth = Math.max(20, Math.round(100 - stressLevel * 0.35));
-    const healthReduction = proximityRatio * 65;
-    const currentHealth = Math.max(5, Math.round(baseHealth - healthReduction));
-
-    const pulseCycle = Math.sin(time * pulseSpeed);
-    const pulseScale = isCritical
-      ? 1.0 + pulseCycle * 0.12
-      : (isCaution ? 1.0 + pulseCycle * 0.06 : 1.0);
-    const pulseAlpha = 0.7 + 0.3 * Math.abs(pulseCycle);
-
-    ctx.save();
-
-    // 1. Tactical Threat Vector Tether to nearby boom hazard
-    if (nearestBoom && proximityRatio > 0.20) {
-      ctx.save();
-      ctx.strokeStyle = primaryColor;
-      ctx.lineWidth = isCritical ? 2.0 : 1.2;
-      ctx.globalAlpha = Math.min(0.85, 0.3 + proximityRatio * 0.55);
-      ctx.setLineDash([5, 4]);
-      ctx.lineDashOffset = -time * 0.05;
-      ctx.beginPath();
-      ctx.moveTo(px, py);
-      ctx.lineTo(boomPx, boomPy);
-      ctx.stroke();
-
-      // Threat Vector Midpoint Warning Pip
-      const midX = (px + boomPx) * 0.5;
-      const midY = (py + boomPy) * 0.5;
-      ctx.fillStyle = primaryColor;
-      ctx.beginPath();
-      ctx.arc(midX, midY, isCritical ? 4.5 : 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Distance telemetry label
-      ctx.font = 'bold 8px monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 6;
-      ctx.textAlign = 'center';
-      ctx.fillText(`${Math.round(distance)}px`, midX, midY - 6);
-      ctx.restore();
-    }
-
-    // 2. Pulsing Circular Hazard Halo around the Object (Never square brackets)
-    if (proximityRatio > 0.25) {
-      ctx.save();
-      const haloRadius = (blockSize / 2) + 6;
-      ctx.strokeStyle = primaryColor;
-      ctx.lineWidth = isCritical ? 2.5 : 1.5;
-      ctx.globalAlpha = pulseAlpha * (isCritical ? 0.95 : 0.7);
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = isCritical ? 16 : 8;
-
-      ctx.beginPath();
-      ctx.arc(px, py, haloRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Critical Hazard: Expanding Shockwave Rings
-      if (isCritical) {
-        const ringOffset = ((time * 0.05) % 26);
-        const ringR = haloRadius + ringOffset;
-        const ringAlpha = (1 - ringOffset / 26) * 0.8;
-        ctx.strokeStyle = primaryColor;
-        ctx.lineWidth = 1.8;
-        ctx.globalAlpha = ringAlpha;
-        ctx.beginPath();
-        ctx.arc(px, py, ringR, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // 3. Upright Holographic Visual Health Bar and Telemetry Badge
-    ctx.save();
-    ctx.translate(px, py - 30);
-    ctx.scale(pulseScale, pulseScale);
-
-    const barW = 46;
-    const barH = 7;
-    const barX = -barW / 2;
-    const barY = -barH / 2;
-
-    // Background Bezel
-    ctx.fillStyle = 'rgba(6, 11, 24, 0.88)';
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 1.2;
-    ctx.shadowColor = glowColor;
-    ctx.shadowBlur = isCritical ? 14 : (isCaution ? 8 : 4);
-    drawRoundRect(ctx, barX - 1.5, barY - 1.5, barW + 3, barH + 3, 4);
-    ctx.fill();
-    ctx.stroke();
-
-    // Segmented Health Meter (4 Tactical Segments)
-    const segments = 4;
-    const segGap = 1.5;
-    const segW = (barW - (segGap * (segments - 1))) / segments;
-    const activeSegments = Math.round((currentHealth / 100) * segments);
-
-    for (let s = 0; s < segments; s++) {
-      const sx = barX + s * (segW + segGap);
-      const isFilled = s < activeSegments;
-
-      if (isFilled) {
-        ctx.fillStyle = primaryColor;
-        ctx.shadowColor = glowColor;
-        ctx.shadowBlur = 6;
-        drawRoundRect(ctx, sx, barY, segW, barH, 1.5);
-        ctx.fill();
-      } else {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.shadowBlur = 0;
-        drawRoundRect(ctx, sx, barY, segW, barH, 1.5);
-        ctx.fill();
-      }
-    }
-
-    // Micro Status Telemetry Header
-    ctx.font = 'bold 8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = isCritical ? '#ffdddd' : (isCaution ? '#fffbeb' : '#ecfdf5');
-    ctx.shadowColor = glowColor;
-    ctx.shadowBlur = isCritical ? 10 : 4;
-    const labelY = barY - 4;
-    ctx.fillText(`${statusText} • ${currentHealth}%`, 0, labelY);
-
-    ctx.restore();
-    ctx.restore();
-    ctx.shadowBlur = 0;
-  };
 
   const draw = (time: number) => {
     const canvas = canvasRef.current;
@@ -2605,6 +2416,16 @@ export function GameBoard() {
       ctx.roundRect(-ghw, -ghw, ghw * 2, ghw * 2, ghw * 0.45);
       ctx.fill();
       ctx.stroke();
+      // Shape cue as well as colour, for colour-blind players: ✓ safe, ~ wobbly, ✕ will slide off
+      ctx.font = `900 ${Math.round(ghw * 0.9)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      const glyph = risk < 0.3 ? '✓' : risk < 0.7 ? '~' : '✕';
+      ctx.strokeText(glyph, 0, 1);
+      ctx.fillStyle = `rgb(${col})`;
+      ctx.fillText(glyph, 0, 1);
       ctx.restore();
     }
 

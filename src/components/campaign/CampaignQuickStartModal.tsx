@@ -80,7 +80,7 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
 
           {/* Core Briefing */}
           <p className="text-xs text-white/80 leading-relaxed mb-3.5">
-            Stack your <strong className="text-amber-300">first 3 blocks</strong> with active safety dampeners. Then gravity is real: keep the tower centred, because a stack that hangs past its edge topples. Never tap a bomb, just let it fly past.
+            Stack your <strong className="text-amber-300">first 3 critters</strong> with training wheels on. After that gravity is real: keep the tower centred, mind the wobble, and <strong className="text-rose-300">never tap a bomb</strong>. Just wave it goodbye! 👋
           </p>
 
           {/* 3 Step Interactive Visual Cards */}
@@ -98,7 +98,7 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
                   </span>
                 </div>
                 <div className="text-[11px] text-white/70 mt-0.5">
-                  Tap <span className="text-emerald-300 font-bold">only</span> when incoming blocks enter the glowing target reticle.
+                  Tap <span className="text-emerald-300 font-bold">only</span> when a critter reaches the glowing ring. Not before, not after!
                 </div>
               </div>
             </div>
@@ -116,7 +116,7 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
                   </span>
                 </div>
                 <div className="text-[11px] text-white/70 mt-0.5">
-                  Tap early and a block lands short on its side; tap late and it overshoots. The ghost box shows where it will land, so balance each overhang with the next block.
+                  Tap early and it lands short; tap late and it overshoots. Tall towers wobble, so wait for the top to swing back. The ghost shows where it'll land: <span className="text-emerald-300 font-bold">✓ means go!</span>
                 </div>
               </div>
             </div>
@@ -134,7 +134,7 @@ export function CampaignQuickStartModal({ isOpen, onClose, onStart }: CampaignQu
                   </span>
                 </div>
                 <div className="text-[11px] text-white/70 mt-0.5">
-                  Early misclicks are absorbed! Emergency stasis triggers if you miss the window.
+                  Oopsies don't count during training. After that you get <span className="text-rose-300 font-bold">3 hearts ♥</span> for slips, but a tapped bomb is an instant kaboom!
                 </div>
               </div>
             </div>
