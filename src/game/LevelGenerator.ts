@@ -28,13 +28,13 @@ export type LevelTwist = 'none' | 'boss' | 'gusty' | 'heavy' | 'tricksters' | 'c
 
 export const TWIST_INFO: Record<LevelTwist, { label: string; intro: string }> = {
   none: { label: '', intro: '' },
-  boss: { label: 'BOSS', intro: 'BOSS LEVEL: a long, fast climb' },
-  gusty: { label: 'GUSTY', intro: 'GUSTY: wind gusts push your tower' },
-  heavy: { label: 'HEAVY LOAD', intro: 'HEAVY LOAD: lots of heavy gold and anchors' },
-  tricksters: { label: 'TRICKSTERS', intro: 'TRICKSTERS: disguises everywhere, watch for the glitch' },
-  calm: { label: 'CALM SKIES', intro: 'CALM SKIES: no bombs, just build it tall and straight' },
-  'ghost-night': { label: 'GHOST NIGHT', intro: 'GHOST NIGHT: pieces fade and flicker' },
-  'bomb-rush': { label: 'BOMB RUSH', intro: 'BOMB RUSH: a short burst of bombs, keep your nerve' },
+  boss: { label: 'BOSS', intro: 'BOSS LEVEL: THE BIG ONE. DEEP BREATHS!' },
+  gusty: { label: 'GUSTY', intro: "GUSTY: HOLD ONTO YOUR TOWER, IT'S WINDY! 💨" },
+  heavy: { label: 'HEAVY LOAD', intro: 'HEAVY LOAD: CHUNKY GOLD AND ANCHORS INCOMING 🏋️' },
+  tricksters: { label: 'TRICKSTERS', intro: 'TRICKSTERS: COSTUMES EVERYWHERE! WATCH FOR THE GLITCH 🎭' },
+  calm: { label: 'CALM SKIES', intro: 'CALM SKIES: NO BOMBS, JUST STACK IT SKY-HIGH ☁️' },
+  'ghost-night': { label: 'GHOST NIGHT', intro: 'GHOST NIGHT: THINGS GO BUMP AND BLINK 👻' },
+  'bomb-rush': { label: 'BOMB RUSH', intro: "BOMB RUSH: SO MANY BOMBS! DON'T TAP THEM 💣" },
 };
 
 const TWIST_CYCLE: LevelTwist[] = ['none', 'gusty', 'heavy', 'tricksters', 'calm', 'ghost-night', 'bomb-rush'];

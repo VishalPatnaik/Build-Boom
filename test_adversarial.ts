@@ -47,7 +47,7 @@ console.log('--- 1. PHYSICS ADVERSARIAL REGRESSION ---');
   const resOffCenter = applyBlockImpact(phys2, 14, Math.PI / 4, 'titan', {});
   assert(phys2.tiltAngle === 0, 'Off-center Titan hit locks tiltAngle to 0° without off-center torque distortion');
   assert(phys2.angularVelocity === 0, 'Off-center Titan hit locks angularVelocity to 0');
-  assert(resOffCenter.message === 'TITAN ANCHOR LOCKED!', 'Off-center Titan hit maintains anchor lock status');
+  assert(resOffCenter.message === 'TITAN ANCHOR: CLUNK! 🗿', 'Off-center Titan hit maintains anchor lock status');
 
   // 1.3 Rapid Repeated Titan Impacts
   for (let i = 0; i < 5; i++) {

@@ -412,14 +412,14 @@ export function applyBlockImpact(
     // Titan anchors cancel the sway outright (the stack's balance still matters afterwards)
     state.tiltAngle = 0;
     state.angularVelocity = 0;
-    message = 'TITAN ANCHOR LOCKED!';
+    message = 'TITAN ANCHOR: CLUNK! 🗿';
   } else if (archetype === 'gold_ingot') {
     bonusCoins += Math.round(50 * (1 + midasTier * 0.25));
-    message = '+50 GOLD INGOT!';
+    message = '+50 SHINY GOLD! ✨';
   } else if (archetype === 'prism') {
     state.prismSurgeRemaining = 5;
     bonusCoins += Math.round(100 * (1 + midasTier * 0.25));
-    message = '3X PRISM SURGE!';
+    message = '3X PRISM SURGE! 🌈';
   }
 
   if (state.prismSurgeRemaining > 0) {

@@ -38,6 +38,8 @@ export interface LevelPerformanceMetrics {
   maxCombo: number;         // e.g. 14
   coinsEarned: number;      // e.g. 150
   stars: number;            // 1 to 3
+  /** What would earn the missing stars, in plain words */
+  starHints?: string[];
 }
 
 export interface EndOfLevelSummaryProps {
@@ -184,6 +186,11 @@ export function EndOfLevelSummary({
               );
             })}
           </div>
+          {metrics.starHints && metrics.starHints.length > 0 && (
+            <div className="mt-2 text-[11px] font-semibold text-white/70 leading-snug">
+              Grab more ★: {metrics.starHints.join(' · ')}
+            </div>
+          )}
         </div>
 
         {/* Primary Performance Metrics Cards (Exact User Requirements) */}

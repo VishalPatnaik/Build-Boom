@@ -66,6 +66,8 @@ interface Debris {
 
 /** Big floating "N IN A ROW" cards covered the tower top; the HUD combo meter shows the same thing. */
 const SHOW_FLOATING_COMBO_CARDS = false;
+/** Little cheers for a perfect landing, picked at random. */
+const PERFECT_CHEERS = ['PERFECT!', 'NAILED IT!', "CHEF'S KISS! 🤌", 'BULLSEYE! 🎯', 'BUTTERY SMOOTH!', 'TEXTBOOK!'];
 const SHOW_LANDING_RESONANCE = false;
 /** Mistakes allowed per run before it ends (bombs and a toppled tower end it at once). */
 const MAX_LIVES = 3;
@@ -210,6 +212,10 @@ export function GameBoard() {
   const gameOverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initGameRef = useRef<(customLevel?: number) => void>(() => {});
   const canvasSizeRef = useRef({ w: 0, h: 0, dpr: 1 });
+  // Auto quality: if the phone struggles, render at 1x and trim effects (it never switches back mid-session)
+  const lowFxRef = useRef(false);
+  const resizeCanvasRef = useRef<() => void>(() => {});
+  const frameStatsRef = useRef({ ema: 16.7, slowMs: 0 });
 
   const handleWarpComplete = useCallback(() => {
     setWarpTransition((prev) => {
@@ -272,6 +278,9 @@ export function GameBoard() {
     teeterMs: 0,
     slowUntil: 0,
     lastTipAt: -1e9,
+    starHints: [] as string[],
+    maxHeight: 0,
+    recordAnnounced: false,
     floatTexts: [] as { text: string; x: number; y: number; life: number; color: string }[],
     camX: 0, // camera follows the tower's resting top (not its sway)
     towerSink: 0, // eases the tower down one layer after each landing
@@ -401,6 +410,9 @@ export function GameBoard() {
       teeterMs: 0,
       slowUntil: 0,
       lastTipAt: -1e9,
+      starHints: [],
+      maxHeight: 0,
+      recordAnnounced: false,
       floatTexts: [],
       camX: 0,
       towerSink: 0,
@@ -436,7 +448,7 @@ export function GameBoard() {
       emp: gs.physics.empCharges,
       shield: gs.physics.shieldActive,
     });
-    setMessage('AIRDROP DELIVERED!');
+    setMessage('AIRDROP! SPECIAL DELIVERY 📦');
     setTimeout(() => setMessage(''), 1200);
   };
 
@@ -464,7 +476,7 @@ export function GameBoard() {
     const gs = gameStateRef.current;
     if (gs.physics.stasisCharges <= 0) {
       audio.playTiltWarning();
-      setMessage('NO STASIS CHARGES! (TAP HUD TO RE-ARM)');
+      setMessage('OUT OF STASIS! TAP THE HUD TO RE-ARM ⏳');
       setTimeout(() => setMessage(''), 900);
       return;
     }
@@ -480,7 +492,7 @@ export function GameBoard() {
     setTacticalCharges((c) => ({ ...c, stasis: gs.physics.stasisCharges }));
     audio.playStasisSound(true);
     haptics.stasisActivated();
-    setMessage('CHRONO STASIS!');
+    setMessage('CHRONO STASIS! TIME GOES ZZZ… 😴');
     setTimeout(() => setMessage(''), 1000);
   };
 
@@ -489,7 +501,7 @@ export function GameBoard() {
     const gs = gameStateRef.current;
     if (gs.physics.empCharges <= 0) {
       audio.playTiltWarning();
-      setMessage('NO EMP CHARGES! (TAP HUD TO RE-ARM)');
+      setMessage('OUT OF EMP! TAP THE HUD TO RE-ARM ⚡');
       setTimeout(() => setMessage(''), 900);
       return;
     }
@@ -525,7 +537,7 @@ export function GameBoard() {
     if (defusedCount > 0) {
       useGameStore.getState().recordAchievementProgress('bombsDefused', defusedCount);
     }
-    setMessage(`EMP DEFUSED! +${coinReward} COINS`);
+    setMessage(`EMP! BOMBS FIZZLED +${coinReward} 🪙`);
     setTimeout(() => setMessage(''), 1100);
   };
 
@@ -587,7 +599,7 @@ export function GameBoard() {
       const w = container.clientWidth || 300;
       const h = container.clientHeight || 300;
       // Render at the screen's real pixel density (capped for frame rate) so art stays sharp on phones
-      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+      const dpr = Math.min(lowFxRef.current ? 1 : 2, Math.max(1, window.devicePixelRatio || 1));
       canvasSizeRef.current = { w, h, dpr };
       const bw = Math.round(w * dpr);
       const bh = Math.round(h * dpr);
@@ -597,6 +609,7 @@ export function GameBoard() {
       }
     };
     updateSize();
+    resizeCanvasRef.current = updateSize;
 
     const ro = new ResizeObserver(() => {
       updateSize();
@@ -638,7 +651,7 @@ export function GameBoard() {
         audio.playTiltWarning();
         triggerHapticVibrate([20, 35]);
         setTutorialMistakeAlert('TOO EARLY! ⚠️ Wait for the block to enter the green sweet spot circle!');
-        setMessage('WAIT FOR GREEN CIRCLE!');
+        setMessage('PATIENCE! WAIT FOR THE GREEN CIRCLE 🟢');
         setTimeout(() => {
           setTutorialMistakeAlert(null);
           setMessage('');
@@ -660,7 +673,7 @@ export function GameBoard() {
         haptics.bombAbsorbedByShield();
         recorderRef.current.logEvent('shield', 'AEGIS SHIELD ABSORBED MISCLICK', '#38bdf8');
         createExplosionAtDistance(targetBlock, gameRadius, w, h, '#38bdf8');
-        setMessage('AEGIS SHIELD ABSORBED MISCLICK!');
+        setMessage('AEGIS SHIELD: OOPSIE FORGIVEN! 🛡️');
         setTimeout(() => setMessage(''), 1000);
         return;
       }
@@ -671,11 +684,11 @@ export function GameBoard() {
       triggerHapticVibrate([45, 30, 40]);
       haptics.tooEarly();
       recorderRef.current.logEvent('early', 'TOO EARLY MISCLICK', '#ef4444');
-      if (loseLife('TOO EARLY!')) {
+      if (loseLife('TOO EARLY! OOPSIE')) {
         if (targetBlock.type === 'build') createExplosionAtDistance(targetBlock, gameRadius, w, h, '#f59e0b', true);
         return;
       }
-      gameOver(false, 'TOO EARLY!');
+      gameOver(false, 'TOO EARLY! EAGER BEAVER 🦫');
       createExplosionAtDistance(targetBlock, gameRadius, w, h, '#ef4444');
     } else if (targetBlock.distance < -15) {
       // Ignored, gameloop will catch it.
@@ -697,7 +710,7 @@ export function GameBoard() {
           haptics.bombAbsorbedByShield();
           recorderRef.current.logEvent('shield', 'AEGIS SHIELD ABSORBED BOMB', '#38bdf8');
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#38bdf8');
-          setMessage('AEGIS SHIELD ABSORBED BOMB!');
+          setMessage('AEGIS SHIELD ATE THAT BOMB! 🛡️');
           setTimeout(() => setMessage(''), 1000);
           return;
         }
@@ -705,7 +718,7 @@ export function GameBoard() {
         triggerHapticVibrate([70, 35, 110, 45, 175]);
         haptics.bombHit();
         recorderRef.current.logEvent('boom', 'BOMB DETONATED', '#ef4444', { mass: targetMass });
-        gameOver(false, 'YOU BUILT A BOMB!');
+        gameOver(false, 'YOU TAPPED A BOMB! KABOOM 💥');
         createExplosionAtDistance(targetBlock, gameRadius, w, h, '#ef4444');
       } else {
         // Successful Placement with Physics & Archetype calculation!
@@ -769,7 +782,7 @@ export function GameBoard() {
             haptics.towerCollapsed();
             recorderRef.current.logEvent('collapse', 'TOWER TOPPLED', '#ef4444');
             creditGravity('overhang', placement.toppleLevel, placement.slip, placement.fallen);
-            gameOver(false, 'OVERHANG! TOWER TOPPLED');
+            gameOver(false, 'OVERHANG! TOWER TOPPLED 🫠');
             return;
           }
 
@@ -783,12 +796,12 @@ export function GameBoard() {
             audio.playShieldBreak();
             haptics.bombAbsorbedByShield();
             recorderRef.current.logEvent('shield', 'AEGIS SHIELD CAUGHT TOPPLE', '#38bdf8');
-            setMessage(`AEGIS SHIELD CAUGHT THE FALL! -${placement.fallen.length} BLOCKS`);
+            setMessage(`AEGIS SHIELD SAVED THE DAY! -${placement.fallen.length} PIECES`);
           } else {
             audio.playCollisionSound(targetMass, { type: 'glance' });
             triggerHapticVibrate([30, 25, 45]);
             recorderRef.current.logEvent('slide', 'BLOCK SLID OFF', '#f59e0b');
-            setMessage(swayMiss ? 'SLID OFF! WAIT FOR THE SWAY TO SWING BACK' : 'SLID OFF! LAND IT OVER THE TOWER');
+            setMessage(swayMiss ? 'WHOOPS, IT SLID OFF! WAIT FOR THE SWING 🎢' : 'WHOOPS, IT SLID OFF THE EDGE!');
           }
           setTimeout(() => setMessage(''), 1100);
 
@@ -803,24 +816,39 @@ export function GameBoard() {
         }
 
         if (!impact.isPerfect && Math.abs(placement.slip) > BLOCK_HALF_WIDTH * 0.5 && !targetBlock.archetype?.match(/titan|gold_ingot|prism/)) {
-          setMessage(swayMiss ? (placement.slip > 0 ? 'CAUGHT THE SWAY ▶ OVERHANG' : '◀ CAUGHT THE SWAY OVERHANG') : placement.slip > 0 ? 'OVERHANG ▶ BALANCE IT LEFT' : '◀ OVERHANG BALANCE IT RIGHT');
+          setMessage(swayMiss ? (placement.slip > 0 ? 'WOBBLY! IT LEANS ▶' : '◀ WOBBLY! IT LEANS') : placement.slip > 0 ? 'LEANING ▶ AIM A BIT LEFT' : '◀ LEANING, AIM A BIT RIGHT');
           setTimeout(() => setMessage(''), 800);
         }
 
         // One-time tip the first time the tower is tall enough to sway noticeably
         if (!isTutorialActive && gs.physics.stack.length === 6 && !gs.swayHintShown) {
           gs.swayHintShown = true;
-          showTip('sway', 'THE TOWER SWAYS', 'Every landing rocks it. Tap when the top swings back under the piece: the marker turns green.');
+          showTip('sway', 'THE TOWER WIGGLES!', 'Every landing rocks it. Tap when the top swings back under the piece. Green marker means go!');
         }
 
         // Trick pieces pay out: trusting a "bomb" that was really a piece, or catching a ghost
         if (!isTutorialActive && (targetBlock.modifier === 'fake-boom' || targetBlock.modifier === 'ghost')) {
           useGameStore.getState().addCoins(3);
-          gs.floatTexts.push({ text: targetBlock.modifier === 'ghost' ? 'GHOST CAUGHT! +3 🪙' : 'NERVES OF STEEL! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: targetBlock.modifier === 'ghost' ? '#c4b5fd' : '#5eead4' });
+          gs.floatTexts.push({ text: targetBlock.modifier === 'ghost' ? 'GHOST BUSTED! +3 🪙' : 'NERVES OF STEEL! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: targetBlock.modifier === 'ghost' ? '#c4b5fd' : '#5eead4' });
         }
 
         gs.builtCount++;
         gs.combo++;
+        gs.maxHeight = Math.max(gs.maxHeight, gs.physics.stack.length);
+        if (mode === 'endless' && !isTutorialActive) {
+          const best = useGameStore.getState().highScores['tower-endless'] || 0;
+          const n = gs.physics.stack.length;
+          if (best >= 5 && n > best && !gs.recordAnnounced) {
+            gs.recordAnnounced = true;
+            gs.floatTexts.push({ text: '🎉 NEW RECORD! THE SKY CALLED, YOU ANSWERED', x: w / 2, y: h * 0.65 - 95, life: 1.8, color: '#fde047' });
+            worldThemeRef.current.particles.triggerStackParticles(0.5, 0.55, true, 3);
+            audio.playComboSurge(3);
+          }
+          if (n > 0 && n % 10 === 0) {
+            useGameStore.getState().addCoins(5);
+            gs.floatTexts.push({ text: `${n} TALL! WHEEE! +5 🪙`, x: w / 2, y: h * 0.65 - 70, life: 1.3, color: '#86efac' });
+          }
+        }
         gs.maxCombo = Math.max(gs.maxCombo || 0, gs.combo);
         if (impact.isPerfect) {
           gs.perfectCount = (gs.perfectCount || 0) + 1;
@@ -884,7 +912,7 @@ export function GameBoard() {
         // Aim Assist tier 3: double points while your combo is 10 or more
         const comboBoost = (unlockedPerks['precision_optics'] || 0) >= 3 && gs.combo >= 10 ? 2 : 1;
         if (comboBoost > 1 && gs.combo === 10) {
-          setMessage('HYPERDRIVE! 2X SCORE');
+          setMessage('HYPERDRIVE! DOUBLE POINTS 🚀');
           setTimeout(() => setMessage(''), 900);
         }
         const totalPoints = Math.round(basePoints * impact.scoreMultiplier * multiplierBoost * comboBoost);
@@ -1020,16 +1048,16 @@ export function GameBoard() {
         if (targetBlock.archetype === 'titan') {
           audio.playTitanAnchor();
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#f59e0b', true);
-          setMessage('TITAN ANCHOR LOCKED!');
+          setMessage('TITAN ANCHOR: CLUNK! ROCK SOLID 🗿');
           setTimeout(() => setMessage(''), 800);
         } else if (targetBlock.archetype === 'gold_ingot') {
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#eab308', true);
-          setMessage('+50 GOLD BULLION!');
+          setMessage('+50 SHINY GOLD! ✨');
           setTimeout(() => setMessage(''), 800);
         } else if (targetBlock.archetype === 'prism') {
           audio.playComboSurge(3);
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe', true);
-          setMessage('3X PRISM SURGE!');
+          setMessage('3X PRISM SURGE! SO SPARKLY 🌈');
           setTimeout(() => setMessage(''), 800);
         } else if (impact.isPerfect) {
           if (gs.rapidPerfectStreak < 2) {
@@ -1039,17 +1067,17 @@ export function GameBoard() {
           // The HUD chip tracks the streak; a toast only marks milestones so the screen stays calm
           const streakMilestone = gs.rapidPerfectStreak >= 2 && [3, 5, 7, 10].includes(gs.rapidPerfectMultiplier);
           if (streakMilestone) {
-            setMessage(`${gs.rapidPerfectMultiplier}x PERFECT STREAK! ⚡`);
+            setMessage(`${gs.rapidPerfectMultiplier}x PERFECT STREAK! ON FIRE 🔥`);
             setTimeout(() => setMessage(''), 650);
           } else if (gs.rapidPerfectStreak < 2) {
-            setMessage('PERFECT!');
+            setMessage(PERFECT_CHEERS[Math.floor(Math.random() * PERFECT_CHEERS.length)]);
             setTimeout(() => setMessage(''), 500);
           }
 
           if (unlockedPerks['aegis_shield'] >= 2 && gs.combo % 20 === 0 && !gs.physics.shieldActive) {
             gs.physics.shieldActive = true;
             setTacticalCharges((c) => ({ ...c, shield: true }));
-            setMessage('AEGIS SHIELD RECHARGED!');
+            setMessage('AEGIS SHIELD RECHARGED! 🛡️');
           }
         } else {
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00ffcc', true);
@@ -1076,15 +1104,15 @@ export function GameBoard() {
     const h = canvasSizeRef.current.h || 800;
     const whole = [...gs.physics.stack, ...fallen];
     const pose = whole.length ? towerPose(whole, Math.min(Math.max(0, fromLevel), whole.length - 1), gs.physics.tiltAngle, w / 2, h * 0.65) : { x: w / 2, y: h * 0.65 };
-    gs.floatTexts.push({ text: '⬇ GRAVITY', x: pose.x, y: pose.y - 10, life: 1.6, color: '#fb923c' });
+    gs.floatTexts.push({ text: '⬇ GRAVITY SAYS HI', x: pose.x, y: pose.y - 10, life: 1.6, color: '#fb923c' });
     const dir = side < 0 ? 'left' : 'right';
     const piece = fromLevel <= 0 ? 'the bottom piece' : `piece ${fromLevel}`;
     setGravityNote(
       cause === 'overhang'
-        ? `The pieces above ${piece} hung too far ${dir}. Their centre of mass passed the edge, and gravity pulled them over.`
+        ? `The pieces above ${piece} leaned out too far ${dir}. Their centre of mass slipped past the edge and gravity went "nope!"`
         : cause === 'sway'
-        ? `The tower was built leaning ${dir}. When it swayed, the weight above ${piece} swung past its edge and gravity did the rest.`
-        : `It leaned further than it could hold, and gravity pulled it down. Gyro Stability upgrades help it recover.`
+        ? `Your tower was leaning ${dir}, then it swayed. The weight above ${piece} swung past the edge and gravity took it for a ride.`
+        : `It leaned more than it could handle and gravity won the tug of war. Gyro Stability upgrades help it bounce back.`
     );
   };
 
@@ -1122,7 +1150,7 @@ export function GameBoard() {
     gs.lastPerfectTime = 0;
     gs.rapidPerfectMultiplier = 1;
     if (gs.lives <= 0) return false;
-    showTip('hearts', 'YOU LOST A HEART', 'Early or missed taps cost a heart; lose all 3 and the run ends. Tapping a bomb ends it at once.');
+    showTip('hearts', 'OOPS, A HEART!', 'Early or missed taps cost a heart. Lose all 3 and the run ends. Tap a bomb? Instant kaboom!');
     gs.shake = Math.max(gs.shake, 6);
     setMessage(`${label} ${'♥'.repeat(gs.lives)}${'♡'.repeat(MAX_LIVES - gs.lives)}`);
     setTimeout(() => setMessage(''), 1100);
@@ -1220,6 +1248,7 @@ export function GameBoard() {
   const gameOver = (win: boolean, reason?: string) => {
     if (gameStateRef.current.isGameOver) return;
     gameStateRef.current.isGameOver = true;
+    if (mode === 'endless') useGameStore.getState().updateHighScore('tower-endless', gameStateRef.current.maxHeight);
     gameStateRef.current.rapidPerfectStreak = 0;
     gameStateRef.current.lastPerfectTime = 0;
     gameStateRef.current.rapidPerfectMultiplier = 1;
@@ -1341,15 +1370,23 @@ export function GameBoard() {
 
         // Compute performance metrics for EndOfLevelSummary
         const gs = gameStateRef.current;
+        // Read the live score: this runs inside the game loop, where the rendered value is stale
+        const score = useGameStore.getState().score;
         const elapsedSec = gs.startTime > 0 ? (performance.now() - gs.startTime) / 1000 : 0;
         const built = gs.builtCount;
         const perfects = gs.perfectCount || 0;
         const accuracyPct = built > 0 ? Math.min(100, Math.round((perfects / built) * 100)) : 100;
         const heightMeters = built * 2.5;
 
-        let starsEarned = 1;
-        if (accuracyPct >= 90) starsEarned = 3;
-        else if (accuracyPct >= 70) starsEarned = 2;
+        // Stars: clearing earns one, keeping every heart earns one, landing at least half the
+        // pieces perfectly earns one. Best result per level is kept and shown on the map.
+        const heartsKept = gs.lives >= MAX_LIVES && !gs.hasRevived;
+        const starsEarned = 1 + (heartsKept ? 1 : 0) + (accuracyPct >= 50 ? 1 : 0);
+        updateHighScore(`stars-${level}`, starsEarned);
+        gs.starHints = [
+          !heartsKept ? 'keep all 3 hearts ♥' : '',
+          accuracyPct < 50 ? `nail half your landings perfectly (you got ${accuracyPct}%)` : '',
+        ].filter(Boolean);
 
         const currentHighScore = highScores[`campaign-${level}`] || 0;
         const isNewBest = score > currentHighScore;
@@ -1371,6 +1408,7 @@ export function GameBoard() {
           maxCombo: gs.maxCombo || 0,
           coinsEarned: totalCoins,
           stars: starsEarned,
+          starHints: gs.starHints,
         };
 
         setSummaryMetrics(metricsData);
@@ -1477,6 +1515,16 @@ export function GameBoard() {
     // Clamp dt to maximum 33.3ms (approx 30fps minimum delta) to prevent physics jumps on frame hitches
     const rawDt = time - gs.lastFrameTime;
     const dt = Math.min(rawDt, 33.3);
+    // Watch the frame rate; after ~3 s of struggling, switch to the lighter renderer
+    if (!lowFxRef.current && Number.isFinite(rawDt) && rawDt > 0 && rawDt < 250 && !document.hidden) {
+      const fs = frameStatsRef.current;
+      fs.ema = fs.ema * 0.95 + rawDt * 0.05;
+      fs.slowMs = fs.ema > 28 ? fs.slowMs + rawDt : 0;
+      if (fs.slowMs > 3000) {
+        lowFxRef.current = true;
+        resizeCanvasRef.current();
+      }
+    }
     gs.lastFrameTime = time;
 
     if (rechargeModalOpenRef.current || (import.meta.env.DEV && (window as any).__freeze)) {
@@ -1537,9 +1585,9 @@ export function GameBoard() {
         if (!wasTeetering) {
           audio.playTiltWarning();
           triggerHapticVibrate([25, 20, 25]);
-          setMessage('TEETERING! HOLD ON…');
+          setMessage('TEETERING! HOLD YOUR BREATH… 😬');
           setTimeout(() => setMessage(''), 700);
-          showTip('teeter', 'TEETERING!', 'A crooked tower tips when it sways. Land the next pieces back over the centre to straighten it.');
+          showTip('teeter', 'WOBBLE WARNING!', 'A crooked tower tips when it sways. Land the next pieces back over the centre to straighten it out.');
         }
       }
     } else {
@@ -1568,7 +1616,7 @@ export function GameBoard() {
         haptics.bombAbsorbedByShield();
         recorderRef.current.logEvent('shield', 'AEGIS SHIELD CAUGHT TOPPLE', '#38bdf8');
         useGameStore.getState().setTowerHeight(gs.physics.stack.length);
-        setMessage(`AEGIS SHIELD CAUGHT THE FALL! -${fallen.length} BLOCKS`);
+        setMessage(`AEGIS SHIELD SAVED THE DAY! -${fallen.length} PIECES`);
         setTimeout(() => setMessage(''), 1100);
       } else {
         // Everything above the failed joint (or the whole tower if it flexed too far) comes down
@@ -1582,7 +1630,7 @@ export function GameBoard() {
         triggerHapticVibrate([70, 35, 95, 45, 140]);
         haptics.towerCollapsed();
         recorderRef.current.logEvent('collapse', 'TOWER COLLAPSED', '#ef4444');
-        gameOver(false, physResult.toppleLevel >= 0 ? 'TOWER TOPPLED! KEEP IT CENTRED' : 'EQUILIBRIUM LOST! TOWER COLLAPSED');
+        gameOver(false, physResult.toppleLevel >= 0 ? 'TOWER TOPPLED! GRAVITY SAYS HI 👋' : 'TOWER COLLAPSED! TOO MUCH LEAN');
         return;
       }
     }
@@ -1638,11 +1686,11 @@ export function GameBoard() {
           handled: false
         });
         if (next.modifier === 'fake-boom' || next.modifier === 'fake-build') {
-          showTip('disguise', 'TRICKSTER!', 'Some bombs dress up as critters, and critters as bombs. Watch it: the disguise glitches and shows its true face.');
+          showTip('disguise', 'TRICKSTER ALERT!', 'Some bombs wear critter costumes (and critters dress up as bombs). Watch for the glitch: it shows the real face.');
         } else if (next.modifier === 'ghost') {
-          showTip('ghost', 'GHOST', 'It fades out mid-flight but it is still coming. Tap when it reappears over the tower.');
+          showTip('ghost', 'SPOOKY GHOST!', 'It vanishes mid-flight but it is still coming. Tap when it pops back over the tower. Boo!');
         } else if (next.modifier === 'blink') {
-          showTip('blink', 'BLINKER', 'It flickers in and out. Look closely at what it really is before you tap.');
+          showTip('blink', 'BLINKY!', 'It flickers like a disco light. Look closely at what it really is before you tap.');
         }
         gs.lastSpawnTime = time;
       }
@@ -1687,7 +1735,7 @@ export function GameBoard() {
           effectiveDt = 0; // Freeze motion until player taps
           setTutorialEmergencyHold(true);
           setSweetSpotActive(true);
-          setMessage('SWEET SPOT! TAP NOW TO STACK');
+          setMessage('SWEET SPOT! TAP NOW! 👆');
           continue;
         }
         b.handled = true;
@@ -1696,8 +1744,8 @@ export function GameBoard() {
         triggerHapticVibrate([65, 35, 85]);
         haptics.tooEarly();
         recorderRef.current.logEvent('boom', 'MISSED BLOCK', '#f59e0b', { mass: bMass });
-        if (loseLife('MISSED!')) continue;
-        gameOver(false, 'TOO LATE!');
+        if (loseLife('MISSED! BYE BYE BUDDY 👋')) continue;
+        gameOver(false, 'TOO LATE! THEY GOT AWAY 🏃');
         createExplosionAtDistance(b, gameRadius, w, h, '#f59e0b');
       }
       
@@ -1711,7 +1759,7 @@ export function GameBoard() {
         // Didn't fall for a bomb dressed up as a piece
         if (b.modifier === 'fake-build' && !isTutorialActive) {
           useGameStore.getState().addCoins(3);
-          gs.floatTexts.push({ text: 'OUTSMARTED! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: '#fb7185' });
+          gs.floatTexts.push({ text: 'GOTCHA, SNEAKY BOMB! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: '#fb7185' });
         }
       }
     }
@@ -2462,7 +2510,7 @@ export function GameBoard() {
       ctx.globalAlpha = 1.0;
 
       // Spawning Trails
-      if (Math.random() < 0.4 && opacity > 0.5) {
+      if (Math.random() < (lowFxRef.current ? 0.12 : 0.4) && opacity > 0.5) {
           gs.particles.push({
               x: px, y: py,
               vx: -Math.cos(b.angle) * 3 + (Math.random()-0.5),
@@ -2560,6 +2608,34 @@ export function GameBoard() {
       ctx.restore();
     }
 
+    // Your best endless tower: a flag line up ahead to chase
+    if (mode === 'endless' && !gs.recordAnnounced) {
+      const best = useGameStore.getState().highScores['tower-endless'] || 0;
+      const n = gs.physics.stack.length;
+      if (best >= 5 && best > n) {
+        const y = cy + (n - best + 1) * VISUAL_LAYER + gs.towerSink - BLOCK_HALF_WIDTH;
+        if (y > 90 && y < h - 40) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(253, 224, 71, 0.75)';
+          ctx.setLineDash([8, 6]);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cx - 90, y);
+          ctx.lineTo(cx + 90, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.font = '900 12px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+          ctx.strokeText(`🏆 YOUR BEST: ${best}`, cx, y - 7);
+          ctx.fillStyle = '#fde047';
+          ctx.fillText(`🏆 YOUR BEST: ${best}`, cx, y - 7);
+          ctx.restore();
+        }
+      }
+    }
+
     // Trick rewards float up from the landing point
     for (let i = gs.floatTexts.length - 1; i >= 0; i--) {
       const f = gs.floatTexts[i];
@@ -2579,7 +2655,8 @@ export function GameBoard() {
     }
 
     // Keep the screen readable (and the frame rate steady): drop the oldest particles past a cap
-    if (gs.particles.length > 140) gs.particles.splice(0, gs.particles.length - 140);
+    const particleCap = lowFxRef.current ? 60 : 140;
+    if (gs.particles.length > particleCap) gs.particles.splice(0, gs.particles.length - particleCap);
 
     // Physical Tactile Response for Nearby Boom Hazards (Vibration API)
     if (state === 'playing' && !gs.isGameOver) {

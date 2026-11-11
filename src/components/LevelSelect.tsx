@@ -77,6 +77,13 @@ function CampaignBackground({ scrollRef, worldTheme }: { scrollRef: React.RefObj
 
 export function LevelSelect() {
   const { setMode, setLevel, unlockedLevels, setState, hasCompletedCampaignTutorial, startCampaignTutorial } = useGameStore();
+  // Best star result per level (saved alongside high scores as "stars-<level>")
+  const highScores = useGameStore((st) => st.highScores);
+  const levelStars = React.useMemo(() => {
+    const out: Record<number, number> = {};
+    for (const [k, v] of Object.entries(highScores || {})) if (k.startsWith('stars-')) out[Number(k.slice(6))] = v;
+    return out;
+  }, [highScores]);
   const worldTheme = useWorldTheme();
   const themePalette = worldTheme.palette;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -359,7 +366,14 @@ export function LevelSelect() {
                       </span>
                       
                       {/* Status Badges */}
-                      {isPlayed && (
+                      {isPlayed && (levelStars[lvl] || 0) > 0 && (
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-px bg-black/70 rounded-full px-1.5 py-0.5 border border-yellow-400/50 shadow" aria-label={`${levelStars[lvl]} of 3 stars`}>
+                          {[1, 2, 3].map((k) => (
+                            <span key={k} className={`text-[10px] leading-none ${k <= levelStars[lvl] ? 'text-yellow-300' : 'text-white/25'}`}>★</span>
+                          ))}
+                        </div>
+                      )}
+                      {isPlayed && !(levelStars[lvl] > 0) && (
                         <div className="absolute -bottom-2.5 -right-2.5 bg-emerald-950/95 rounded-lg p-1 shadow-[0_0_10px_rgba(16,185,129,0.7)] border border-emerald-400">
                           <Check className="w-3 h-3 text-emerald-400" strokeWidth={3.5} />
                         </div>
