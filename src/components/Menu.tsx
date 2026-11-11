@@ -78,7 +78,7 @@ export function Menu() {
             </div>
             <div className="flex items-center gap-1.5 text-xs font-black text-yellow-300 drop-shadow relative z-10 font-mono">
               <Trophy className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300/40" />
-              <span>{trophies.gold + trophies.silver + trophies.bronze} Cups</span>
+              <span>{trophies.gold + trophies.silver + trophies.bronze}<span className="hidden min-[390px]:inline"> Cups</span></span>
             </div>
           </motion.button>
 
@@ -102,26 +102,7 @@ export function Menu() {
               <Settings className="w-4 h-4" />
             </motion.button>
 
-            {/* HAPTICS TOGGLE BUTTON */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                toggleHaptics();
-                if (!hapticsEnabled) {
-                  haptics.vibrate([18, 30, 25]);
-                }
-              }}
-              className={`p-2 rounded-2xl border-2 backdrop-blur-md shadow-md cursor-pointer transition-all active:scale-95 flex items-center justify-center ${
-                hapticsEnabled
-                  ? 'bg-cyan-950/70 border-cyan-400/70 text-cyan-300 hover:bg-cyan-900/70 shadow-[0_0_12px_rgba(6,182,212,0.4),inset_0_1px_0_rgba(255,255,255,0.2)]'
-                  : 'bg-black/50 border-white/20 text-white/40 hover:bg-black/70 shadow-sm'
-              }`}
-              title={hapticsEnabled ? 'Haptic Feedback: ON' : 'Haptic Feedback: OFF'}
-              aria-label="Toggle Haptic Feedback"
-            >
-              {hapticsEnabled ? <Vibrate className="w-4 h-4 text-cyan-300" /> : <VibrateOff className="w-4 h-4 text-white/40" />}
-            </motion.button>
+            {/* Vibration on/off lives in Settings, so the header fits narrow phones */}
 
             {/* COINS HUD */}
             <motion.button 
@@ -291,10 +272,10 @@ export function Menu() {
             </div>
             <div className="min-w-0 text-left">
               <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-cyan-300 uppercase">
-                <span>TACTICAL ARSENAL</span>
-                <span className="text-amber-300">• MUNITIONS</span>
+                <span className="whitespace-nowrap">TACTICAL ARSENAL</span>
+                <span className="text-amber-300 hidden min-[400px]:inline whitespace-nowrap">• MUNITIONS</span>
               </div>
-              <div className="text-xs font-black text-white truncate flex items-center gap-2.5 mt-0.5 font-mono">
+              <div className="text-xs font-black text-white flex items-center gap-1.5 min-[400px]:gap-2.5 mt-0.5 font-mono">
                 <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">⏳ {powerups.stasis}</span>
                 <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">⚡ {powerups.emp}</span>
                 <span className="bg-black/40 px-1.5 py-0.5 rounded border border-cyan-400/30">🛡️ {powerups.shield}</span>

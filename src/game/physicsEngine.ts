@@ -305,7 +305,12 @@ export function swayScaleFor(mode: string, level: number, towerHeight: number): 
  * campaign and once an endless tower gets tall.
  */
 export function windStrengthFor(mode: string, level: number, towerHeight: number): number {
-  if (mode === 'campaign') return Math.max(0, Math.min(1, (level - 20) / 120));
+  if (mode === 'campaign') {
+    const base = Math.max(0, Math.min(1, (level - 20) / 120));
+    // Gusty twist levels (see LevelGenerator.levelTwist) blow from early on
+    const gusty = level > 5 && level % 10 !== 0 && level % 7 === 1;
+    return gusty ? Math.max(base, Math.min(0.75, 0.35 + level / 300)) : base;
+  }
   if (mode === 'endless') return Math.max(0, Math.min(1, (towerHeight - 15) / 50));
   if (mode === 'daily') return 0.3;
   if (mode === 'tournament') return 0.4;

@@ -20,6 +20,31 @@ export interface BlockDef {
   mass?: number;
 }
 
+/**
+ * Campaign levels rotate through twists so 200 levels don't feel like the same run,
+ * just faster. The core rules (stack critters, never tap a bomb) never change.
+ */
+export type LevelTwist = 'none' | 'boss' | 'gusty' | 'heavy' | 'tricksters' | 'calm' | 'ghost-night' | 'bomb-rush';
+
+export const TWIST_INFO: Record<LevelTwist, { label: string; intro: string }> = {
+  none: { label: '', intro: '' },
+  boss: { label: 'BOSS', intro: 'BOSS LEVEL: a long, fast climb' },
+  gusty: { label: 'GUSTY', intro: 'GUSTY: wind gusts push your tower' },
+  heavy: { label: 'HEAVY LOAD', intro: 'HEAVY LOAD: lots of heavy gold and anchors' },
+  tricksters: { label: 'TRICKSTERS', intro: 'TRICKSTERS: disguises everywhere, watch for the glitch' },
+  calm: { label: 'CALM SKIES', intro: 'CALM SKIES: no bombs, just build it tall and straight' },
+  'ghost-night': { label: 'GHOST NIGHT', intro: 'GHOST NIGHT: pieces fade and flicker' },
+  'bomb-rush': { label: 'BOMB RUSH', intro: 'BOMB RUSH: a short burst of bombs, keep your nerve' },
+};
+
+const TWIST_CYCLE: LevelTwist[] = ['none', 'gusty', 'heavy', 'tricksters', 'calm', 'ghost-night', 'bomb-rush'];
+
+export function levelTwist(levelIndex: number): LevelTwist {
+  if (levelIndex <= 5) return 'none';
+  if (levelIndex % 10 === 0) return 'boss';
+  return TWIST_CYCLE[levelIndex % TWIST_CYCLE.length];
+}
+
 export function calculateBlockMass(archetype?: BlockArchetype, isBoom?: boolean, rng?: () => number): number {
   const r = rng ? rng() : 0.5;
   if (isBoom) {
@@ -70,7 +95,10 @@ export function generateLevel(levelIndex: number): BlockDef[] {
   // Start with fewer blocks, increase slowly
   // Level 1: 5 blocks
   // Level 200: 105 blocks
-  const blocksCount = 5 + Math.floor(levelIndex * 0.5);
+  const twist = levelTwist(levelIndex);
+  let blocksCount = 5 + Math.floor(levelIndex * 0.5);
+  if (twist === 'calm') blocksCount = Math.round(blocksCount * 0.8) + 3; // all pieces, a tall straight build
+  if (twist === 'bomb-rush') blocksCount = Math.max(8, Math.round(blocksCount * 0.7));
   const blocks: BlockDef[] = [];
   
   // Slower initial speed, scales over 200 levels
@@ -83,7 +111,10 @@ export function generateLevel(levelIndex: number): BlockDef[] {
 
   for (let i = 0; i < blocksCount; i++) {
     // Starts at 10% chance of BOOM, scales to 40% at level 200
-    const boomChance = Math.min(0.60, 0.15 + (levelIndex * 0.02)); // Increased bomb scaling
+    // Bombs top out at 40% so late levels are about building, not mostly waiting
+    let boomChance = Math.min(0.4, 0.15 + (levelIndex * 0.02));
+    if (twist === 'calm') boomChance = 0;
+    if (twist === 'bomb-rush') boomChance = 0.6;
     const isBoom = rng() < boomChance;
     
     // Vary speed
@@ -119,15 +150,20 @@ export function generateLevel(levelIndex: number): BlockDef[] {
     let modifier: BlockDef['modifier'];
     if (levelIndex > 3) { // Start modifiers much earlier (level 4+)
       const modRoll = rng();
-      const modChance = Math.min(0.6, 0.1 + (levelIndex * 0.03)); // Scales up quickly to 60% chance
+      let modChance = Math.min(0.6, 0.1 + (levelIndex * 0.03)); // Scales up quickly to 60% chance
+      if (twist === 'tricksters' || twist === 'ghost-night') modChance = Math.min(0.75, modChance + 0.25);
       if (modRoll < modChance) {
-        if (modRoll < modChance * 0.33) modifier = 'ghost';
-        else if (modRoll < modChance * 0.66) modifier = isBoom ? 'fake-build' : 'fake-boom';
+        const kind = modRoll / modChance;
+        if (twist === 'tricksters') modifier = isBoom ? 'fake-build' : 'fake-boom';
+        else if (twist === 'ghost-night') modifier = kind < 0.6 ? 'ghost' : 'blink';
+        else if (kind < 0.33) modifier = 'ghost';
+        else if (kind < 0.66) modifier = isBoom ? 'fake-build' : 'fake-boom';
         else modifier = 'blink';
       }
     }
     
-    const archetype = isBoom ? undefined : (levelIndex > 2 ? rollArchetype(rng, levelIndex / 20) : 'standard');
+    let archetype: BlockArchetype | undefined = isBoom ? undefined : (levelIndex > 2 ? rollArchetype(rng, levelIndex / 20) : 'standard');
+    if (twist === 'heavy' && !isBoom && rng() < 0.45) archetype = rng() < 0.6 ? 'gold_ingot' : 'titan';
     const mass = calculateBlockMass(archetype, isBoom, rng);
 
     blocks.push({
@@ -151,7 +187,7 @@ export function generateLevel(levelIndex: number): BlockDef[] {
   blocks[0].mass = 1.0;
   
   // Guarantee at least 1 bomb per level (from Level 2 onwards)
-  if (levelIndex > 1 && !blocks.some(b => b.type === 'boom')) {
+  if (levelIndex > 1 && twist !== 'calm' && !blocks.some(b => b.type === 'boom')) {
      blocks[blocks.length - 1].type = 'boom';
   }
 
@@ -200,7 +236,7 @@ export function generateEndless(seed: number, count: number, startDifficulty: nu
   
   for (let i = 0; i < count; i++) {
     const diff = startDifficulty + Math.floor(i / 10);
-    const boomChance = Math.min(0.65, 0.25 + (diff * 0.03)); // Higher base endless chance
+    const boomChance = Math.min(0.45, 0.25 + (diff * 0.03)); // capped so runs stay about building
     const isBoom = rng() < boomChance;
     
     const baseSpeed = Math.max(0.3, 1.4 - diff * 0.05);

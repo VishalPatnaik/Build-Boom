@@ -86,6 +86,15 @@ export function withParallaxTier(
   }
   ctx.save();
   ctx.translate(offset.x, offset.y);
+  if (offset.x !== 0) {
+    // Scenery spans exactly the screen width: overscale a touch about the centre so a
+    // sideways shift never exposes an edge
+    const cw = ctx.canvas.width / (ctx.getTransform().a || 1);
+    const k = 1 + (2 * (Math.abs(offset.x) + 2)) / Math.max(1, cw);
+    ctx.translate(cw / 2, 0);
+    ctx.scale(k, 1);
+    ctx.translate(-cw / 2, 0);
+  }
   renderFn();
   ctx.restore();
 }
@@ -102,6 +111,15 @@ export function withParallaxLayer(
   }
   ctx.save();
   ctx.translate(offset.x, offset.y);
+  if (offset.x !== 0) {
+    // Scenery spans exactly the screen width: overscale a touch about the centre so a
+    // sideways shift never exposes an edge
+    const cw = ctx.canvas.width / (ctx.getTransform().a || 1);
+    const k = 1 + (2 * (Math.abs(offset.x) + 2)) / Math.max(1, cw);
+    ctx.translate(cw / 2, 0);
+    ctx.scale(k, 1);
+    ctx.translate(-cw / 2, 0);
+  }
   renderFn();
   ctx.restore();
 }

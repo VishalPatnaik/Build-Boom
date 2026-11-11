@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
-import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass } from '../game/LevelGenerator';
+import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass, levelTwist, TWIST_INFO } from '../game/LevelGenerator';
 import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, supportX, flexOffset, topSway, blockHalfWidth, windStrengthFor, swayScaleFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
 import { trackEvent } from '../game/eventDispatcher';
 import { renderBlock, renderPlate, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
@@ -66,8 +66,15 @@ interface Debris {
 
 /** Big floating "N IN A ROW" cards covered the tower top; the HUD combo meter shows the same thing. */
 const SHOW_FLOATING_COMBO_CARDS = false;
+const SHOW_LANDING_RESONANCE = false;
 /** Mistakes allowed per run before it ends (bombs and a toppled tower end it at once). */
 const MAX_LIVES = 3;
+/** How long a joint can hang past its edge (from the sway) before that part of the tower falls. */
+const TEETER_GRACE_MS = 450;
+/** Slow motion while a first-time tip is on screen. */
+const TIP_SLOWMO_MS = 2600;
+/** Minimum gap between two first-time tips. */
+const TIP_SPACING_MS = 8000;
 
 export function GameBoard() {
   const { 
@@ -157,8 +164,11 @@ export function GameBoard() {
   const [builtCount, setBuiltCount] = useState(0);
   // Hearts: a mistimed or missed piece costs one; bombs and a toppled tower still end the run
   const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
+  const [tipCard, setTipCard] = useState<{ title: string; body: string } | null>(null);
   const [totalBlocks, setTotalBlocks] = useState(0);
   const [lostReason, setLostReason] = useState('');
+  // Plain-language physics explanation shown when the tower falls
+  const [gravityNote, setGravityNote] = useState('');
   const [message, setMessage] = useState('');
   const [tiltDisplay, setTiltDisplay] = useState(0);
   const [stressDisplay, setStressDisplay] = useState(0);
@@ -259,6 +269,9 @@ export function GameBoard() {
     debris: [] as Debris[],
     lives: MAX_LIVES,
     swayHintShown: false,
+    teeterMs: 0,
+    slowUntil: 0,
+    lastTipAt: -1e9,
     floatTexts: [] as { text: string; x: number; y: number; life: number; color: string }[],
     camX: 0, // camera follows the tower's resting top (not its sway)
     towerSink: 0, // eases the tower down one layer after each landing
@@ -310,6 +323,7 @@ export function GameBoard() {
     setTotalBlocks(queue.length);
     setBuiltCount(0);
     setLivesLeft(MAX_LIVES);
+    setGravityNote('');
     useGameStore.getState().setTowerHeight(0);
     useGameStore.getState().setTowerTilt(0);
     setActiveCombo(0);
@@ -331,7 +345,11 @@ export function GameBoard() {
     const initialMsg = isTutorialMode
       ? 'QUICK-START: STACK 3 BLOCKS'
       : mode === 'campaign' 
-      ? (activeLevel % 10 === 0 ? `TITAN SIEGE • LVL ${activeLevel}` : `LEVEL ${activeLevel}`)
+      ? (activeLevel % 10 === 0
+          ? `TITAN SIEGE • LVL ${activeLevel}`
+          : TWIST_INFO[levelTwist(activeLevel)].intro
+          ? `LEVEL ${activeLevel} · ${TWIST_INFO[levelTwist(activeLevel)].intro}`
+          : `LEVEL ${activeLevel}`)
       : mode === 'tournament'
       ? (useGameStore.getState().activeTournament?.title || 'TOURNAMENT')
       : mode === 'workshop'
@@ -380,6 +398,9 @@ export function GameBoard() {
       debris: [],
       lives: MAX_LIVES,
       swayHintShown: false,
+      teeterMs: 0,
+      slowUntil: 0,
+      lastTipAt: -1e9,
       floatTexts: [],
       camX: 0,
       towerSink: 0,
@@ -387,7 +408,7 @@ export function GameBoard() {
       freeEmpLeft: freeEmp,
     };
     
-    setTimeout(() => setMessage(''), 1500);
+    setTimeout(() => setMessage(''), mode === 'campaign' && levelTwist(activeLevel) !== 'none' ? 2600 : 1500);
   };
   initGameRef.current = initGame;
 
@@ -542,6 +563,7 @@ export function GameBoard() {
         gameStateRef.current.lives = Math.max(gameStateRef.current.lives, 2);
         setLivesLeft(gameStateRef.current.lives);
         setMessage(''); // Clear BOOM! text when resuming
+        setGravityNote('');
         useGameStore.getState().clearReviveFlag();
       }
       requestRef.current = requestAnimationFrame(gameLoop);
@@ -746,6 +768,7 @@ export function GameBoard() {
             triggerHapticVibrate([70, 35, 95, 45, 140]);
             haptics.towerCollapsed();
             recorderRef.current.logEvent('collapse', 'TOWER TOPPLED', '#ef4444');
+            creditGravity('overhang', placement.toppleLevel, placement.slip, placement.fallen);
             gameOver(false, 'OVERHANG! TOWER TOPPLED');
             return;
           }
@@ -787,12 +810,7 @@ export function GameBoard() {
         // One-time tip the first time the tower is tall enough to sway noticeably
         if (!isTutorialActive && gs.physics.stack.length === 6 && !gs.swayHintShown) {
           gs.swayHintShown = true;
-          let seen = false;
-          try { seen = localStorage.getItem('ts_sway_hint') === '1'; localStorage.setItem('ts_sway_hint', '1'); } catch { /* storage unavailable */ }
-          if (!seen) {
-            setMessage('THE TOWER SWAYS! TAP WHEN THE TOP SWINGS BACK');
-            setTimeout(() => setMessage(''), 2600);
-          }
+          showTip('sway', 'THE TOWER SWAYS', 'Every landing rocks it. Tap when the top swings back under the piece: the marker turns green.');
         }
 
         // Trick pieces pay out: trusting a "bomb" that was really a piece, or catching a ghost
@@ -958,7 +976,7 @@ export function GameBoard() {
         const normStackX = px / Math.max(1, w);
         const normStackY = py / Math.max(1, h);
         // Confetti only for perfect landings, so it stays special and the tower stays visible
-        if (impact.isPerfect) worldThemeRef.current.particles.triggerStackParticles(normStackX, normStackY, true, Math.min(gs.combo, 3));
+        if (impact.isPerfect && gs.combo % 5 === 0) worldThemeRef.current.particles.triggerStackParticles(normStackX, normStackY, true, Math.min(gs.combo, 3));
 
         if (impact.bonusCoins > 0) {
           useGameStore.getState().addCoins(impact.bonusCoins);
@@ -1018,12 +1036,15 @@ export function GameBoard() {
             audio.playPerfectSound();
           }
           createExplosionAtDistance(targetBlock, gameRadius, w, h, '#00f2fe', true);
-          if (gs.rapidPerfectStreak >= 2) {
-            setMessage(`RAPID PERFECT ${gs.rapidPerfectMultiplier}x MULTIPLIER! ⚡`);
-          } else {
-            setMessage('PERFECT ALIGNMENT!');
+          // The HUD chip tracks the streak; a toast only marks milestones so the screen stays calm
+          const streakMilestone = gs.rapidPerfectStreak >= 2 && [3, 5, 7, 10].includes(gs.rapidPerfectMultiplier);
+          if (streakMilestone) {
+            setMessage(`${gs.rapidPerfectMultiplier}x PERFECT STREAK! ⚡`);
+            setTimeout(() => setMessage(''), 650);
+          } else if (gs.rapidPerfectStreak < 2) {
+            setMessage('PERFECT!');
+            setTimeout(() => setMessage(''), 500);
           }
-          setTimeout(() => setMessage(''), 650);
 
           if (unlockedPerks['aegis_shield'] >= 2 && gs.combo % 20 === 0 && !gs.physics.shieldActive) {
             gs.physics.shieldActive = true;
@@ -1046,6 +1067,48 @@ export function GameBoard() {
   };
 
   /**
+   * Gravity gets the credit when the tower falls: marks the joint that gave way and explains
+   * why in plain words on the end screen.
+   */
+  const creditGravity = (cause: 'overhang' | 'sway' | 'lean', fromLevel: number, side: number, fallen: StackedBlock[]) => {
+    const gs = gameStateRef.current;
+    const w = canvasSizeRef.current.w || 400;
+    const h = canvasSizeRef.current.h || 800;
+    const whole = [...gs.physics.stack, ...fallen];
+    const pose = whole.length ? towerPose(whole, Math.min(Math.max(0, fromLevel), whole.length - 1), gs.physics.tiltAngle, w / 2, h * 0.65) : { x: w / 2, y: h * 0.65 };
+    gs.floatTexts.push({ text: '⬇ GRAVITY', x: pose.x, y: pose.y - 10, life: 1.6, color: '#fb923c' });
+    const dir = side < 0 ? 'left' : 'right';
+    const piece = fromLevel <= 0 ? 'the bottom piece' : `piece ${fromLevel}`;
+    setGravityNote(
+      cause === 'overhang'
+        ? `The pieces above ${piece} hung too far ${dir}. Their centre of mass passed the edge, and gravity pulled them over.`
+        : cause === 'sway'
+        ? `The tower was built leaning ${dir}. When it swayed, the weight above ${piece} swung past its edge and gravity did the rest.`
+        : `It leaned further than it could hold, and gravity pulled it down. Gyro Stability upgrades help it recover.`
+    );
+  };
+
+  /**
+   * First-time tips: shown once per install, with a couple of seconds of slow motion so
+   * there is time to read them mid-run.
+   */
+  const showTip = (key: string, title: string, body: string) => {
+    if (isTutorialActive) return;
+    // One tip at a time, with breathing room; a skipped tip comes back at its next trigger
+    if (performance.now() - gameStateRef.current.lastTipAt < TIP_SPACING_MS) return;
+    try {
+      if (localStorage.getItem('ts_tip_' + key) === '1') return;
+      localStorage.setItem('ts_tip_' + key, '1');
+    } catch {
+      return; // no storage (private mode): skip tips rather than repeat them every run
+    }
+    gameStateRef.current.slowUntil = performance.now() + TIP_SLOWMO_MS;
+    gameStateRef.current.lastTipAt = performance.now();
+    setTipCard({ title, body });
+    setTimeout(() => setTipCard((t) => (t && t.title === title ? null : t)), TIP_SLOWMO_MS + 600);
+  };
+
+  /**
    * A mistake that is not fatal on its own: costs a heart and the combo. Returns true when
    * the run carries on, false when that was the last heart.
    */
@@ -1059,6 +1122,7 @@ export function GameBoard() {
     gs.lastPerfectTime = 0;
     gs.rapidPerfectMultiplier = 1;
     if (gs.lives <= 0) return false;
+    showTip('hearts', 'YOU LOST A HEART', 'Early or missed taps cost a heart; lose all 3 and the run ends. Tapping a bomb ends it at once.');
     gs.shake = Math.max(gs.shake, 6);
     setMessage(`${label} ${'♥'.repeat(gs.lives)}${'♡'.repeat(MAX_LIVES - gs.lives)}`);
     setTimeout(() => setMessage(''), 1100);
@@ -1415,7 +1479,7 @@ export function GameBoard() {
     const dt = Math.min(rawDt, 33.3);
     gs.lastFrameTime = time;
 
-    if (rechargeModalOpenRef.current) {
+    if (rechargeModalOpenRef.current || (import.meta.env.DEV && (window as any).__freeze)) {
       draw(time);
       requestRef.current = requestAnimationFrame(gameLoop);
       return;
@@ -1439,10 +1503,11 @@ export function GameBoard() {
         effectiveDt = dt * speedFactor;
       }
     }
+    if (time < gs.slowUntil) effectiveDt *= 0.25;
 
     // Update Tower Tilt & Equilibrium
     // Dev-only hook so automated playtests can read the live game state
-    if (import.meta.env.DEV) (window as any).__gs = gs;
+    if (import.meta.env.DEV) { (window as any).__gs = gs; (window as any).__store = useGameStore; }
     const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks, {
       forgiving: isTutorialActive,
       wind: mode === 'workshop' ? Math.max(0, Math.min(1, sandboxOptions?.wind ?? 0)) : windStrengthFor(mode, level, gs.physics.stack.length),
@@ -1461,6 +1526,24 @@ export function GameBoard() {
     if (physResult.warningAlert && time - gs.lastWarningTime > 1100) {
       gs.lastWarningTime = time;
       audio.playTiltWarning();
+    }
+    // Teetering: a joint pushed past its edge by the sway only gives way if it stays past
+    // the edge for a moment. If the swing comes back in time the tower survives.
+    if (physResult.toppleLevel >= 0 && Math.abs(gs.physics.tiltAngle) < gs.physics.maxTiltAllowed && !isTutorialActive) {
+      const wasTeetering = gs.teeterMs > 0;
+      gs.teeterMs += Number.isFinite(dt) ? dt : 16;
+      if (gs.teeterMs < TEETER_GRACE_MS) {
+        physResult.collapsed = false;
+        if (!wasTeetering) {
+          audio.playTiltWarning();
+          triggerHapticVibrate([25, 20, 25]);
+          setMessage('TEETERING! HOLD ON…');
+          setTimeout(() => setMessage(''), 700);
+          showTip('teeter', 'TEETERING!', 'A crooked tower tips when it sways. Land the next pieces back over the centre to straighten it.');
+        }
+      }
+    } else {
+      gs.teeterMs = 0;
     }
     if (physResult.collapsed) {
       if (isTutorialActive) {
@@ -1490,7 +1573,9 @@ export function GameBoard() {
       } else {
         // Everything above the failed joint (or the whole tower if it flexed too far) comes down
         const from = physResult.toppleLevel >= 0 ? physResult.toppleLevel : 0;
+        const leanSide = gs.physics.comOffset !== 0 ? gs.physics.comOffset : gs.physics.tiltAngle;
         const fallen = gs.physics.stack.splice(from);
+        creditGravity(physResult.toppleLevel >= 0 ? 'sway' : 'lean', from, leanSide, fallen);
         spawnDebris(fallen, from, cw, ch);
         gs.shake = Math.max(gs.shake, 30);
         audio.playCollisionSound(3.0, { type: 'crash' });
@@ -1552,6 +1637,13 @@ export function GameBoard() {
           spawnedAt: time,
           handled: false
         });
+        if (next.modifier === 'fake-boom' || next.modifier === 'fake-build') {
+          showTip('disguise', 'TRICKSTER!', 'Some bombs dress up as critters, and critters as bombs. Watch it: the disguise glitches and shows its true face.');
+        } else if (next.modifier === 'ghost') {
+          showTip('ghost', 'GHOST', 'It fades out mid-flight but it is still coming. Tap when it reappears over the tower.');
+        } else if (next.modifier === 'blink') {
+          showTip('blink', 'BLINKER', 'It flickers in and out. Look closely at what it really is before you tap.');
+        }
         gs.lastSpawnTime = time;
       }
     }
@@ -2108,8 +2200,9 @@ export function GameBoard() {
       if (plateY < h + 10) renderPlate(ctx, cx - gs.camX - plateW / 2, plateY + bounce, plateW, 28, activePlate, time);
     }
 
-    // Rapid Perfect Multiplier Dynamic Canvas Resonance
-    if (gs.rapidPerfectStreak >= 2) {
+    // Rapid Perfect Multiplier Dynamic Canvas Resonance (off: the HUD streak chip shows this,
+    // and rings around the landing point hid the swaying tower top)
+    if (SHOW_LANDING_RESONANCE && gs.rapidPerfectStreak >= 2) {
       ctx.save();
       const multTier = Math.min(5, Math.max(2, gs.rapidPerfectMultiplier));
       const multColors: Record<number, string> = {
@@ -2711,11 +2804,11 @@ export function GameBoard() {
           {/* Compact streak chip: the old full-size cards spilled off phone screens */}
           {(rapidComboData.active || activeCombo >= 3) && (
             <div
-              className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black tabular-nums tracking-wide border backdrop-blur-md shadow ${
+              className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black tabular-nums tracking-wide whitespace-nowrap border backdrop-blur-md shadow ${
                 rapidComboData.active ? 'bg-amber-400/90 text-black border-amber-200' : 'bg-black/45 text-amber-300 border-amber-300/40'
               }`}
             >
-              {rapidComboData.active ? `⚡ ${rapidComboData.multiplier}x PERFECT STREAK` : `🔥 ${activeCombo} COMBO`}
+              {rapidComboData.active ? `⚡ ${rapidComboData.multiplier}x STREAK` : `🔥 ${activeCombo} COMBO`}
             </div>
           )}
         </div>
@@ -2736,7 +2829,7 @@ export function GameBoard() {
             ) : mode === 'workshop' ? (
               <span className="text-sky-300 font-mono text-xs">SHIFT FORGE</span>
             ) : mode === 'campaign' ? (
-              `LEVEL ${level}`
+              TWIST_INFO[levelTwist(level)].label && levelTwist(level) !== 'boss' ? `LEVEL ${level} · ${TWIST_INFO[levelTwist(level)].label}` : `LEVEL ${level}`
             ) : (
               mode
             )}
@@ -2918,6 +3011,25 @@ export function GameBoard() {
             </button>
           </div>
         </div>
+
+        {/* First-time tip card (the run plays in slow motion while it shows) */}
+        <AnimatePresence>
+          {tipCard && state === 'playing' && (
+            <motion.div
+              key={tipCard.title}
+              initial={{ opacity: 0, y: -10, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-[calc(max(0.75rem,env(safe-area-inset-top,12px))+10rem)] left-1/2 -translate-x-1/2 w-[min(320px,88vw)] pointer-events-none z-30"
+            >
+              <div className="rounded-2xl bg-slate-950/90 border border-cyan-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.5)] px-4 py-3 text-center backdrop-blur-md">
+                <div className="text-[11px] font-mono font-black tracking-widest text-cyan-300">TIP · {tipCard.title}</div>
+                <div className="mt-1 text-sm font-semibold leading-snug text-white">{tipCard.body}</div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Non-blocking in-game HUD feedback toasts (positioned cleanly at top, never covering the center playfield) */}
         <AnimatePresence>
@@ -3203,10 +3315,15 @@ export function GameBoard() {
                   }`}
                   style={{ WebkitTextStroke: '2px #fff' }}
                 >
-                  {state === 'won' ? 'CLEARED!' : /TOPPLED|COLLAPSED/.test(lostReason) ? 'TOPPLED!' : 'BOOM!'}
+                  {state === 'won' ? 'CLEARED!' : /TOPPLED|COLLAPSED/.test(lostReason) ? 'GRAVITY WINS!' : 'BOOM!'}
                 </motion.h2>
                 {state !== 'won' && lostReason && (
                   <div className="text-xs sm:text-sm font-bold tracking-wider text-white/80 mb-2 uppercase">{lostReason}</div>
+                )}
+                {state !== 'won' && gravityNote && /TOPPLED|COLLAPSED/.test(lostReason) && (
+                  <div className="max-w-xs mx-auto mb-3 px-3 py-2 rounded-xl bg-orange-500/15 border border-orange-300/40 text-[13px] leading-snug text-orange-100 font-semibold">
+                    ⬇ {gravityNote}
+                  </div>
                 )}
                 
                 <div className="text-2xl sm:text-3xl text-white font-black mb-5 drop-shadow-md" style={{ WebkitTextStroke: '1.5px #333' }}>

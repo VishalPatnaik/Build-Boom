@@ -156,6 +156,9 @@ export interface ParallaxLayerConfig {
   ambientDriftY: number;   // Vertical thermal breathing
 }
 
+/** Largest sideways parallax shift, px; the tier wrapper overscales by this much to hide edges. */
+export const PARALLAX_MAX_X = 14;
+
 export const DEFAULT_PARALLAX_LAYERS: ParallaxLayerConfig[] = [
   { id: 'celestial', name: 'Celestial & Deep Horizon Dome', depth: 0.05, speedRatio: 0.05, ambientDriftX: 0.35, ambientDriftY: 0.0 },
   { id: 'horizon', name: 'Distant Mountain Ranges & Skyline', depth: 0.20, speedRatio: 0.20, ambientDriftX: 1.1, ambientDriftY: 0.08 },
@@ -1635,25 +1638,31 @@ export class EnvironmentRenderer {
     const tiltShiftX = Math.sin((this.currentTowerTilt * Math.PI) / 180) * 110 * intensity;
 
     // Independent multi-layered parallax rates for background, midground, and foreground:
+    // As the tower climbs the camera rises, so the ground sinks away below the screen.
+    // Scenery layers span exactly the screen width, so sideways shifts stay small (the
+    // tier wrapper overscales slightly to cover them) and vertical shifts only go down,
+    // which never exposes an edge.
+    const clampX = (v: number) => Math.max(-PARALLAX_MAX_X, Math.min(PARALLAX_MAX_X, v));
+    const sink = (ratio: number, pointer: number) => Math.max(0, this.currentAltitudePixels * ratio * intensity + this.smoothPointerY * pointer * intensity);
     const backgroundOffset = {
-      x: Number((this.smoothPointerX * 22 * intensity + tiltShiftX * 0.15).toFixed(2)),
-      y: Number((-this.currentAltitudePixels * 0.14 * intensity + this.smoothPointerY * 18 * intensity).toFixed(2)),
+      x: Number(clampX(this.smoothPointerX * 22 * intensity + tiltShiftX * 0.15).toFixed(2)),
+      y: Number(sink(0.14, 18).toFixed(2)),
     };
 
     const midgroundOffset = {
-      x: Number((this.smoothPointerX * 45 * intensity + tiltShiftX * 0.52).toFixed(2)),
-      y: Number((-this.currentAltitudePixels * 0.52 * intensity + this.smoothPointerY * 35 * intensity).toFixed(2)),
+      x: Number(clampX(this.smoothPointerX * 45 * intensity + tiltShiftX * 0.52).toFixed(2)),
+      y: Number(sink(0.52, 35).toFixed(2)),
     };
 
     const foregroundOffset = {
-      x: Number((this.smoothPointerX * 80 * intensity + tiltShiftX * 1.08).toFixed(2)),
-      y: Number((-this.currentAltitudePixels * 1.05 * intensity + this.smoothPointerY * 55 * intensity).toFixed(2)),
+      x: Number(clampX(this.smoothPointerX * 80 * intensity + tiltShiftX * 1.08).toFixed(2)),
+      y: Number(sink(1.05, 55).toFixed(2)),
     };
 
     // Compute layer offsets for the 6 discrete depth planes
     const layers: ParallaxLayerOffset[] = DEFAULT_PARALLAX_LAYERS.map((cfg) => {
       // Vertical translation: higher speed ratios move down faster as camera climbs
-      const verticalShift = -(this.currentAltitudePixels * cfg.speedRatio * intensity);
+      const verticalShift = this.currentAltitudePixels * cfg.speedRatio * intensity;
       const pointerYShift = this.smoothPointerY * 35 * cfg.speedRatio * intensity;
       const thermalBreathing = Math.sin(time * 0.0012 + cfg.depth * 2.5) * (cfg.ambientDriftY * 12);
       const offsetY = verticalShift + pointerYShift + thermalBreathing;
@@ -1661,8 +1670,8 @@ export class EnvironmentRenderer {
       // Horizontal translation: pointer tilt + continuous organic wind drift + tower tilt reaction
       const pointerXShift = this.smoothPointerX * 45 * cfg.speedRatio * intensity;
       const towerTiltLayerShift = tiltShiftX * (cfg.speedRatio / 1.15);
-      const windDrift = (time * 0.001 * cfg.ambientDriftX * 18) % (w * 2);
-      const offsetX = pointerXShift + towerTiltLayerShift + (windDrift > w ? windDrift - w * 2 : windDrift);
+      // (No continuous sideways drift: the scenery isn't tiled, so drifting slid it off screen)
+      const offsetX = Math.max(-PARALLAX_MAX_X, Math.min(PARALLAX_MAX_X, pointerXShift + towerTiltLayerShift));
 
       return {
         depth: cfg.depth,

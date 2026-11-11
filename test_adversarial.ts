@@ -5,7 +5,7 @@ import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayB
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
 import { PROGRESSION_STORAGE_KEY, PROGRESSION_SNAPSHOT_KEY, autoSaveProgression } from './src/utils/progressionStorage';
 import { useGameStore } from './src/game/store';
-import { generateLevel } from './src/game/LevelGenerator';
+import { generateLevel, levelTwist } from './src/game/LevelGenerator';
 import { audioCrossFader } from './src/audio/AudioCrossFader';
 import { AdService } from './src/ads/AdService';
 
@@ -225,6 +225,17 @@ console.log('\n--- 3. LEVEL TRANSITION & ENGINE RE-INIT ---');
     assert(queue.length > 0, `Level ${lvl} generates valid block queue (${queue.length} blocks)`);
     assert(queue.every(b => typeof b.speed === 'number' && b.speed > 0), `Level ${lvl} block speeds are valid numbers`);
   }
+
+  // 3.1b Level twists keep the campaign varied without changing the rules
+  const calmLvl = Array.from({ length: 60 }, (_, i) => i + 6).find(l => levelTwist(l) === 'calm')!;
+  assert(generateLevel(calmLvl).every(b => b.type === 'build'), `Calm Skies level ${calmLvl} has no bombs`);
+  const trickLvl = Array.from({ length: 60 }, (_, i) => i + 6).find(l => levelTwist(l) === 'tricksters')!;
+  assert(generateLevel(trickLvl).some(b => b.modifier === 'fake-boom' || b.modifier === 'fake-build'), `Tricksters level ${trickLvl} has disguises`);
+  const gustyLvl = Array.from({ length: 60 }, (_, i) => i + 6).find(l => levelTwist(l) === 'gusty')!;
+  assert(windStrengthFor('campaign', gustyLvl, 10) > 0.3 && windStrengthFor('campaign', gustyLvl + 1, 10) === 0, `Gusty level ${gustyLvl} is windy, the next level is calm`);
+  const lateTotal = [131, 132, 134, 135, 136, 138, 139].reduce((acc, l) => { const q = generateLevel(l); acc.b += q.filter(x => x.type === 'boom').length; acc.n += q.length; return acc; }, { b: 0, n: 0 });
+  assert(lateTotal.b / lateTotal.n < 0.5, `Late levels are mostly pieces, not bombs (${Math.round(100 * lateTotal.b / lateTotal.n)}% bombs)`);
+  assert(levelTwist(3) === 'none' && levelTwist(20) === 'boss', 'First levels have no twist; every 10th is a boss');
 
   // 3.2 State Reset on Level Advancement
   useGameStore.setState({ level: 5, state: 'won', score: 1250, pendingCoins: 300 });
