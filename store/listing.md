@@ -17,6 +17,7 @@ BUILD WITH REAL PHYSICS
 • Every landing shoves the tower: tall towers sway, so tap when the top swings back under the incoming piece.
 • Wind gusts push taller towers sideways in later worlds.
 • Never tap a bomb. Let it fly past.
+• Watch for tricksters: bombs disguised as critters, critters disguised as bombs, ghosts and blinkers. Every disguise glitches for a split second; spot it and earn bonus coins.
 
 20 THEMED WORLDS, 200 LEVELS
 Stack bumblebees in the Spring Meadow, moon bunnies on the Lunar Surface, sea turtles on the Coral Reef, gummy bears in Candyland, mecha-kitties in the Cyberpunk Megacity and more. Every world has its own critter, its own hazard and its own landing platform.

@@ -36,6 +36,8 @@ interface ActiveBlock extends BlockDef {
   handled: boolean;
   success?: boolean;
   contactSoundPlayed?: boolean;
+  /** Time a disguised object flipped to its true identity (fake-boom / fake-build). */
+  revealedAt?: number;
 }
 
 interface Particle {
@@ -257,6 +259,7 @@ export function GameBoard() {
     debris: [] as Debris[],
     lives: MAX_LIVES,
     swayHintShown: false,
+    floatTexts: [] as { text: string; x: number; y: number; life: number; color: string }[],
     camX: 0, // camera follows the tower's resting top (not its sway)
     towerSink: 0, // eases the tower down one layer after each landing
     freeStasisLeft: 0,
@@ -377,6 +380,7 @@ export function GameBoard() {
       debris: [],
       lives: MAX_LIVES,
       swayHintShown: false,
+      floatTexts: [],
       camX: 0,
       towerSink: 0,
       freeStasisLeft: freeStasis,
@@ -789,6 +793,12 @@ export function GameBoard() {
             setMessage('THE TOWER SWAYS! TAP WHEN THE TOP SWINGS BACK');
             setTimeout(() => setMessage(''), 2600);
           }
+        }
+
+        // Trick pieces pay out: trusting a "bomb" that was really a piece, or catching a ghost
+        if (!isTutorialActive && (targetBlock.modifier === 'fake-boom' || targetBlock.modifier === 'ghost')) {
+          useGameStore.getState().addCoins(3);
+          gs.floatTexts.push({ text: targetBlock.modifier === 'ghost' ? 'GHOST CAUGHT! +3 🪙' : 'NERVES OF STEEL! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: targetBlock.modifier === 'ghost' ? '#c4b5fd' : '#5eead4' });
         }
 
         gs.builtCount++;
@@ -1606,6 +1616,11 @@ export function GameBoard() {
         if (midasTier >= 1) {
           useGameStore.getState().addCoins(2);
         }
+        // Didn't fall for a bomb dressed up as a piece
+        if (b.modifier === 'fake-build' && !isTutorialActive) {
+          useGameStore.getState().addCoins(3);
+          gs.floatTexts.push({ text: 'OUTSMARTED! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: '#fb7185' });
+        }
       }
     }
     
@@ -2262,11 +2277,37 @@ export function GameBoard() {
 
       // Disguised blocks (Slow-Mo tier 3 shows them as they really are while slow-mo is on)
       const trueSight = gs.physics.stasisActive && (unlockedPerks['chrono_stasis'] || 0) >= 3;
+      const isDisguise = b.modifier === 'fake-boom' || b.modifier === 'fake-build';
+      let flipScale = 1;
+      let tellJitter = 0;
       if (!trueSight) {
         if (b.modifier === 'fake-boom' && b.distance > 65) apparentType = 'boom';
         if (b.modifier === 'fake-build' && b.distance > 65) apparentType = 'build';
         if (b.modifier === 'ghost' && b.distance < 80 && b.distance > 20) opacity = 0.05;
         if (b.modifier === 'blink' && Math.floor(time / 80) % 2 === 0) opacity = 0.1;
+        // The tell: a disguise can't hold perfectly. Roughly once a second it glitches and
+        // shows its true face for a split second; sharp-eyed players can call it early.
+        if (isDisguise && b.distance > 65) {
+          const phase = (time + (b.id ?? 0) * 397) % 1100;
+          if (phase < 70) apparentType = b.type;
+          if (phase < 160) tellJitter = Math.sin(time * 0.9) * 2.5;
+        }
+      }
+      // The reveal: when a disguise drops it flips like a card, with a pop
+      if (isDisguise && b.distance <= 65 && !b.handled) {
+        if (b.revealedAt === undefined) {
+          b.revealedAt = time;
+          if (!trueSight) {
+            const rx = cx + Math.cos(b.angle) * (b.distance / 100) * gameRadius;
+            const ry = cy + Math.sin(b.angle) * (b.distance / 100) * gameRadius;
+            gs.particles.push({ x: rx, y: ry, vx: 0, vy: 0, life: 1, color: b.type === 'boom' ? '#ff3355' : '#00ffcc', size: 14, type: 'ring' });
+          }
+        }
+        const t = (time - b.revealedAt) / 260;
+        if (t < 1 && !trueSight) {
+          flipScale = Math.abs(Math.cos(t * Math.PI));
+          if (t < 0.5) apparentType = b.type === 'boom' ? 'build' : 'boom';
+        }
       }
       
       // Fade out passed bombs as they fly away
@@ -2281,7 +2322,8 @@ export function GameBoard() {
       ctx.globalAlpha = opacity;
 
       ctx.save();
-      ctx.translate(px, py);
+      ctx.translate(px + tellJitter, py);
+      if (flipScale !== 1) ctx.scale(Math.max(0.06, flipScale), 1);
       
       // Speed-based squash and stretch
       const stretch = 1 + (b.speed * 0.1);
@@ -2422,6 +2464,24 @@ export function GameBoard() {
       ctx.roundRect(-ghw, -ghw, ghw * 2, ghw * 2, ghw * 0.45);
       ctx.fill();
       ctx.stroke();
+      ctx.restore();
+    }
+
+    // Trick rewards float up from the landing point
+    for (let i = gs.floatTexts.length - 1; i >= 0; i--) {
+      const f = gs.floatTexts[i];
+      f.life -= 0.014;
+      f.y -= 0.6;
+      if (f.life <= 0) { gs.floatTexts.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, f.life * 2);
+      ctx.font = '900 15px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
       ctx.restore();
     }
 
