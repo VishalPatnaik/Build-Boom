@@ -14,6 +14,7 @@ import { IAPOverlay } from './components/IAPOverlay';
 import { RemoveAdsOverlay } from './components/RemoveAdsOverlay';
 import { AchievementUnlockToast } from './components/achievements/AchievementUnlockToast';
 import { UnifiedLoadingOverlay } from './components/UnifiedLoadingOverlay';
+import { VesyronIntro } from './components/VesyronIntro';
 
 // Secondary screens load on demand so the first launch downloads less
 const Shop = lazy(() => import('./components/Shop').then((m) => ({ default: m.Shop })));
@@ -88,6 +89,7 @@ export default function App() {
   return (
     <div className="w-full h-full bg-[#030712] flex items-center justify-center overflow-hidden relative font-display text-slate-100">
       <PlayfulBackground />
+      <VesyronIntro />
 
       <AnimatePresence mode="wait">
         {showMenu && <Menu key="menu" />}
