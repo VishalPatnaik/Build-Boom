@@ -1590,8 +1590,8 @@ export class EnvironmentRenderer {
       renderCinematicWorld(ctx, w, h, this.currentWorldId, safeTime, false, this.currentParallaxState || undefined);
     }
 
-    // Apply Post-Processing Passes: Environmental Lighting, Depth Haze, Emissive Bloom, Parallax Decks, Milestones & Weather Particles
-    this.applyPostProcessingPasses(ctx, w, h, safeTime, worldInfo);
+    // The layered backdrop does its own depth, light and weather, so the old bloom/haze passes
+    // (which made every world look the same glowy way) are skipped for the 20 worlds.
   }
 
   /**
