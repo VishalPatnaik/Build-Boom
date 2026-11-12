@@ -1,126 +1,79 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import '@fontsource/cinzel/700.css';
+import logoUrl from '../assets/vesyron-logo.webp';
+import maskUrl from '../assets/vesyron-logo-mask.webp';
 
-// Vesyron studio ident, played once per app launch (tap to skip). Follows the brand storyboard:
-// 1 full gold wordmark → 2 E·Y·R·O·N dissolve to sparks → 3 V and S glide to centre
-// → 4 they lock into the VS monogram → 5 "VISION | STRENGTH" → 6 back to the full wordmark.
-const T = 6.2; // seconds for the whole sequence
-const at = (s: number) => s / T; // keyframe time helper
+// Vesyron studio ident: the official logo, brought to life. Plays once per app launch; tap to skip.
+// Timeline (s): 0 black → 0.2–1.4 logo focuses in → 1.4 flares ignite on V and S
+// → 1.7–2.6 light sweeps across the gold → embers drift up → 4.2 fade into the game.
+const T = 4.2;
 
-const GOLD = ['#fff7d6', '#f8cf6a', '#d98e1c', '#8a4b07', '#f6c453'];
-const LETTERS: { ch: string; x: number; keep?: boolean }[] = [
-  { ch: 'V', x: 112, keep: true },
-  { ch: 'E', x: 246 },
-  { ch: 'S', x: 372, keep: true },
-  { ch: 'Y', x: 500 },
-  { ch: 'R', x: 628 },
-  { ch: 'O', x: 764 },
-  { ch: 'N', x: 900 },
+// Flare positions as fractions of the logo image (1536×1024)
+const FLARES = [
+  { x: 0.153, y: 0.312, delay: 1.35, size: 1 },   // tip of the V
+  { x: 0.456, y: 0.288, delay: 1.5, size: 1.1 },  // top of the S
+  { x: 0.447, y: 0.628, delay: 1.65, size: 0.8 }, // tail of the S
 ];
-const BASE_Y = 250;
-// Where V and S sit inside the monogram
-const MONO = { V: 455, S: 532, scale: 1.35 };
 
-/** Ribbon "S" from the Vesyron mark, drawn about its centre (≈150 tall). */
-function RibbonS() {
+function Flare({ x, y, delay, size }: { x: number; y: number; delay: number; size: number; key?: React.Key }) {
   return (
-    <g transform="translate(-48 -96)">
-      <path
-        d="M86 6 C54 -6 12 8 18 42 C22 64 58 70 70 88 C56 74 28 66 24 42 C20 18 52 4 86 6 Z"
-        fill="url(#vyGoldSoft)"
-      />
-      <path
-        d="M70 88 C92 112 76 150 30 154 C16 155 4 150 -4 140 C30 146 56 128 54 106 C52 94 40 84 28 74 C50 76 64 80 70 88 Z"
-        fill="url(#vyGoldSoft)"
-      />
-      <path
-        d="M96 14 C70 4 40 14 40 38 C40 52 62 60 76 72 C62 64 46 56 44 40 C42 22 66 10 96 14 Z"
-        fill="url(#vyGoldSoft)"
-        opacity="0.85"
-      />
-    </g>
+    <motion.div
+      className="absolute pointer-events-none"
+      style={{ left: `${x * 100}%`, top: `${y * 100}%`, width: 0, height: 0 }}
+      initial={{ opacity: 0, scale: 0.2 }}
+      animate={{ opacity: [0, 1, 0.75, 0.9], scale: [0.2, 1.25 * size, 0.95 * size, 1 * size] }}
+      transition={{ delay, duration: 1.4, times: [0, 0.25, 0.6, 1], ease: 'easeOut' }}
+    >
+      <div className="absolute -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(255,247,214,1) 0%, rgba(248,184,74,0.65) 30%, rgba(248,184,74,0) 70%)' }} />
+      <div className="absolute -translate-x-1/2 -translate-y-1/2 w-28 h-[2px]"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,240,200,0.95), transparent)' }} />
+      <div className="absolute -translate-x-1/2 -translate-y-1/2 w-[2px] h-14"
+        style={{ background: 'linear-gradient(180deg, transparent, rgba(255,240,200,0.85), transparent)' }} />
+    </motion.div>
   );
 }
 
-/** Gold sparks: letters dissolving, then streaks rushing into the centre. */
-function Sparks({ start }: { start: number }) {
+/** Warm embers drifting up from the gold once it's lit. */
+function Embers() {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current;
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
+    const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = c.clientWidth;
-    const h = c.clientHeight;
-    c.width = w * dpr;
-    c.height = h * dpr;
-    ctx.scale(dpr, dpr);
-    // the SVG (viewBox 1000×420) is centred and fits the width
-    const k = Math.min(w / 1000, h / 420);
-    const ox = (w - 1000 * k) / 2;
-    const oy = (h - 420 * k) / 2;
-    const toX = (x: number) => ox + x * k;
-    const toY = (y: number) => oy + y * k;
-
-    type P = { x: number; y: number; vx: number; vy: number; life: number; max: number; r: number; born: number };
-    const ps: P[] = [];
+    const w = c.clientWidth, h = c.clientHeight;
+    c.width = w * dpr; c.height = h * dpr; ctx.scale(dpr, dpr);
+    const ps = Array.from({ length: 70 }, () => ({
+      x: w * (0.12 + Math.random() * 0.76),
+      y: h * (0.5 + Math.random() * 0.12),
+      vx: (Math.random() - 0.5) * 12,
+      vy: -(10 + Math.random() * 28),
+      r: 0.6 + Math.random() * 1.6,
+      born: 1.6 + Math.random() * 1.6,
+      max: 1.2 + Math.random() * 1.4,
+    }));
+    const t0 = performance.now();
     let raf = 0;
-    let spawnedDissolve = false;
-    let spawnedStreak = false;
-
     const loop = (now: number) => {
-      const t = (now - start) / 1000;
+      const t = (now - t0) / 1000;
       ctx.clearRect(0, 0, w, h);
-      if (!spawnedDissolve && t > 1.05) {
-        spawnedDissolve = true;
-        for (const L of LETTERS.filter((l) => !l.keep)) {
-          for (let i = 0; i < 46; i++) {
-            ps.push({
-              x: toX(L.x + (Math.random() - 0.5) * 90),
-              y: toY(BASE_Y - Math.random() * 120),
-              vx: (Math.random() - 0.3) * 40 * k * 2,
-              vy: (-Math.random() * 50 - 10) * k * 2,
-              life: 0, max: 0.9 + Math.random() * 0.9, r: 0.8 + Math.random() * 1.8, born: t,
-            });
-          }
-        }
-      }
-      if (!spawnedStreak && t > 1.9) {
-        spawnedStreak = true;
-        for (let i = 0; i < 90; i++) {
-          const side = i % 2 ? 1 : -1;
-          const y = toY(190 + (Math.random() - 0.5) * 140);
-          ps.push({
-            x: side > 0 ? w + Math.random() * 40 : -Math.random() * 40,
-            y, vx: -side * (280 + Math.random() * 260) * k * 2, vy: (toY(200) - y) * 1.4,
-            life: 0, max: 0.55 + Math.random() * 0.35, r: 0.8 + Math.random() * 1.4, born: t,
-          });
-        }
-      }
       for (const p of ps) {
         const age = t - p.born;
         if (age < 0 || age > p.max) continue;
-        const dt = 1 / 60;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 6 * dt;
-        const a = 1 - age / p.max;
-        ctx.globalAlpha = a;
-        ctx.fillStyle = Math.random() > 0.8 ? '#fff7d6' : '#f8b84a';
+        ctx.globalAlpha = Math.sin((age / p.max) * Math.PI) * 0.9;
+        ctx.fillStyle = '#ffc861';
         ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 6;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.arc(p.x + p.vx * age, p.y + p.vy * age, p.r, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
-      if (t < 3.2) raf = requestAnimationFrame(loop);
+      if (t < T) raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [start]);
+  }, []);
   return <canvas ref={ref} className="absolute inset-0 w-full h-full pointer-events-none" />;
 }
 
@@ -130,134 +83,64 @@ export function VesyronIntro() {
     if (typeof navigator !== 'undefined' && (navigator as any).webdriver) return false; // automated tests
     try { return sessionStorage.getItem('vy_intro') !== '1'; } catch { return true; }
   });
-  const [start] = useState(() => performance.now());
 
   useEffect(() => {
     if (!show) return;
     try { sessionStorage.setItem('vy_intro', '1'); } catch { /* ignore */ }
-    const t = setTimeout(() => setShow(false), (reduce ? 2.2 : T) * 1000);
+    const t = setTimeout(() => setShow(false), (reduce ? 2.4 : T) * 1000);
     return () => clearTimeout(t);
   }, [show, reduce]);
-
-  const ease = 'easeInOut' as const;
 
   return (
     <AnimatePresence>
       {show && (
         <motion.div
           key="vesyron-intro"
-          className="fixed inset-0 z-[500] bg-black select-none overflow-hidden"
-          exit={{ opacity: 0, transition: { duration: 0.4 } }}
+          className="fixed inset-0 z-[500] bg-black select-none overflow-hidden flex items-center justify-center"
+          exit={{ opacity: 0, transition: { duration: 0.45 } }}
           onPointerDown={() => setShow(false)}
           role="presentation"
+          aria-label="Vesyron"
         >
-          {/* warm haze and reflective floor */}
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 35% at 50% 50%, rgba(217,142,28,0.18), rgba(0,0,0,0) 70%)' }} />
-          <div className="absolute inset-x-0 top-1/2 h-1/2" style={{ background: 'linear-gradient(180deg, rgba(248,184,74,0.10), rgba(0,0,0,0) 40%)' }} />
+          {/* logo box keeps the image's 3:2 shape so flares line up with the letters */}
+          <motion.div
+            className="relative w-[min(100vw,150vh)] aspect-[3/2]"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.12, filter: 'blur(10px) brightness(0.4)' }}
+            animate={reduce ? { opacity: 1 } : { opacity: [0, 1, 1], scale: [1.12, 1, 1.03], filter: ['blur(10px) brightness(0.4)', 'blur(0px) brightness(1)', 'blur(0px) brightness(1)'] }}
+            transition={reduce ? { duration: 0.6 } : { duration: T, times: [0, 0.32, 1], ease: 'easeOut' }}
+          >
+            <img src={logoUrl} alt="Vesyron" draggable={false} className="absolute inset-0 w-full h-full object-contain" />
 
-          {!reduce && <Sparks start={start} />}
+            {!reduce && (
+              <>
+                {/* light sweep, masked to the lettering so the black background stays black */}
+                <div
+                  className="absolute inset-0 overflow-hidden"
+                  style={{ WebkitMaskImage: `url(${maskUrl})`, maskImage: `url(${maskUrl})`, WebkitMaskSize: '100% 100%', maskSize: '100% 100%' }}
+                >
+                  <motion.div
+                    className="absolute top-0 h-full w-[28%] -skew-x-[18deg]"
+                    style={{ background: 'linear-gradient(90deg, rgba(255,200,120,0), rgba(255,244,214,0.95), rgba(255,200,120,0))' }}
+                    initial={{ left: '-35%' }}
+                    animate={{ left: '120%' }}
+                    transition={{ delay: 1.7, duration: 0.9, ease: 'easeInOut' }}
+                  />
+                </div>
+                {/* gentle glow breathing on the gold */}
+                <motion.img
+                  src={logoUrl} alt="" aria-hidden draggable={false}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  style={{ mixBlendMode: 'screen', filter: 'blur(14px) saturate(1.4)' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0, 0.55, 0.3, 0.45] }}
+                  transition={{ duration: T, times: [0, 0.3, 0.45, 0.7, 1] }}
+                />
+                {FLARES.map((f, i) => <Flare key={i} {...f} />)}
+              </>
+            )}
+          </motion.div>
 
-          <svg viewBox="0 0 1000 420" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="vyGold" x1="0" y1="0" x2="0" y2="1">
-                {GOLD.map((c, i) => <stop key={i} offset={i / (GOLD.length - 1)} stopColor={c} />)}
-              </linearGradient>
-              <linearGradient id="vyGoldSoft" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#fff7d6" />
-                <stop offset="1" stopColor="#d98e1c" />
-              </linearGradient>
-              <filter id="vyGlow" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur stdDeviation="5" result="b" />
-                <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-              <radialGradient id="vyFlare">
-                <stop offset="0" stopColor="#fff7d6" stopOpacity="1" />
-                <stop offset="0.25" stopColor="#f8b84a" stopOpacity="0.6" />
-                <stop offset="1" stopColor="#f8b84a" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-
-            {/* horizon light line */}
-            <motion.line
-              x1="40" x2="960" y1={BASE_Y + 14} y2={BASE_Y + 14} stroke="#f8b84a" strokeWidth="1.5"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: [0, 0.7, 0.7, 0.35, 0.7] }}
-              transition={{ duration: T, times: [0, at(0.5), at(2.5), at(3.2), at(5)], ease }}
-            />
-
-            {/* monogram rings (phase 4–5) */}
-            {[70, 120, 165].map((r, i) => (
-              <motion.circle
-                key={r} cx="500" cy="190" r={r} fill="none" stroke="#f8b84a" strokeWidth={i === 1 ? 1.4 : 0.8}
-                initial={{ opacity: 0, scale: 0.4 }}
-                animate={{ opacity: [0, 0, 0.7, 0.5, 0], scale: [0.4, 0.4, 1, 1.05, 1.2] }}
-                transition={{ duration: T, times: [0, at(2.55 + i * 0.08), at(3.0 + i * 0.08), at(4.4), at(5.0)], ease }}
-              />
-            ))}
-
-            {/* letters */}
-            <g filter="url(#vyGlow)">
-              {LETTERS.map((L, i) => {
-                if (L.ch === 'S' || L.ch === 'V') {
-                  const tx = L.ch === 'V' ? MONO.V : MONO.S;
-                  const dx = tx - L.x;
-                  return (
-                    <motion.g
-                      key={L.ch}
-                      initial={{ opacity: 0, x: 0, y: 0, scale: 1 }}
-                      animate={{
-                        opacity: [0, 1, 1, 1, 1, 1],
-                        x: [0, 0, 0, dx, dx, 0],
-                        y: [0, 0, 0, -50, -50, 0],
-                        scale: [1, 1, 1, MONO.scale, MONO.scale, 1],
-                      }}
-                      transition={{ duration: T, times: [0, at(0.6), at(1.8), at(2.6), at(4.5), at(5.3)], ease }}
-                    >
-                      {L.ch === 'V' ? (
-                        <text x={L.x} y={BASE_Y} textAnchor="middle" fontFamily="Cinzel, serif" fontWeight={700} fontSize="168" fill="url(#vyGold)">V</text>
-                      ) : (
-                        <g transform={`translate(${L.x} ${BASE_Y - 50}) scale(0.82)`}><RibbonS /></g>
-                      )}
-                    </motion.g>
-                  );
-                }
-                return (
-                  <motion.text
-                    key={L.ch}
-                    x={L.x} y={BASE_Y} textAnchor="middle" fontFamily="Cinzel, serif" fontWeight={700} fontSize="132"
-                    fill="url(#vyGold)"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0, 1, 1, 0, 0, 1] }}
-                    transition={{ duration: T, times: [0, at(0.5 + i * 0.04), at(1.05), at(1.6), at(4.6), at(5.3)], ease }}
-                  >
-                    {L.ch}
-                  </motion.text>
-                );
-              })}
-            </g>
-
-            {/* lens flares */}
-            {[{ x: 112, y: 90, t: 0.6 }, { x: 500, y: 190, t: 3.0 }, { x: 900, y: 120, t: 5.3 }].map((f, i) => (
-              <motion.g key={i} initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0, 1, 0] }}
-                transition={{ duration: T, times: [0, at(f.t - 0.15), at(f.t), at(f.t + 0.6)] }}>
-                <circle cx={f.x} cy={f.y} r="46" fill="url(#vyFlare)" />
-                <rect x={f.x - 180} y={f.y - 1} width="360" height="2" fill="#fff7d6" opacity="0.7" />
-                <rect x={f.x - 1} y={f.y - 60} width="2" height="120" fill="#fff7d6" opacity="0.5" />
-              </motion.g>
-            ))}
-
-            {/* tagline (phase 5) */}
-            <motion.g initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0, 1, 1, 0] }}
-              transition={{ duration: T, times: [0, at(3.2), at(3.6), at(4.5), at(4.9)] }}>
-              <text x="378" y="372" textAnchor="end" fontFamily="Cinzel, serif" fontWeight={700} fontSize="40" letterSpacing="6" fill="url(#vyGold)">VISION</text>
-              <text x="622" y="372" textAnchor="start" fontFamily="Cinzel, serif" fontWeight={700} fontSize="40" letterSpacing="6" fill="url(#vyGold)">STRENGTH</text>
-              <line x1="500" y1="310" x2="486" y2="392" stroke="#f8cf6a" strokeWidth="3" />
-              <line x1="120" y1="360" x2="250" y2="360" stroke="#f8b84a" strokeWidth="1.2" opacity="0.7" />
-              <line x1="880" y1="360" x2="750" y2="360" stroke="#f8b84a" strokeWidth="1.2" opacity="0.7" />
-            </motion.g>
-          </svg>
+          {!reduce && <Embers />}
         </motion.div>
       )}
     </AnimatePresence>
