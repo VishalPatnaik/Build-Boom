@@ -17,8 +17,9 @@ so it plays offline. Purchases use Google Play Billing; ads use Google AdMob.
    - Create two ad units: **Rewarded** and **Interstitial**. Copy both IDs (`ca-app-pub-…/…`).
    - Privacy & messaging → create a **GDPR consent message** (the game shows it automatically).
 3. **Host the privacy policy.** Google Play needs a public privacy-policy link even for a
-   mobile-only game. Upload `public/privacy.html` to your company site, for example
-   `https://vesyron.com/towershift/privacy.html`, and paste that link into Play Console.
+   mobile-only game. It is published at `https://vesyron.com/towershift/privacy`
+   (source: `public/privacy.html`); paste that link into Play Console. Support email:
+   `towershift@vesyron.com`.
 
 ## 2. Configure the build (on your PC)
 

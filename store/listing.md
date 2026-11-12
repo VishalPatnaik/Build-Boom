@@ -38,6 +38,6 @@ Silly Mode adds cartoon wiggle and squish to every landing. Turn it off any time
 
 Free to play with optional in-app purchases and ads. Ad Blocker VIP Pass removes ads.
 
-**Contact email:** support@vesyron.com
-**Website:** https://vesyron.com
-**Privacy policy:** https://<your-domain>/privacy.html
+**Contact email:** towershift@vesyron.com
+**Website:** https://vesyron.com/towershift
+**Privacy policy:** https://vesyron.com/towershift/privacy
