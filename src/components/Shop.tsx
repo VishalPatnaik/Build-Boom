@@ -39,6 +39,21 @@ function formatCompactCoins(amount: number): string {
   return amount.toLocaleString();
 }
 
+const CAT_EMOJI: Record<CosmeticCategory, string> = { background: '🌍', skin: '🧸', boom: '💣', plate: '🍽️' };
+const CAT_LABEL: Record<CosmeticCategory, string> = { background: 'World', skin: 'Object', boom: 'Boom', plate: 'Plate' };
+const CAT_TITLE: Record<CosmeticCategory, string> = {
+  background: 'WORLDS TO VISIT',
+  skin: 'CRITTERS TO STACK',
+  boom: 'BOOMS TO DODGE',
+  plate: 'PLATES TO BUILD ON',
+};
+const EQUIPPED_LINE: Record<CosmeticCategory, string> = {
+  background: 'Your stage in Shift Odyssey, Orbital Shift & Shift Arena',
+  skin: 'Your stacking buddy, reporting for wobble duty!',
+  boom: 'Your boom of choice. Remember: never tap it!',
+  plate: 'Your trusty base. The whole tower thanks it.',
+};
+
 function LivePreviewCanvas({ previewState, worldTheme }: { previewState: any; worldTheme: WorldThemeResult }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -128,41 +143,59 @@ function LivePreviewCanvas({ previewState, worldTheme }: { previewState: any; wo
         // Guard against transient canvas sizing
       }
 
-      // Center plate, bouncing 3D object, and boom cleanly within the fixed preview viewport
-      const groundY = Math.min(logicalH - 42, Math.max(logicalH * 0.68, 128));
+      // Stage layout: plate centred low, critter resting on it with a happy hop,
+      // and the boom whizzing PAST the tower (you never tap it, you let it fly by).
+      const stageScale = Math.max(0.75, Math.min(1.15, logicalH / 260));
+      const plateW = 124 * stageScale;
+      const plateH = 30 * stageScale;
+      const blockS = 76 * stageScale;
+      const groundY = logicalH - 34 - plateH; // stays clear of the loadout strip
+      const cx = logicalW / 2;
 
-      // Render Plate
-      renderPlate(ctx, logicalW / 2 - 60, groundY, 120, 30, previewState.plate, time);
+      // soft contact shadow
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(cx, groundY + plateH * 0.9, plateW * 0.55, plateH * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
 
-      // Render 3D Object (bouncing smoothly above the plate)
-      const maxBounce = Math.min(32, Math.max(16, logicalH * 0.11));
-      const bounceY = Math.abs(Math.sin(time / 200)) * maxBounce;
-      renderBlock(ctx, logicalW / 2 - 40, groundY - 72 - bounceY, 80, 80, previewState.skin, false, time);
-      
-      // Render Boom attacking
-      const cycle = Math.floor(time / 15) % 150;
-      const boomHeightOffset = Math.min(130, Math.max(80, logicalH * 0.42));
-      let boomX = logicalW / 2 + 120;
-      let boomY = groundY - boomHeightOffset;
-      let boomLife = 1;
-      let type = 'projectile';
-      
-      if (cycle < 80) { // Charging / approaching
-         const t = Math.pow(cycle / 80, 2); // accelerate
-         boomX = logicalW / 2 + 120 - t * 120;
-         boomY = groundY - boomHeightOffset + t * boomHeightOffset;
-      } else if (cycle < 110) { // Impact explosion
-         const t = (cycle - 80) / 30;
-         boomX = logicalW / 2;
-         boomY = groundY;
-         boomLife = 1 - t; // fade out
-         type = 'impact';
-      } else {
-         boomLife = 0;
-      }
-      
-      if (boomLife > 0) {
-         renderBoomParticle(ctx, { x: boomX, y: boomY, rotation: cycle * 0.1, life: boomLife, size: type === 'impact' ? 60 + (1 - boomLife) * 60 : 30, color: getBoomColor(previewState.boom), type }, time, previewState.boom);
+      renderPlate(ctx, cx - plateW / 2, groundY, plateW, plateH, previewState.plate, time);
+
+      // hop: quick jump then a squishy landing
+      const hopPhase = (time % 1600) / 1600;
+      const hop = hopPhase < 0.35 ? Math.sin((hopPhase / 0.35) * Math.PI) : 0;
+      const squish = hopPhase >= 0.35 && hopPhase < 0.45 ? Math.sin(((hopPhase - 0.35) / 0.1) * Math.PI) * 0.08 : 0;
+      const hopY = hop * Math.min(26, logicalH * 0.09);
+      const bw = blockS * (1 + squish);
+      const bh = blockS * (1 - squish);
+      renderBlock(ctx, cx - bw / 2, groundY - bh + blockS * 0.16 - hopY, bw, bh, previewState.skin, false, time);
+
+      // boom fly-by on a gentle arc, right to left, high above the critter
+      const flyMs = 3400;
+      const ft = (time % flyMs) / flyMs;
+      if (ft < 0.62) {
+        const k = ft / 0.62;
+        const startX = logicalW + 40;
+        const endX = -40;
+        const topY = Math.max(66, groundY - blockS - 70 * stageScale);
+        const bx = startX + (endX - startX) * k;
+        const by = topY + Math.sin(k * Math.PI) * -18 + 10;
+        const boomColor = getBoomColor(previewState.boom);
+        // little trail puffs
+        for (let i = 1; i <= 4; i++) {
+          const tk = Math.max(0, k - i * 0.035);
+          const tx = startX + (endX - startX) * tk;
+          const ty = topY + Math.sin(tk * Math.PI) * -18 + 10;
+          ctx.save();
+          ctx.globalAlpha = 0.28 - i * 0.055;
+          ctx.fillStyle = boomColor;
+          ctx.beginPath();
+          ctx.arc(tx, ty, (9 - i) * stageScale, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        renderBoomParticle(ctx, { x: bx, y: by, rotation: Math.sin(time / 180) * 0.25, life: 1, size: 26 * stageScale, color: boomColor, type: 'projectile' }, time, previewState.boom);
       }
 
       ctx.restore();
@@ -186,7 +219,7 @@ function LivePreviewCanvas({ previewState, worldTheme }: { previewState: any; wo
   );
 }
 
-function ItemPreviewCanvas({ item, activeCategory }: { item: CosmeticDef, activeCategory: CosmeticCategory }) {
+function ItemPreviewCanvas({ item, activeCategory, animate = false }: { item: CosmeticDef, activeCategory: CosmeticCategory, animate?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -194,23 +227,50 @@ function ItemPreviewCanvas({ item, activeCategory }: { item: CosmeticDef, active
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    const time = 5000;
+    const pal = getThemePalette(item.themeIdx);
     const w = canvas.width;
     const h = canvas.height;
+    let raf = 0;
+    const start = performance.now();
 
-    ctx.clearRect(0, 0, w, h);
+    const draw = (time: number, bob: number) => {
+      ctx.clearRect(0, 0, w, h);
+      if (activeCategory === 'background') {
+        renderWorld(ctx, w, h, item.id, time, true);
+        return;
+      }
+      // world-tinted backdrop so every tile feels like its home world
+      const g = ctx.createRadialGradient(w / 2, h * 0.55, 4, w / 2, h * 0.55, w * 0.7);
+      g.addColorStop(0, `${pal.primary}66`);
+      g.addColorStop(0.6, `${pal.primary}22`);
+      g.addColorStop(1, 'rgba(2,6,23,0.9)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(w / 2, h * 0.84, 30, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (activeCategory === 'skin') {
+        renderBlock(ctx, w / 2 - 26, h * 0.84 - 54 - bob, 52, 52, item.id, false, time);
+      } else if (activeCategory === 'plate') {
+        renderPlate(ctx, w / 2 - 40, h / 2 - 8 - bob * 0.3, 80, 22, item.id, time);
+      } else if (activeCategory === 'boom') {
+        renderBoomParticle(ctx, { x: w / 2, y: h / 2 - 2 - bob, rotation: Math.sin(time / 300) * 0.2, life: 1, size: 22, color: getBoomColor(item.id), type: 'main' }, time, item.id);
+      }
+    };
 
-    if (activeCategory === 'background') {
-      renderWorld(ctx, w, h, item.id, time, true);
-    } else if (activeCategory === 'skin') {
-      renderBlock(ctx, w / 2 - 24, h / 2 - 24, 48, 48, item.id, false, time);
-    } else if (activeCategory === 'plate') {
-      renderPlate(ctx, w / 2 - 34, h / 2 - 10, 68, 20, item.id, time);
-    } else if (activeCategory === 'boom') {
-      renderBoomParticle(ctx, { x: w / 2, y: h / 2, rotation: time * 0.01, life: 1, size: 20, color: getBoomColor(item.id), type: 'main' }, time, item.id);
+    if (!animate) {
+      draw(5000, 0);
+      return;
     }
-  }, [item, activeCategory]);
+    const loop = (now: number) => {
+      const t = now - start;
+      draw(5000 + t, Math.abs(Math.sin(t / 260)) * 6);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [item, activeCategory, animate]);
 
   return (
     <canvas 
@@ -273,7 +333,8 @@ export function Shop() {
   }, [equippedBackground, equippedCosmetic, equippedBoomEffect, equippedPlate]);
 
   const isItemOwned = (item: CosmeticDef) => {
-    if (item.req === 0 && item.price === 0 && !item.isAd) return true;
+    // Starter gear (free, no ad) is always yours
+    if (item.price === 0 && !item.isAd) return true;
     return ownedCosmetics.includes(item.id);
   };
 
@@ -281,14 +342,13 @@ export function Shop() {
   const activeItem = ALL_COSMETICS.find(c => c.id === previewState[cosmeticCat]) || ALL_COSMETICS[0];
   const allItemsInCategory = ALL_COSMETICS.filter(c => c.type === cosmeticCat);
   const activePowerupDef = POWERUP_CONFIG[selectedPowerup];
+  const levelReady = unlockedLevels >= activeItem.req;
+  const isTryingOn = activeCategory !== 'powerups' && !isItemOwned(activeItem);
 
   const currentWorldId = previewState.background || equippedBackground || 'bg-0';
   const worldTheme = useWorldTheme(currentWorldId);
   const themePalette = worldTheme.palette;
 
-  const previewSkinName = ALL_COSMETICS.find(c => c.id === previewState.skin)?.name || 'Object';
-  const previewBoomName = ALL_COSMETICS.find(c => c.id === previewState.boom)?.name || 'Boom';
-  const previewPlateName = ALL_COSMETICS.find(c => c.id === previewState.plate)?.name || 'Plate';
 
   const handleSelectCosmetic = (item: CosmeticDef, cat: CosmeticCategory) => {
     audio.playClickSound();
@@ -306,6 +366,7 @@ export function Shop() {
 
   const handleBuy = () => {
     if (!activeItem) return;
+    if (unlockedLevels < activeItem.req) return; // coins need the campaign level; ads can skip ahead
     if (coins >= activeItem.price) {
       triggerAssetTransition('Authorizing Transaction...', 450);
       if (buyCosmetic(activeItem.id, activeItem.price)) {
@@ -402,18 +463,18 @@ export function Shop() {
         >
           <ArrowLeft className="w-5 h-5" />
         </motion.button>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center min-w-0 px-1">
           <div 
-            className="font-black text-lg sm:text-xl uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-mono transition-colors duration-300"
+            className="font-black text-base min-[400px]:text-lg sm:text-xl uppercase tracking-wider min-[400px]:tracking-widest whitespace-nowrap drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-mono transition-colors duration-300"
             style={{ color: themePalette.accent }}
           >
             ARMORY & LOCKER
           </div>
           <span 
-            className="text-[10px] font-mono tracking-wider uppercase font-bold transition-colors duration-300"
+            className="text-[10px] font-mono tracking-wider uppercase font-bold transition-colors duration-300 whitespace-nowrap"
             style={{ color: themePalette.primary }}
           >
-            {activeCategory === 'background' ? `${worldTheme.worldName} • World Environment` : 'Live 3D Object & Stage Preview'}
+            {activeCategory === 'background' ? `${worldTheme.worldName} • World` : 'Try it on before you buy'}
           </span>
         </div>
         <motion.button 
@@ -449,22 +510,18 @@ export function Shop() {
         </div>
 
         {/* Unobtrusive Bottom Loadout Strip inside Preview Stage */}
-        <div className="absolute bottom-2 inset-x-3 z-10 pointer-events-none flex items-center justify-between gap-2 text-[10px] font-mono text-white/85 bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10">
-          <span className="truncate">
-            <strong className="text-white/50 uppercase mr-1">Object:</strong>
-            <span style={{ color: themePalette.accent }} className="font-bold">{previewSkinName}</span>
-          </span>
-          <span className="text-white/30">•</span>
-          <span className="truncate">
-            <strong className="text-white/50 uppercase mr-1">Plate:</strong>
-            <span className="font-bold text-white/90">{previewPlateName}</span>
-          </span>
-          <span className="text-white/30">•</span>
-          <span className="truncate">
-            <strong className="text-white/50 uppercase mr-1">Boom:</strong>
-            <span className="font-bold text-white/90">{previewBoomName}</span>
-          </span>
-        </div>
+        {activeCategory !== 'powerups' && (
+          <div className="absolute bottom-2 inset-x-3 z-10 pointer-events-none flex items-center justify-between gap-2 text-[10px] font-mono text-white/85 bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10">
+            <span className="truncate">
+              <span className="mr-1">{CAT_EMOJI[cosmeticCat]}</span>
+              <strong className="text-white/50 uppercase mr-1">{CAT_LABEL[cosmeticCat]}:</strong>
+              <span style={{ color: themePalette.accent }} className="font-bold">{activeItem.name}</span>
+            </span>
+            <span className={`shrink-0 font-bold ${isTryingOn ? 'text-amber-300' : 'text-emerald-300'}`}>
+              {isTryingOn ? '👀 Just trying it on!' : getEquippedId(cosmeticCat) === activeItem.id ? '✓ Wearing it' : '✓ Yours'}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Separate Shop Panel Below Preview (Scrolls Only Within This Panel Space) */}
@@ -576,7 +633,7 @@ export function Shop() {
                   className="flex-1 w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-fuchsia-500 border-2 border-white shadow-[0_3px_0_#9333ea] rounded-2xl flex items-center justify-center gap-2 text-white font-black uppercase tracking-wider text-xs active:translate-y-0.5 transition-all cursor-pointer"
                 >
                   {adsRemoved ? <ShieldCheck className="w-4 h-4 text-emerald-300" /> : <Video className="w-4 h-4" />}
-                  <span>{adsRemoved ? 'VIP Free (+3 Charges)' : `Watch Ad (+${activePowerupDef.adReward})`}</span>
+                  <span>{adsRemoved ? `VIP Free (${activePowerupDef.highlight})` : `Watch Ad (${activePowerupDef.highlight})`}</span>
                 </motion.button>
               </div>
 
@@ -634,7 +691,7 @@ export function Shop() {
                     <span>CURRENTLY EQUIPPED</span>
                   </div>
                   <span className="text-[10px] text-emerald-300/80 font-sans font-medium">
-                    {activeCategory === 'background' ? 'Active Environment in Shift Odyssey, Orbital Shift & Shift Arena' : 'Active Tactical Cosmetic'}
+                    {EQUIPPED_LINE[cosmeticCat]}
                   </span>
                 </div>
               ) : isOwned ? (
@@ -656,21 +713,29 @@ export function Shop() {
                 /* 3. NOT OWNED STATE: DUAL ACQUISITION PATHWAYS WITH OPTIONAL CAMPAIGN MILESTONE */
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11px] font-mono mb-0.5 px-1">
-                    {unlockedLevels >= activeItem.req ? (
+                    {levelReady ? (
                       <span className="font-bold flex items-center gap-1.5 text-emerald-400">
-                        <Check className="w-3.5 h-3.5" /> CAMPAIGN GATE CLEARED • LEVEL {activeItem.req}
+                        <Check className="w-3.5 h-3.5" /> Lv {activeItem.req} reached. Shopping time!
                       </span>
                     ) : (
                       <span className="font-bold flex items-center gap-1.5 text-cyan-300">
-                        <Sparkles className="w-3.5 h-3.5 text-yellow-400" /> CAMPAIGN LVL {activeItem.req} (OR UNLOCK EARLY)
+                        <Lock className="w-3.5 h-3.5 text-rose-300" /> Coins open at level {activeItem.req}. An ad opens it now!
                       </span>
                     )}
-                    <span className="text-white/60">Your Level: {unlockedLevels}</span>
+                    <span className="text-white/60 shrink-0 ml-2">You: Lv {unlockedLevels}</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Option 1: BUY WITH COINS */}
-                    {coins >= activeItem.price ? (
+                    {/* Option 1: BUY WITH COINS (needs the campaign level) */}
+                    {!levelReady ? (
+                      <div className="py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-xs border-2 border-white/15 bg-slate-900/70 text-white/60 font-mono">
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>REACH LEVEL {activeItem.req}</span>
+                        <span className="flex items-center gap-1 bg-black/30 px-2 py-0.5 rounded-full text-[11px] text-amber-300/70">
+                          {activeItem.price.toLocaleString()} <Coins className="w-3 h-3 fill-current" />
+                        </span>
+                      </div>
+                    ) : coins >= activeItem.price ? (
                       <motion.button 
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -692,9 +757,9 @@ export function Shop() {
                         }}
                         className="py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-xs border-2 border-amber-500/50 bg-amber-950/40 text-amber-200 cursor-pointer active:scale-98 font-mono"
                       >
-                        <span className="font-black text-[11px] text-yellow-300">NEED COINS</span>
+                        <span className="font-black text-[11px] text-yellow-300">PIGGY BANK'S SHORT</span>
                         <span className="text-[10px] text-yellow-400/90 underline">
-                          +{(activeItem.price - coins).toLocaleString()} • Buy Credits
+                          +{(activeItem.price - coins).toLocaleString()} 🪙 needed
                         </span>
                       </motion.button>
                     )}
@@ -707,7 +772,7 @@ export function Shop() {
                       className="py-3 px-4 rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs border-2 border-white bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-[0_3px_0_#701a75] active:translate-y-0.5 cursor-pointer font-mono"
                     >
                       {adsRemoved ? <ShieldCheck className="w-4 h-4 text-emerald-300" /> : <Video className="w-4 h-4" />}
-                      <span>{adsRemoved ? 'VIP AD-FREE CLAIM' : 'WATCH SPONSOR AD'}</span>
+                      <span>{adsRemoved ? 'VIP FREE CLAIM' : levelReady ? 'WATCH AD, GET IT FREE' : 'WATCH AD, UNLOCK NOW'}</span>
                     </motion.button>
                   </div>
                 </div>
@@ -767,10 +832,10 @@ export function Shop() {
             <div className="flex items-center justify-between text-[11px] font-mono text-white/70 mb-2.5 px-1">
               <span className="font-bold tracking-wider uppercase flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: themePalette.accent }} />
-                {activeCategory === 'background' ? 'WORLD CATALOGUE (20 BIOMES)' : `${activeCategory.toUpperCase()} CATALOGUE (SCROLL TO BROWSE)`}
+                {CAT_TITLE[cosmeticCat]}
               </span>
               <span className="text-[10px] text-white/50">
-                {allItemsInCategory.filter(isItemOwned).length}/{allItemsInCategory.length} Unlocked
+                {allItemsInCategory.filter(isItemOwned).length}/{allItemsInCategory.length} collected
               </span>
             </div>
 
@@ -781,13 +846,16 @@ export function Shop() {
                 const isEquippedCurrent = getEquippedId(cosmeticCat) === item.id;
                 const isAvailable = !owned && unlockedLevels >= item.req;
                 const isLockedByLvl = !owned && unlockedLevels < item.req;
+                const tilePal = getThemePalette(item.themeIdx);
 
                 return (
                   <motion.button
                     key={item.id}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => handleSelectCosmetic(item, cosmeticCat)}
-                    className={`relative w-full rounded-2xl border-2 flex flex-col justify-between overflow-hidden transition-all text-left cursor-pointer p-2.5 ${
+                    animate={isSelected ? { y: -3, rotateX: 6 } : { y: 0, rotateX: 0 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                    className={`relative w-full rounded-2xl border-2 flex flex-col justify-between overflow-hidden transition-colors text-left cursor-pointer p-2 [transform-style:preserve-3d] ${
                       isSelected 
                         ? 'scale-[1.02] z-10 shadow-xl' 
                         : isEquippedCurrent
@@ -799,79 +867,62 @@ export function Shop() {
                         : 'border-white/15 bg-[#0f172a]/75 hover:border-white/30 opacity-85'
                     }`}
                     style={isSelected ? {
-                      borderColor: themePalette.accent,
-                      boxShadow: `0 0 18px ${themePalette.glow}`,
-                      backgroundColor: '#0f172a',
-                    } : undefined}
+                      borderColor: tilePal.accent,
+                      boxShadow: `0 6px 0 ${tilePal.primary}88, 0 0 18px ${tilePal.glow}`,
+                      background: `linear-gradient(180deg, ${tilePal.primary}33, #0f172a 70%)`,
+                    } : { background: `linear-gradient(180deg, ${tilePal.primary}1f, #0f172a 65%)` }}
                   >
-                    {/* Top Bar with Name and Status Badge */}
-                    <div className="flex items-center justify-between gap-1 w-full mb-1.5 z-10">
-                      <span className="text-[10px] font-mono font-black text-white/95 truncate uppercase tracking-tight">
-                        {activeCategory === 'background' ? `W#${item.themeIdx + 1}` : item.name.split(' ')[0]}
+                    {/* Thumbnail with world tint, state badge and lock veil */}
+                    <div
+                      className="w-full h-20 rounded-xl overflow-hidden relative border bg-black/60 mb-1.5"
+                      style={{ borderColor: `${tilePal.accent}55` }}
+                    >
+                      <ItemPreviewCanvas item={item} activeCategory={cosmeticCat} animate={isSelected} />
+                      <span
+                        className="absolute top-1 left-1 text-[8px] font-mono font-black px-1.5 py-0.5 rounded-md bg-black/70 border"
+                        style={{ color: tilePal.accent, borderColor: `${tilePal.accent}66` }}
+                      >
+                        W{item.themeIdx + 1}
                       </span>
-                      
                       {isEquippedCurrent ? (
-                        <span className="shrink-0 bg-emerald-500 text-slate-950 font-black text-[8px] px-1.5 py-0.2 rounded-full flex items-center gap-0.5 border border-white/60 shadow-xs">
-                          <Check className="w-2.5 h-2.5 stroke-[4]" />
-                          <span>EQUIPPED</span>
+                        <span className="absolute top-1 right-1 bg-emerald-500 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-white/70">
+                          <Check className="w-2.5 h-2.5 stroke-[4]" /> ON
                         </span>
                       ) : owned ? (
-                        <span className="shrink-0 bg-cyan-500/20 text-cyan-300 font-mono font-bold text-[8px] px-1.5 py-0.2 rounded-full border border-cyan-400/40">
-                          OWNED
+                        <span className="absolute top-1 right-1 bg-cyan-500/90 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-full border border-white/50">
+                          YOURS
                         </span>
-                      ) : isAvailable ? (
-                        <span className="shrink-0 bg-amber-400 text-slate-950 font-black text-[8px] px-1.5 py-0.2 rounded-full border border-yellow-200">
-                          AVAILABLE
-                        </span>
-                      ) : (
-                        <span className="shrink-0 bg-rose-950/80 text-rose-300 text-[8px] font-mono font-bold px-1.5 py-0.2 rounded-full flex items-center gap-0.5 border border-rose-500/30">
-                          <Lock className="w-2 h-2" />
-                          <span>LVL {item.req}</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Canvas Thumbnail Preview */}
-                    <div className="w-full h-20 rounded-xl overflow-hidden relative border border-white/10 bg-black/60 mb-1.5">
-                      <ItemPreviewCanvas item={item} activeCategory={cosmeticCat} />
+                      ) : null}
                       {isLockedByLvl && (
-                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-[0.5px]">
-                          <Lock className="w-4 h-4 text-rose-300/80 drop-shadow" />
-                          <span className="text-[8px] font-mono font-bold text-rose-300/80 mt-0.5">LVL {item.req}</span>
-                        </div>
-                      )}
-                      {isEquippedCurrent && (
-                        <div className="absolute bottom-1 right-1 bg-emerald-500 rounded-full p-0.5 border border-white shadow-md">
-                          <Check className="w-2.5 h-2.5 text-white stroke-[4]" />
+                        <div className="absolute inset-0 bg-black/55 flex flex-col items-center justify-center">
+                          <Lock className="w-4 h-4 text-white/80 drop-shadow" />
+                          <span className="text-[8px] font-mono font-bold text-white/80 mt-0.5">LEVEL {item.req}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Bottom Name Label & Unlock Method Indicator */}
-                    <div className="w-full mt-0.5 flex flex-col gap-0.5">
-                      <div className="text-[10px] font-mono text-white/95 truncate font-bold">
+                    {/* Name + how to get it */}
+                    <div className="w-full flex flex-col gap-1">
+                      <div className="text-[10.5px] font-black text-white truncate leading-tight">
                         {item.name}
                       </div>
-                      
-                      {/* Unlock Method Strip */}
-                      <div className="flex items-center justify-between text-[8px] font-mono pt-1 border-t border-white/10">
+                      <div className="flex items-center justify-between text-[9px] font-mono font-bold">
                         {isEquippedCurrent ? (
-                          <span className="text-emerald-400 font-black tracking-tight flex items-center gap-0.5">
-                            <Check className="w-2 h-2 stroke-[3]" /> EQUIPPED
-                          </span>
+                          <span className="text-emerald-400">Wearing it ✓</span>
                         ) : owned ? (
-                          <span className="text-cyan-300 font-bold tracking-tight">
-                            UNLOCKED
-                          </span>
+                          <span className="text-cyan-300">Tap to equip</span>
+                        ) : isAvailable ? (
+                          <>
+                            <span className="flex items-center gap-0.5 text-amber-300">
+                              {item.price.toLocaleString()} <Coins className="w-2.5 h-2.5 fill-current" />
+                            </span>
+                            <span className="text-purple-300">or 🎬</span>
+                          </>
                         ) : (
-                          <div className="flex items-center gap-1 text-[8px] text-white/70 w-full justify-between">
-                            <span className="flex items-center gap-0.5 text-amber-300 font-bold">
-                              {item.price.toLocaleString()} <Coins className="w-2 h-2 fill-current" />
-                            </span>
-                            <span className="text-[7.5px] text-purple-300 font-bold bg-purple-900/50 px-1 py-0.2 rounded border border-purple-500/30">
-                              AD / LVL {item.req}
-                            </span>
-                          </div>
+                          <>
+                            <span className="text-white/50">🔒 Lv {item.req}</span>
+                            <span className="text-purple-300">🎬 now</span>
+                          </>
                         )}
                       </div>
                     </div>
