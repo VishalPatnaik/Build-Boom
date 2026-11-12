@@ -3077,6 +3077,7 @@ export function GameBoard() {
         {state === 'won' && mode === 'campaign' && summaryMetrics ? (
           <EndOfLevelSummary
             metrics={summaryMetrics}
+            canRetry={(useGameStore.getState().highScores[`stars-${level}`] || 0) < 3}
             onNextLevel={() => {
               if (gameOverTimeoutRef.current) {
                 clearTimeout(gameOverTimeoutRef.current);
@@ -3089,6 +3090,11 @@ export function GameBoard() {
                 useGameStore.getState().setPendingCoins(0);
               }
               setSummaryMetrics(null);
+              // Finishing a world goes back to the map, where the next world unlocks with fanfare
+              if (currentLvl % 10 === 0 && currentLvl < 200) {
+                useGameStore.getState().setState('idle');
+                return;
+              }
               setWarpTransition({
                 isActive: true,
                 fromLevel: currentLvl,

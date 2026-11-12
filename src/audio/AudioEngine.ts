@@ -1227,6 +1227,59 @@ class AudioEngine {
     });
   }
 
+  /** A padlock clunk, a rising whoosh and a big bright chord: a new world opens. */
+  playWorldUnlock() {
+    if (!this.ctx || !this.sfxEnabled) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const out = this.getDestination();
+    // clunk
+    const clunk = this.ctx.createOscillator();
+    const cg = this.ctx.createGain();
+    clunk.type = 'square';
+    clunk.frequency.setValueAtTime(180, t);
+    clunk.frequency.exponentialRampToValueAtTime(70, t + 0.12);
+    cg.gain.setValueAtTime(0.0001, t);
+    cg.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
+    cg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    clunk.connect(cg);
+    cg.connect(out);
+    clunk.start(t);
+    clunk.stop(t + 0.16);
+    // whoosh up
+    const sweep = this.ctx.createOscillator();
+    const sg = this.ctx.createGain();
+    sweep.type = 'sawtooth';
+    sweep.frequency.setValueAtTime(160, t + 0.15);
+    sweep.frequency.exponentialRampToValueAtTime(1400, t + 0.75);
+    const sf = this.ctx.createBiquadFilter();
+    sf.type = 'lowpass';
+    sf.frequency.value = 2200;
+    sg.gain.setValueAtTime(0.0001, t + 0.15);
+    sg.gain.exponentialRampToValueAtTime(0.08, t + 0.4);
+    sg.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+    sweep.connect(sf);
+    sf.connect(sg);
+    sg.connect(out);
+    sweep.start(t + 0.15);
+    sweep.stop(t + 0.82);
+    // chord (C major with a high sparkle)
+    [523.25, 659.25, 783.99, 1046.5, 1567.98].forEach((f, i) => {
+      const o = this.ctx!.createOscillator();
+      const g = this.ctx!.createGain();
+      o.type = i === 4 ? 'sine' : 'triangle';
+      o.frequency.value = f;
+      const s0 = t + 0.78 + i * 0.03;
+      g.gain.setValueAtTime(0.0001, s0);
+      g.gain.exponentialRampToValueAtTime(i === 4 ? 0.05 : 0.11, s0 + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.001, s0 + 1.2);
+      o.connect(g);
+      g.connect(out);
+      o.start(s0);
+      o.stop(s0 + 1.25);
+    });
+  }
+
   /** Soft "aww" two-note drop when a heart is lost. */
   playHeartLost() {
     if (!this.ctx || !this.sfxEnabled) return;

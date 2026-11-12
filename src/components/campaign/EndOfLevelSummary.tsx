@@ -50,6 +50,8 @@ export interface EndOfLevelSummaryProps {
   onWatchDoubleCoins?: () => void;
   onViewReplay?: () => void;
   hasReplay?: boolean;
+  /** False once the level has 3 stars: perfect levels can't be replayed */
+  canRetry?: boolean;
 }
 
 export function EndOfLevelSummary({
@@ -60,6 +62,7 @@ export function EndOfLevelSummary({
   onWatchDoubleCoins,
   onViewReplay,
   hasReplay = false,
+  canRetry = true,
 }: EndOfLevelSummaryProps) {
   const [revealedStars, setRevealedStars] = useState(0);
   const [claimedDouble, setClaimedDouble] = useState(false);
@@ -346,13 +349,18 @@ export function EndOfLevelSummary({
             }}
             className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-black font-black text-base sm:text-lg uppercase tracking-wider rounded-2xl shadow-[0_4px_0_#0d9488,0_8px_20px_rgba(20,184,166,0.4)] flex items-center justify-center gap-2 border-2 border-emerald-200 cursor-pointer active:translate-y-1 active:shadow-none transition-all"
           >
-            <span>NEXT LEVEL</span>
+            <span>{metrics.level % 10 === 0 ? 'UNLOCK NEXT WORLD 🔓' : 'NEXT LEVEL'}</span>
             <ChevronRight className="w-5 h-5 stroke-[3]" />
           </button>
 
           {/* Secondary Actions Grid */}
           <div className="grid grid-cols-3 gap-2">
-            {/* RETRY */}
+            {/* RETRY (gone once the level is perfect: 3 stars means it's done) */}
+            {!canRetry ? (
+              <div className="py-2.5 px-2 bg-yellow-400/15 border border-yellow-300/50 text-yellow-200 font-black text-xs uppercase rounded-xl flex items-center justify-center gap-1">
+                ★★★ DONE
+              </div>
+            ) : (
             <button
               onClick={() => {
                 audio.playClickSound();
@@ -365,6 +373,7 @@ export function EndOfLevelSummary({
               <RotateCcw className="w-3.5 h-3.5" />
               <span>RETRY</span>
             </button>
+            )}
 
             {/* REPLAY */}
             {hasReplay && onViewReplay ? (
