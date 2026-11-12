@@ -1,5 +1,6 @@
 // Comprehensive Adversarial Regression Test Suite for TOWER//SHIFT
-import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor, topSway, swayScaleFor } from './src/game/physicsEngine';
+import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, findToppleLevel, BLOCK_HALF_WIDTH, blockHalfWidth, windStrengthFor, topSway, swayScaleFor, motionTorqueFor } from './src/game/physicsEngine';
+import { toScreenLateral, filterLateral } from './src/game/deviceMotion';
 import { ALL_COSMETICS, COLLECTIONS } from './src/game/collections';
 import { PurchaseValidator, EntitlementGranter, MockBillingProvider, GooglePlayBillingProvider, billingService } from './src/billing/BillingService';
 import { BILLING_CATALOG, getProductById } from './src/billing/catalog';
@@ -484,6 +485,30 @@ console.log('\n--- 7. STACKING PHYSICS ---');
   applyBlockImpact(gentle, 0, 0, 'standard', perks, 1);
   applyBlockImpact(full, 0, 0, 'standard', perks, 1);
   assert(Math.abs(gentle.angularVelocity) < Math.abs(full.angularVelocity), 'Gentle levels shove the tower less');
+}
+
+// ----------------------------------------------------
+// 7c. PHONE MOTION (swing the phone, the tower swings)
+// ----------------------------------------------------
+console.log('\n--- 7c. PHONE MOTION ---');
+{
+  assert(motionTorqueFor(5, 15, 0) < 0, 'Moving the phone right makes the tower lean left (it lags behind its base)');
+  assert(motionTorqueFor(-5, 15, 0) > 0, 'Moving it left leans the tower right');
+  assert(Math.abs(motionTorqueFor(5, 25, 0)) > Math.abs(motionTorqueFor(5, 3, 0)), 'A tall tower feels a swing more than a short one');
+  assert(Math.abs(motionTorqueFor(5, 15, 3)) < Math.abs(motionTorqueFor(5, 15, 0)), 'Gyro Stability softens phone swings');
+  assert(motionTorqueFor(5, 0, 0) === 0, 'No tower, nothing to swing');
+  const still = createInitialPhysicsState({});
+  const swung = createInitialPhysicsState({});
+  for (const st of [still, swung]) for (let i = 0; i < 12; i++) placeBlock(st, { distance: 0, angle: 0, mass: 1, isPerfect: true, perks: {} });
+  still.angularVelocity = 0; swung.angularVelocity = 0;
+  for (let f = 0; f < 20; f++) { updateTowerPhysics(still, 16.7, {}); updateTowerPhysics(swung, 16.7, {}, { baseAccel: f < 12 ? 8 : 0 }); }
+  assert(swung.tiltAngle < still.tiltAngle - 1, 'A real swing of the phone visibly rocks a 12-tall tower');
+  assert(toScreenLateral(1, 2, 0) === 1 && toScreenLateral(1, 2, 90) === 2 && toScreenLateral(1, 2, 270) === -2, 'Phone axes map to the screen in any rotation');
+  let out = 0;
+  for (let i = 0; i < 30; i++) out = filterLateral(0.3, false);
+  assert(out === 0, 'Hand tremor below the dead-zone is ignored');
+  for (let i = 0; i < 80; i++) out = filterLateral(4.9, true); // phone held tilted, not moving
+  assert(Math.abs(out) < 0.5, 'Just holding the phone tilted does not push the tower (gravity filtered out)');
 }
 
 // ----------------------------------------------------

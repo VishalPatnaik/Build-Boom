@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
 import { useDailyStore } from '../game/dailyStore';
+import { startDeviceMotion, stopDeviceMotion, requestMotionPermission, getMotion } from '../game/deviceMotion';
 import { MAX_LIVES, TEETER_GRACE_MS, canLaunch, teeterStep, campaignStars } from '../game/runRules';
 import { generateLevel, generateEndless, generateTournament, generateSandboxLevel, generateTutorialBlocks, BlockDef, getBlockMass, levelTwist, TWIST_INFO } from '../game/LevelGenerator';
 import { createInitialPhysicsState, updateTowerPhysics, applyBlockImpact, placeBlock, rebraceTower, landingSlip, flexOffset, topSway, blockHalfWidth, windStrengthFor, swayScaleFor, BLOCK_HALF_WIDTH, BASE_HALF_WIDTH, HIT_WINDOW, MAX_SLIP, VISUAL_LAYER, MAX_VISIBLE_LAYERS, StackedBlock, TowerPhysicsState } from '../game/physicsEngine';
@@ -100,6 +101,7 @@ export function GameBoard() {
     hapticsEnabled, 
     toggleHaptics,
     sillyMode,
+    motionSway,
     toggleSillyMode,
     visualTheme,
     hasCompletedCampaignTutorial,
@@ -214,6 +216,17 @@ export function GameBoard() {
   const lowFxRef = useRef(false);
   const resizeCanvasRef = useRef<() => void>(() => {});
   const frameStatsRef = useRef({ ema: 16.7, slowMs: 0 });
+  // Phone motion: swinging the phone rocks the tower (Settings → Motion Sway)
+  const motionPermissionAskedRef = useRef(false);
+  const motionEnergyRef = useRef(0);
+  useEffect(() => {
+    if (motionSway && state === 'playing') {
+      startDeviceMotion();
+      return () => stopDeviceMotion();
+    }
+    stopDeviceMotion();
+    return undefined;
+  }, [motionSway, state]);
 
   const handleWarpComplete = useCallback(() => {
     setWarpTransition((prev) => {
@@ -1108,6 +1121,10 @@ export function GameBoard() {
     gs.floatTexts.push({ text: '⬇ GRAVITY SAYS HI', x: pose.x, y: pose.y - 10, life: 1.6, color: '#fb923c' });
     const dir = side < 0 ? 'left' : 'right';
     const piece = fromLevel <= 0 ? 'the bottom piece' : `piece ${fromLevel}`;
+    if (cause !== 'overhang' && motionEnergyRef.current > 1.2) {
+      setGravityNote('You gave your phone a good swing and the tower swung with it. Gravity caught it mid-wobble! Hold steady when it gets tall.');
+      return;
+    }
     setGravityNote(
       cause === 'overhang'
         ? `The pieces above ${piece} leaned out too far ${dir}. Their centre of mass slipped past the edge and gravity went "nope!"`
@@ -1558,7 +1575,14 @@ export function GameBoard() {
     // Update Tower Tilt & Equilibrium
     // Dev-only hook so automated playtests can read the live game state
     if (import.meta.env.DEV) { (window as any).__gs = gs; (window as any).__store = useGameStore; }
+    // Moving the phone moves the tower's base; a strong swing gets a one-time tip
+    const baseAccel = motionSway && !rechargeModalOpenRef.current ? getMotion().lateral : 0;
+    motionEnergyRef.current = motionEnergyRef.current * Math.exp(-dt / 600) + Math.abs(baseAccel) * (dt / 1000);
+    if (Math.abs(baseAccel) > 4 && gs.physics.stack.length >= 3) {
+      showTip('motion', 'WHOA, EASY THERE!', 'Your tower feels every move of your phone. Swing it and the stack swings too. Hold steady (or rock it on purpose)!');
+    }
     const physResult = updateTowerPhysics(gs.physics, effectiveDt, unlockedPerks, {
+      baseAccel,
       forgiving: isTutorialActive,
       wind: mode === 'workshop' ? Math.max(0, Math.min(1, sandboxOptions?.wind ?? 0)) : windStrengthFor(mode, level, gs.physics.stack.length),
     });
@@ -2752,6 +2776,11 @@ export function GameBoard() {
         style={{ ...worldTheme.cssVariables, touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}
         onPointerDown={(e) => {
           if (e.cancelable) e.preventDefault();
+          if (motionSway && !motionPermissionAskedRef.current) {
+            // iOS only lets a tap ask for the motion sensor; elsewhere this is a no-op
+            motionPermissionAskedRef.current = true;
+            requestMotionPermission().then((ok) => ok && startDeviceMotion());
+          }
           handleAction();
         }}
       >

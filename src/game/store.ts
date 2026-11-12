@@ -90,6 +90,9 @@ interface GameStore {
   toggleScreenShake: () => void;
   sillyMode: boolean;
   toggleSillyMode: () => void;
+  /** Moving or swinging the phone rocks the tower (device motion sensors) */
+  motionSway: boolean;
+  toggleMotionSway: () => void;
 
   // Settings Overlay & Audio/Visual Preferences
   settingsModalOpen: boolean;
@@ -270,6 +273,9 @@ const loadProgress = () => {
       if (parsed.sillyMode === undefined) {
         parsed.sillyMode = true;
       }
+      if (parsed.motionSway === undefined) {
+        parsed.motionSway = true;
+      }
       if (parsed.musicEnabled === undefined) {
         parsed.musicEnabled = true;
       }
@@ -330,6 +336,7 @@ const loadProgress = () => {
     showFpsMonitor: true,
     screenShakeEnabled: true,
     sillyMode: true,
+    motionSway: true,
     musicEnabled: true,
     sfxEnabled: true,
     musicVolume: 0.6,
@@ -374,6 +381,7 @@ const saveProgress = (data: Partial<GameStore>) => {
       showFpsMonitor: data.showFpsMonitor !== undefined ? data.showFpsMonitor : current.showFpsMonitor,
       screenShakeEnabled: data.screenShakeEnabled !== undefined ? data.screenShakeEnabled : current.screenShakeEnabled,
       sillyMode: data.sillyMode !== undefined ? data.sillyMode : current.sillyMode,
+      motionSway: data.motionSway !== undefined ? data.motionSway : current.motionSway,
       musicEnabled: data.musicEnabled !== undefined ? data.musicEnabled : current.musicEnabled,
       sfxEnabled: data.sfxEnabled !== undefined ? data.sfxEnabled : current.sfxEnabled,
       musicVolume: data.musicVolume !== undefined ? data.musicVolume : current.musicVolume,
@@ -463,6 +471,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const next = !get().sillyMode;
     saveProgress({ sillyMode: next });
     set({ sillyMode: next });
+  },
+  motionSway: initialProgress.motionSway !== undefined ? initialProgress.motionSway : true,
+  toggleMotionSway: () => {
+    const next = !get().motionSway;
+    saveProgress({ motionSway: next });
+    set({ motionSway: next });
   },
 
   // Settings & Theme

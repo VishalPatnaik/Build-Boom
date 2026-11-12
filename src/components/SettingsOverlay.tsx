@@ -125,6 +125,8 @@ export function SettingsOverlay() {
     toggleFpsMonitor,
     sillyMode,
     toggleSillyMode,
+    motionSway,
+    toggleMotionSway,
     playerName,
     setPlayerName,
     playerAvatar,
@@ -765,6 +767,44 @@ export function SettingsOverlay() {
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out mt-0.5 ${
                           sillyMode ? 'translate-x-6' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* MOTION SWAY CARD */}
+                <div className={`p-4 rounded-2xl border-2 backdrop-blur-md transition-all ${
+                  motionSway ? 'bg-gradient-to-r from-cyan-950/80 via-sky-950/50 to-slate-950 border-cyan-400/80' : 'bg-slate-950/80 border-slate-800'
+                }`}>
+                  <div className="flex items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 shrink-0 text-lg ${
+                        motionSway ? 'bg-cyan-500/20 border-cyan-400' : 'bg-slate-900 border-slate-700 grayscale'
+                      }`}>
+                        📱
+                      </div>
+                      <div>
+                        <span className="text-sm font-black text-white uppercase tracking-wider">Motion Sway 🌀</span>
+                        <p className="text-[11px] text-slate-300 font-sans mt-0.5">
+                          Swing your phone and the tower swings with it, just like a real stack in your hand. Turn it off for bumpy bus rides!
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        haptics.uiTap();
+                        toggleMotionSway();
+                      }}
+                      className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none ${
+                        motionSway ? 'bg-cyan-400 border-cyan-200' : 'bg-slate-800 border-slate-700'
+                      }`}
+                      aria-label="Toggle motion sway"
+                      aria-pressed={motionSway}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out mt-0.5 ${
+                          motionSway ? 'translate-x-6' : 'translate-x-0.5'
                         }`}
                       />
                     </button>

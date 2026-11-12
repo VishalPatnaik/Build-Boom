@@ -290,6 +290,20 @@ export function rebraceTower(state: TowerPhysicsState) {
   findToppleLevel(state);
 }
 
+/** How strongly moving the phone rocks the tower. */
+export const MOTION_GAIN = 0.8;
+
+/**
+ * Torque from the phone being moved sideways. The base accelerates with the phone and the
+ * tower's weight lags behind, so it leans opposite to the motion; taller towers have more
+ * weight up high and feel it more. Gyro Stability tiers soften it.
+ */
+export function motionTorqueFor(baseAccel: number, towerHeight: number, gyroTier: number): number {
+  if (!baseAccel || towerHeight <= 0) return 0;
+  const heightFactor = Math.min(1.5, 0.4 + towerHeight / 20);
+  return -baseAccel * MOTION_GAIN * heightFactor * (1 - 0.15 * Math.min(3, gyroTier));
+}
+
 /**
  * How strongly arriving objects rock the tower in a given run: gentle while players learn
  * (early campaign, short endless towers), full strength later.
@@ -342,7 +356,15 @@ export function updateTowerPhysics(
   state: TowerPhysicsState,
   dtMs: number,
   perks: Record<string, number>,
-  opts: { forgiving?: boolean; wind?: number } = {}
+  opts: {
+    forgiving?: boolean;
+    wind?: number;
+    /**
+     * Sideways acceleration of the phone, m/s² (right is +). The tower's base moves with
+     * the phone, so the tower lags behind it and leans the other way, like a real stack.
+     */
+    baseAccel?: number;
+  } = {}
 ): { collapsed: boolean; warningAlert: boolean; toppleLevel: number } {
   // Clamp delta time to avoid large physics steps on mobile frame hitches or tab resumption
   const dt = Math.min(0.064, Math.max(0.001, (Number.isFinite(dtMs) ? dtMs : 16.67) / 1000));
@@ -363,7 +385,8 @@ export function updateTowerPhysics(
   updateWind(state, dt, opts.forgiving ? 0 : opts.wind || 0);
   const windTorque = state.wind.force * 3.5 * Math.min(2, n / 15);
 
-  state.angularVelocity += (gravityTorque + windTorque - state.tiltAngle * spring) * dt;
+  const motionTorque = opts.forgiving ? 0 : motionTorqueFor(opts.baseAccel || 0, n, perks['structural_gyro'] || 0);
+  state.angularVelocity += (gravityTorque + windTorque + motionTorque - state.tiltAngle * spring) * dt;
   state.angularVelocity *= Math.exp(-dampRate * dt);
   state.tiltAngle += state.angularVelocity * dt * 20;
 

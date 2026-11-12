@@ -16,6 +16,7 @@ BUILD WITH REAL PHYSICS
 • Wide anchor blocks steady the base, heavy gold blocks shift the weight, light crystals wobble.
 • Every landing shoves the tower: tall towers sway, so tap when the top swings back under the incoming piece.
 • Wind gusts push taller towers sideways in later worlds.
+• Motion Sway: swing your phone and the tower swings with it, like a real stack in your hand (switch it off in Settings).
 • Never tap a bomb. Let it fly past.
 • Three hearts per run: a slip costs a heart, so one wobble never ends your fun.
 • Watch for tricksters: bombs disguised as critters, critters disguised as bombs, ghosts and blinkers. Every disguise glitches for a split second; spot it and earn bonus coins.
