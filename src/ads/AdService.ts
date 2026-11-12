@@ -1,5 +1,5 @@
 // TOWER//SHIFT — Universal Ad Engine & Native Mobile Ads (AdMob) Bridge
-// Provides seamless rewarded ads and interstitial ads across Web, PWA, and Native Android wrappers.
+// Real ads run through Google AdMob in the Android app; the browser fallback is a test stand-in for desktop development only.
 
 import { useGameStore } from '../game/store';
 import { initAds, showRewardedAd } from './admob';
@@ -146,7 +146,7 @@ export class AdService {
     return {
       isAvailable: true,
       provider: 'sponsor_engine',
-      providerLabel: 'Universal Sponsor Engine (Web / PWA)',
+      providerLabel: 'Test ads (desktop development preview)',
       hasAdFreeVIP: false,
       canShowAds: true,
     };

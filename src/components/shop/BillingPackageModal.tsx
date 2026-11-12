@@ -27,9 +27,8 @@ import {
   Wallet,
   Lock
 } from 'lucide-react';
-import { PaymentScreenModal, PaymentRail } from './PaymentScreenModal';
+import { PaymentScreenModal } from './PaymentScreenModal';
 
-export type PaymentMethod = 'card' | 'gpay' | 'paypal' | 'stripe';
 
 interface BillingPackageModalProps {
   isOpen: boolean;
@@ -40,7 +39,6 @@ interface BillingPackageModalProps {
 export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: BillingPackageModalProps) {
   const { coins, powerups, ownedCosmetics, adsRemoved } = useGameStore();
   const [activeTab, setActiveTab] = useState<ProductType>(initialTab);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentRail>('gpay');
   const [activePaymentProduct, setActivePaymentProduct] = useState<ProductCatalogItem | null>(null);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -152,7 +150,7 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                     </span>
                   </div>
                   <p className="text-xs text-white/60">
-                    Credit/Debit, Google Pay, PayPal, Apple Pay & Stripe
+                    Secure checkout with Google Play
                   </p>
                 </div>
               </div>
@@ -169,64 +167,6 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                   <span className="flex items-center gap-0.5 text-yellow-400"><Zap className="w-3 h-3" />{powerups.emp}</span>
                   <span className="flex items-center gap-0.5 text-emerald-400"><Shield className="w-3 h-3" />{powerups.shield}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Payment Method Selector Bar */}
-            <div className="mt-3.5 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] font-mono">
-              <div className="flex items-center gap-1.5 text-white/70">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Select Payment Method:</span>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => { setSelectedMethod('gpay'); audio.playClickSound(); }}
-                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
-                    selectedMethod === 'gpay'
-                      ? 'bg-amber-500/30 border-amber-400 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
-                >
-                  <span>⚡</span>
-                  <span>Google Pay</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedMethod('card'); audio.playClickSound(); }}
-                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
-                    selectedMethod === 'card'
-                      ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
-                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
-                >
-                  <CreditCard className="w-3 h-3 text-cyan-400" />
-                  <span>Card</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedMethod('paypal'); audio.playClickSound(); }}
-                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
-                    selectedMethod === 'paypal'
-                      ? 'bg-blue-500/30 border-blue-400 text-blue-200 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
-                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="font-black">🅿️</span>
-                  <span>PayPal</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedMethod('stripe'); audio.playClickSound(); }}
-                  className={`py-1 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-all border ${
-                    selectedMethod === 'stripe'
-                      ? 'bg-purple-500/30 border-purple-400 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                      : 'bg-black/30 border-white/10 text-white/60 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="font-black">S</span>
-                  <span>Stripe</span>
-                </button>
               </div>
             </div>
 
@@ -434,33 +374,12 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                       <button
                         onClick={() => handlePurchase(product)}
                         disabled={isBuying}
-                        className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-mono ${
-                          selectedMethod === 'gpay'
-                            ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/30'
-                            : selectedMethod === 'paypal'
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:brightness-110 shadow-blue-500/30'
-                            : selectedMethod === 'stripe'
-                            ? 'bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white hover:brightness-110 shadow-purple-500/30'
-                            : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 text-slate-950 hover:brightness-110 shadow-cyan-500/30'
-                        }`}
-                      >
+                        className="px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-mono bg-gradient-to-r from-emerald-400 to-cyan-500 text-slate-950 hover:brightness-110 shadow-emerald-500/30"
+                     >
                         {isBuying ? (
                           <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <>
-                            <span>
-                              {selectedMethod === 'gpay' ? '⚡' : selectedMethod === 'paypal' ? '🅿️' : selectedMethod === 'stripe' ? 'S' : '💳'}
-                            </span>
-                            <span>
-                              {selectedMethod === 'gpay'
-                                ? `PAY ${product.defaultPricePlaceholder} WITH GPAY`
-                                : selectedMethod === 'paypal'
-                                ? `PAY ${product.defaultPricePlaceholder} WITH PAYPAL`
-                                : selectedMethod === 'stripe'
-                                ? `PAY ${product.defaultPricePlaceholder} WITH STRIPE`
-                                : `PAY ${product.defaultPricePlaceholder} WITH CARD`}
-                            </span>
-                          </>
+                          <span>BUY {product.defaultPricePlaceholder}</span>
                         )}
                       </button>
                     )}
@@ -475,12 +394,8 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
             <div className="text-white/60 flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
               <span className="flex items-center gap-1 text-emerald-400 font-mono font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Verified:</span>
+                <span>Paid securely through Google Play</span>
               </span>
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">Credit/Debit</span>
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">Google Pay</span>
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">PayPal</span>
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white/80 font-mono">Stripe</span>
             </div>
             <button
               onClick={handleRestore}
@@ -546,7 +461,6 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
           isOpen={!!activePaymentProduct}
           onClose={() => setActivePaymentProduct(null)}
           product={activePaymentProduct}
-          initialRail={selectedMethod}
           onSuccess={(result) => {
             setActivePaymentProduct(null);
             setSuccessResult(result);

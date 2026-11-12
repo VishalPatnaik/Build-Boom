@@ -38,7 +38,6 @@ import {
   Download,
   Video
 } from 'lucide-react';
-import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useFullscreen } from '../hooks/useFullscreen';
 import { AdService } from '../ads/AdService';
 import { showAdPrivacyOptions } from '../ads/admob';
@@ -142,9 +141,7 @@ export function SettingsOverlay() {
   const [nameSavedFeedback, setNameSavedFeedback] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
-  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const { isFullscreen, toggleFullscreen } = useFullscreen();
-  const [showIOSModal, setShowIOSModal] = useState(false);
   const [hapticTestFeedback, setHapticTestFeedback] = useState<string | null>(null);
 
   useEffect(() => {
@@ -944,7 +941,7 @@ export function SettingsOverlay() {
             )}
 
             {/* ======================================================== */}
-            {/* TAB: MOBILE APP, PWA & IMMERSIVE HARDWARE                */}
+            {/* TAB: MOBILE DEVICE & IMMERSIVE HARDWARE                  */}
             {/* ======================================================== */}
             {activeTab === 'mobile' && (
               <motion.div
@@ -952,66 +949,6 @@ export function SettingsOverlay() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-4"
               >
-                {/* 1. NATIVE APP INSTALLATION STATUS / ACTION */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-cyan-500/50 relative overflow-hidden">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-400/60 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.4)] shrink-0">
-                        <Smartphone className="w-5 h-5 stroke-[2.5]" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black text-white uppercase tracking-wider font-mono">
-                            PWA Mobile App Experience
-                          </span>
-                          {isInstalled ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 font-mono">
-                              <CheckCircle2 className="w-3 h-3" /> Standalone
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400 text-cyan-300 text-[9px] font-black uppercase tracking-wider font-mono">
-                              Installable
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-slate-400 font-sans mt-0.5">
-                          {isInstalled 
-                            ? 'Running in full-screen standalone mode with zero browser address bars and offline caching.' 
-                            : 'Install directly to your mobile home screen for a distraction-free native app experience.'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isInstalled && (
-                    <div className="mt-3 flex gap-2">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={async () => {
-                          haptics.uiTap();
-                          if (isInstallable) {
-                            await install();
-                          } else {
-                            setShowIOSModal(true);
-                          }
-                        }}
-                        className="flex-1 py-2.5 px-4 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl font-mono flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>Install Mobile App</span>
-                      </motion.button>
-
-                      <button
-                        onClick={() => setShowIOSModal(true)}
-                        className="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-400 rounded-xl text-xs font-bold text-cyan-300 uppercase tracking-wider cursor-pointer font-mono"
-                      >
-                        iOS / Android Guide
-                      </button>
-                    </div>
-                  )}
-                </div>
-
                 {/* 2. FULLSCREEN & IMMERSIVE DISPLAY */}
                 <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-slate-800">
                   <div className="flex items-center justify-between gap-3">
@@ -1335,82 +1272,6 @@ export function SettingsOverlay() {
           </div>
         </motion.div>
 
-        {/* Mobile App Installation Guidance Dialog */}
-        <AnimatePresence>
-          {showIOSModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 15 }}
-                className="relative w-full max-w-sm rounded-3xl bg-gradient-to-b from-slate-900 via-slate-950 to-black p-5 sm:p-6 text-slate-100 border-2 border-cyan-400/80 shadow-[0_0_40px_rgba(6,182,212,0.4)] font-mono"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border-2 border-cyan-400 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.5)]">
-                      <Smartphone className="w-5 h-5 stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">
-                        NATIVE MOBILE APP
-                      </span>
-                      <h3 className="text-base font-black text-white uppercase tracking-wider">
-                        INSTALL TOWER//SHIFT
-                      </h3>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowIOSModal(false)}
-                    className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    aria-label="Close"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="space-y-3 text-xs text-slate-300 mb-5 leading-relaxed font-sans">
-                  <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-300 font-mono font-black text-xs shrink-0">
-                      1
-                    </div>
-                    <div>
-                      {isIOS ? (
-                        <>Tap the <strong className="text-white">Share</strong> icon in your Safari navigation bar.</>
-                      ) : (
-                        <>Tap your browser menu (<strong className="text-white">⋮</strong> or <strong className="text-white">Share</strong>).</>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-300 font-mono font-black text-xs shrink-0">
-                      2
-                    </div>
-                    <div>
-                      Select <strong className="text-cyan-300">"Add to Home Screen"</strong> or <strong className="text-cyan-300">"Install App"</strong>.
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-300 font-mono font-black text-xs shrink-0">
-                      3
-                    </div>
-                    <div>
-                      Launch directly from your mobile home screen with full screen graphics, offline audio, and zero browser address bars!
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowIOSModal(false)}
-                  className="w-full py-3 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl font-mono cursor-pointer shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-                >
-                  GOT IT
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
       </div>
     </AnimatePresence>
   );

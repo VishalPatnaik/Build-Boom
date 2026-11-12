@@ -16,8 +16,9 @@ so it plays offline. Purchases use Google Play Billing; ads use Google AdMob.
    - Copy the **App ID** (`ca-app-pub-…~…`).
    - Create two ad units: **Rewarded** and **Interstitial**. Copy both IDs (`ca-app-pub-…/…`).
    - Privacy & messaging → create a **GDPR consent message** (the game shows it automatically).
-3. **Host the privacy policy.** It is in the game at `/privacy.html`, so once the web version is
-   deployed it is at `https://<your-domain>/privacy.html` (for example `https://play.vesyron.com/privacy.html`).
+3. **Host the privacy policy.** Google Play needs a public privacy-policy link even for a
+   mobile-only game. Upload `public/privacy.html` to your company site, for example
+   `https://vesyron.com/towershift/privacy.html`, and paste that link into Play Console.
 
 ## 2. Configure the build (on your PC)
 
@@ -32,7 +33,7 @@ setx GRADLE_USER_HOME D:\gradle-cache     # new terminals keep Gradle's cache on
 ```
 
 1. Copy `.env.android.example` to `.env.android` and fill in:
-   - `VITE_API_BASE_URL`: your deployed game server (tournaments/leaderboards). Must be `https://`.
+   - `VITE_API_BASE_URL`: your deployed API server (tournaments/leaderboards). Must be `https://`.
      Leave it empty to ship offline-only (sample tournaments are used).
    - `VITE_ADMOB_REWARDED_ID`, `VITE_ADMOB_INTERSTITIAL_ID`: your two ad unit IDs.
 2. In `android/gradle.properties` set `ADMOB_APP_ID=` to your AdMob App ID.
@@ -82,7 +83,7 @@ and that the game runs smoothly.
 
 ## 5. In-app products (Play Console → Monetise → Products → In-app products)
 
-Create each with **exactly** this Product ID. Prices are the current web prices in USD; set
+Create each with **exactly** this Product ID. Prices below are suggestions in USD; set
 your own and let Play convert them for other countries.
 
 | Product ID | Name | Price (USD) | Type |

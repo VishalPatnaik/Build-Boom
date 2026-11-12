@@ -1,5 +1,4 @@
-// tsx injects globalThis.__dirname as '.' which breaks ESM packages like vite-plugin-pwa
-// that check `typeof __dirname !== "undefined"`. Delete it before Vite imports.
+// tsx injects globalThis.__dirname as '.', which confuses some ESM packages. Delete it before Vite imports.
 if (typeof (globalThis as any).__dirname !== "undefined") {
   delete (globalThis as any).__dirname;
 }
@@ -7,65 +6,10 @@ if (typeof (globalThis as any).__dirname !== "undefined") {
 import http from "http";
 import express from "express";
 import compression from "compression";
-import path from "path";
-import Stripe from "stripe";
 import "dotenv/config";
-import fs from "fs";
 import { serverTournamentManager } from "./serverTournaments.ts";
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-
-// Products sold through Stripe Checkout. Prices live only on the server.
-const CHECKOUT_PRODUCTS: Record<string, { name: string; description?: string; unitAmount: number }> = {
-  coins_100: { name: "100 Architectural Credits", unitAmount: 99 },
-  coins_500: { name: "500 Architectural Credits (Value Pack)", unitAmount: 399 },
-  coins_1200: { name: "1,200 Architectural Credits (Mega Pack)", unitAmount: 799 },
-  coins_2500: { name: "2,500 Architectural Credits (Ultra Pack)", unitAmount: 1499 },
-  coins_5000: { name: "5,000 Architectural Credits (Legend Pack)", unitAmount: 2499 },
-  remove_ads: { name: "Ad Blocker VIP Pass (Permanent)", description: "Permanent ad removal & VIP instant claim rewards.", unitAmount: 499 },
-  powerup_tactical_pack: { name: "Tactical Arsenal Pack (5 Stasis • 5 EMP • 5 Shields)", unitAmount: 299 },
-  powerup_stasis_10: { name: "Tactical Powerup Munitions Pack (Stasis)", unitAmount: 199 },
-  powerup_emp_10: { name: "Tactical Powerup Munitions Pack (EMP)", unitAmount: 199 },
-  powerup_shield_10: { name: "Tactical Powerup Munitions Pack (Shield)", unitAmount: 199 },
-  bundle_starter_architect: { name: "Starter Architect Pack (350 Coins + 15 Powerups + Chibi Moon Bunny Skin)", unitAmount: 499 },
-  bundle_tactical_architect: { name: "Tactical Architect Pack (1,000 Coins + 36 Powerups + Cosmic Meteorite Skin)", unitAmount: 999 },
-  bundle_legend_architect: { name: "Legend Architect Pack (3,500 Coins + 75 Powerups + 2 Master Skins)", unitAmount: 1999 },
-};
-
-// Checkout sessions that have already been redeemed, so a success link can't be replayed
-const FULFILLED_PATH = path.join(process.cwd(), "checkout_fulfilled.json");
-const fulfilledSessions = new Set<string>(
-  (() => {
-    try {
-      return JSON.parse(fs.readFileSync(FULFILLED_PATH, "utf8")) as string[];
-    } catch {
-      return [];
-    }
-  })()
-);
-function markFulfilled(sessionId: string) {
-  fulfilledSessions.add(sessionId);
-  try {
-    fs.writeFileSync(FULFILLED_PATH, JSON.stringify([...fulfilledSessions]));
-  } catch (err) {
-    console.error("Could not persist fulfilled checkout sessions:", err);
-  }
-}
-
-// Setup Stripe with optional env var (lazy initialization or handle missing gently for dev)
-let stripeClient: Stripe | null = null;
-function getStripe(): Stripe {
-  if (!stripeClient) {
-    const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) {
-      console.warn('STRIPE_SECRET_KEY is missing. Using simulated Stripe mode.');
-      // Create a mock Stripe client for dev if no key is provided
-      return {} as Stripe; 
-    }
-    stripeClient = new Stripe(key);
-  }
-  return stripeClient;
-}
 
 // --- Score submission hygiene -------------------------------------------------
 // There are no player accounts, so a determined cheater can still post a fake
@@ -123,7 +67,7 @@ async function startServer() {
     next();
   });
 
-  // Compress text responses (the game bundle shrinks from ~0.8 MB to ~0.25 MB)
+  // Compress API responses
   app.use(compression());
   const httpServer = http.createServer(app);
   // Hosting platforms (Cloud Run, Render, Railway...) pass the port in PORT
@@ -257,103 +201,9 @@ async function startServer() {
     }
   });
 
-  app.post("/api/checkout", async (req, res) => {
-    try {
-      const { productId, packId } = req.body || {};
-      const targetId = String(productId || packId || "");
-      const product = CHECKOUT_PRODUCTS[targetId];
-      if (!product) {
-        return res.status(400).json({ error: "Unknown product." });
-      }
-
-      // Without a Stripe key, a simulated checkout is allowed for local development only
-      if (!process.env.STRIPE_SECRET_KEY) {
-        if (IS_PRODUCTION) {
-          return res.status(503).json({ error: "Payments are not configured." });
-        }
-        return res.json({ url: `/?checkout_session=mock_${encodeURIComponent(targetId)}` });
-      }
-
-      const stripe = getStripe();
-      const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
-      const host = (req.headers['x-forwarded-host'] as string) || req.get("host");
-      const baseUrl = `${proto}://${host}`;
-
-      const session = await stripe.checkout.sessions.create({
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: product.name,
-                description: product.description || "Architectural credits and tactical powerups.",
-              },
-              unit_amount: product.unitAmount,
-            },
-            quantity: 1,
-          },
-        ],
-        mode: "payment",
-        metadata: { productId: targetId },
-        // Stripe substitutes the real session id; the client must verify it with the server
-        success_url: `${baseUrl}/?checkout_session={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/?canceled=true`,
-      });
-
-      res.json({ url: session.url });
-    } catch (error: any) {
-      console.error("Stripe checkout error:", error);
-      res.status(500).json({ error: "Could not start checkout." });
-    }
-  });
-
-  // Confirms with Stripe that a checkout session was actually paid, once per session
-  app.post("/api/checkout/verify", async (req, res) => {
-    try {
-      const sessionId = String(req.body?.sessionId || "");
-      if (!sessionId || sessionId.length > 255) {
-        return res.status(400).json({ error: "Missing session." });
-      }
-
-      if (sessionId.startsWith("mock_")) {
-        if (IS_PRODUCTION || process.env.STRIPE_SECRET_KEY) {
-          return res.status(403).json({ error: "Simulated purchases are disabled." });
-        }
-        const productId = decodeURIComponent(sessionId.slice(5));
-        if (!CHECKOUT_PRODUCTS[productId]) return res.status(400).json({ error: "Unknown product." });
-        if (fulfilledSessions.has(sessionId)) return res.json({ status: "already_fulfilled", productId });
-        markFulfilled(sessionId);
-        return res.json({ status: "paid", productId, simulated: true });
-      }
-
-      if (!process.env.STRIPE_SECRET_KEY) {
-        return res.status(503).json({ error: "Payments are not configured." });
-      }
-
-      const stripe = getStripe();
-      const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent"] });
-      const productId = session.metadata?.productId || "";
-      if (session.payment_status !== "paid" || !CHECKOUT_PRODUCTS[productId]) {
-        return res.status(402).json({ error: "Payment not completed." });
-      }
-      // The redeemed flag is stored on Stripe's payment record so it survives server restarts
-      const intent = typeof session.payment_intent === "object" ? session.payment_intent : null;
-      if (fulfilledSessions.has(session.id) || intent?.metadata?.towershift_fulfilled === "true") {
-        return res.json({ status: "already_fulfilled", productId });
-      }
-      if (intent) {
-        await stripe.paymentIntents.update(intent.id, { metadata: { towershift_fulfilled: "true" } });
-      }
-      markFulfilled(session.id);
-      res.json({ status: "paid", productId });
-    } catch (error: any) {
-      console.error("Checkout verification error:", error?.message || error);
-      res.status(400).json({ error: "Could not verify payment." });
-    }
-  });
-
-  // Vite middleware for development (HMR disabled for iframe / cloud container stability)
-  if (process.env.NODE_ENV !== "production") {
+  // Development only: serve the game through Vite so it can be tested in a desktop browser.
+  // In production this server is ONLY the API for the Android app; the game itself ships inside the APK.
+  if (!IS_PRODUCTION) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: {
@@ -365,26 +215,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    // Hashed build files never change, so browsers can keep them for a year;
-    // the page, service worker and manifest must always be re-checked so updates arrive.
-    app.use(
-      express.static(distPath, {
-        setHeaders: (res, filePath) => {
-          if (filePath.includes(`${path.sep}assets${path.sep}`)) {
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          } else {
-            res.setHeader('Cache-Control', 'no-cache');
-          }
-        },
-      })
-    );
-    // Unknown API routes are real 404s; everything else is the single-page app
-    app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
-    app.get('*', (req, res) => {
-      res.setHeader('Cache-Control', 'no-cache');
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    app.use((req, res) => res.status(404).json({ error: 'Not found' }));
   }
 
   httpServer.listen(PORT, "0.0.0.0", () => {

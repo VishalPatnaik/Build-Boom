@@ -10,7 +10,6 @@ import { ACHIEVEMENTS, getAchievementCurrentValue } from '../game/achievements';
 import { haptics } from '../utils/haptics';
 import { audio } from '../audio/AudioEngine';
 import { ReplayViewer } from './ReplayViewer';
-import { MobileAppInstallButton } from './MobileAppInstallButton';
 
 import { screenFadeSlideVariants } from '../utils/screenTransitions';
 
@@ -83,9 +82,6 @@ export function Menu() {
           </motion.button>
 
           <div className="flex items-center gap-2">
-            {/* MOBILE APP INSTALL BUTTON */}
-            <MobileAppInstallButton />
-
             {/* SETTINGS OVERLAY BUTTON */}
             <motion.button
               whileHover={{ scale: 1.05 }}

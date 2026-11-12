@@ -6,11 +6,10 @@ import { billingService } from '../billing/BillingService';
 import { getProductById } from '../billing/catalog';
 import { audio } from '../audio/AudioEngine';
 import { haptics } from '../utils/haptics';
-import { PaymentScreenModal, PaymentRail } from './shop/PaymentScreenModal';
+import { PaymentScreenModal } from './shop/PaymentScreenModal';
 
 export function RemoveAdsOverlay() {
   const { showRemoveAds, setShowRemoveAds, adsRemoved } = useGameStore();
-  const [selectedRail, setSelectedRail] = useState<PaymentRail>('gpay');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -26,9 +25,8 @@ export function RemoveAdsOverlay() {
     iconType: 'shield',
   };
 
-  const handleOpenPayment = (rail?: PaymentRail) => {
+  const handleOpenPayment = () => {
     if (adsRemoved) return;
-    if (rail) setSelectedRail(rail);
     audio.playClickSound();
     haptics.vibrate([15]);
     setShowPaymentModal(true);
@@ -36,7 +34,7 @@ export function RemoveAdsOverlay() {
 
   const handleRestore = async () => {
     audio.playClickSound();
-    setStatusMessage('Checking purchase history on Google Play / App Store...');
+    setStatusMessage('Checking your purchases on Google Play...');
     // Ask the store (Google Play in the app) to re-send owned purchases first
     await billingService.restorePurchases().catch(() => undefined);
     const history = billingService.getPurchaseHistory();
@@ -97,79 +95,15 @@ export function RemoveAdsOverlay() {
             )}
 
             <div className="flex flex-col gap-4">
-              {/* Payment Method Selector */}
-              {!adsRemoved && (
-                <div className="flex flex-col gap-1.5 bg-black/40 p-2.5 rounded-xl border border-white/10 text-[10px] font-mono">
-                  <div className="flex items-center justify-between text-white/60">
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> 256-Bit SSL
-                    </span>
-                    <span>Select Payment:</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedRail('gpay'); audio.playClickSound(); }}
-                      className={`py-1.5 rounded-lg border font-bold text-center cursor-pointer transition-all ${
-                        selectedRail === 'gpay'
-                          ? 'bg-amber-500/30 border-amber-400 text-amber-200'
-                          : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
-                      }`}
-                    >
-                      ⚡ GPay
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedRail('card'); audio.playClickSound(); }}
-                      className={`py-1.5 rounded-lg border font-bold text-center cursor-pointer transition-all ${
-                        selectedRail === 'card'
-                          ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200'
-                          : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
-                      }`}
-                    >
-                      💳 Card
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedRail('paypal'); audio.playClickSound(); }}
-                      className={`py-1.5 rounded-lg border font-bold text-center cursor-pointer transition-all ${
-                        selectedRail === 'paypal'
-                          ? 'bg-blue-500/30 border-blue-400 text-blue-200'
-                          : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
-                      }`}
-                    >
-                      🅿️ PayPal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedRail('stripe'); audio.playClickSound(); }}
-                      className={`py-1.5 rounded-lg border font-bold text-center cursor-pointer transition-all ${
-                        selectedRail === 'stripe'
-                          ? 'bg-purple-500/30 border-purple-400 text-purple-200'
-                          : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
-                      }`}
-                    >
-                      S Stripe
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleOpenPayment(selectedRail)}
+                onClick={handleOpenPayment}
                 disabled={adsRemoved}
                 className={`w-full relative flex items-center justify-center gap-3 p-4 rounded-2xl border-4 transition-all font-mono ${
                   adsRemoved 
                     ? 'bg-emerald-600 border-white text-white cursor-default'
-                    : selectedRail === 'gpay'
-                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 border-white text-slate-950 shadow-[0_4px_0_#b45309] cursor-pointer'
-                    : selectedRail === 'paypal'
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 border-white text-white shadow-[0_4px_0_#1e3a8a] cursor-pointer'
-                    : selectedRail === 'stripe'
-                    ? 'bg-gradient-to-r from-purple-500 to-fuchsia-600 border-white text-white shadow-[0_4px_0_#581c87] cursor-pointer'
-                    : 'bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 border-white shadow-[0_4px_0_#0369a1] cursor-pointer text-slate-950'
+                    : 'bg-gradient-to-r from-emerald-400 to-cyan-500 border-white text-slate-950 shadow-[0_4px_0_#0e7490] cursor-pointer'
                 }`}
               >
                 {adsRemoved ? (
@@ -179,13 +113,7 @@ export function RemoveAdsOverlay() {
                 ) : (
                   <div className="flex flex-col items-center">
                     <span className="text-xl sm:text-2xl font-black tracking-wide">
-                      {selectedRail === 'gpay'
-                        ? '⚡ PAY $4.99 WITH GPAY'
-                        : selectedRail === 'paypal'
-                        ? '🅿️ PAY $4.99 WITH PAYPAL'
-                        : selectedRail === 'stripe'
-                        ? 'S PAY $4.99 WITH STRIPE'
-                        : '💳 PAY $4.99 WITH CARD'}
+                      REMOVE ADS · $4.99
                     </span>
                     <span className="text-[10px] opacity-80 uppercase tracking-widest font-bold">
                       One-Time Permanent VIP Unlock
@@ -214,7 +142,6 @@ export function RemoveAdsOverlay() {
             isOpen={showPaymentModal}
             onClose={() => setShowPaymentModal(false)}
             product={removeAdsProduct}
-            initialRail={selectedRail}
             onSuccess={() => {
               setShowPaymentModal(false);
               setShowRemoveAds(false);
