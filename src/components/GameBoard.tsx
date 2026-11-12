@@ -68,6 +68,8 @@ interface Debris {
 
 /** Big floating "N IN A ROW" cards covered the tower top; the HUD combo meter shows the same thing. */
 const SHOW_FLOATING_COMBO_CARDS = false;
+/** Top edge of the play arena: incoming objects start 120% of the arena radius from the landing point. */
+const arenaTopFor = (w: number, h: number) => h * 0.65 - Math.min(w, h) * 0.45 * 1.2 - 30;
 /** Little cheers for a perfect landing, picked at random. */
 const PERFECT_CHEERS = ['PERFECT!', 'NAILED IT!', "CHEF'S KISS! 🤌", 'BULLSEYE! 🎯', 'BUTTERY SMOOTH!', 'TEXTBOOK!'];
 const SHOW_LANDING_RESONANCE = false;
@@ -167,6 +169,10 @@ export function GameBoard() {
   // Hearts: a mistimed or missed piece costs one; bombs and a toppled tower still end the run
   const [livesLeft, setLivesLeft] = useState(MAX_LIVES);
   const [tipCard, setTipCard] = useState<{ title: string; body: string } | null>(null);
+  // Top edge of the play arena (where incoming objects appear), px from the top of the board.
+  // Text and pop-ups stay above it so they never cover the tower or anything flying at it.
+  const [arenaTop, setArenaTop] = useState(9999);
+  const [boardH, setBoardH] = useState(0);
   const [totalBlocks, setTotalBlocks] = useState(0);
   const [lostReason, setLostReason] = useState('');
   // Plain-language physics explanation shown when the tower falls
@@ -612,6 +618,8 @@ export function GameBoard() {
       // Render at the screen's real pixel density (capped for frame rate) so art stays sharp on phones
       const dpr = Math.min(lowFxRef.current ? 1 : 2, Math.max(1, window.devicePixelRatio || 1));
       canvasSizeRef.current = { w, h, dpr };
+      setArenaTop(Math.round(arenaTopFor(w, h)));
+      setBoardH(h);
       const bw = Math.round(w * dpr);
       const bh = Math.round(h * dpr);
       if (canvas.width !== bw || canvas.height !== bh) {
@@ -840,7 +848,7 @@ export function GameBoard() {
         // Trick pieces pay out: trusting a "bomb" that was really a piece, or catching a ghost
         if (!isTutorialActive && (targetBlock.modifier === 'fake-boom' || targetBlock.modifier === 'ghost')) {
           useGameStore.getState().addCoins(3);
-          gs.floatTexts.push({ text: targetBlock.modifier === 'ghost' ? 'GHOST BUSTED! +3 🪙' : 'NERVES OF STEEL! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: targetBlock.modifier === 'ghost' ? '#c4b5fd' : '#5eead4' });
+          gs.floatTexts.push({ text: targetBlock.modifier === 'ghost' ? 'GHOST BUSTED! +3 🪙' : 'NERVES OF STEEL! +3 🪙', x: w / 2, y: Math.max(150, arenaTopFor(w, h) - 4), life: 1, color: targetBlock.modifier === 'ghost' ? '#c4b5fd' : '#5eead4' });
         }
 
         gs.builtCount++;
@@ -851,14 +859,14 @@ export function GameBoard() {
           const n = gs.physics.stack.length;
           if (best >= 5 && n > best && !gs.recordAnnounced) {
             gs.recordAnnounced = true;
-            gs.floatTexts.push({ text: '🎉 NEW RECORD! THE SKY CALLED, YOU ANSWERED', x: w / 2, y: h * 0.65 - 95, life: 1.8, color: '#fde047' });
+            gs.floatTexts.push({ text: '🎉 NEW RECORD! SKY-HIGH!', x: w / 2, y: Math.max(126, arenaTopFor(w, h) - 28), life: 1.8, color: '#fde047' });
             worldThemeRef.current.particles.triggerStackParticles(0.5, 0.55, true, 3);
             audio.playCheer();
           }
           if (n > 0 && n % 10 === 0) {
             useGameStore.getState().addCoins(5);
             audio.playComboSurge(2);
-            gs.floatTexts.push({ text: `${n} TALL! WHEEE! +5 🪙`, x: w / 2, y: h * 0.65 - 70, life: 1.3, color: '#86efac' });
+            gs.floatTexts.push({ text: `${n} TALL! WHEEE! +5 🪙`, x: w / 2, y: Math.max(150, arenaTopFor(w, h) - 4), life: 1.3, color: '#86efac' });
           }
         }
         gs.maxCombo = Math.max(gs.maxCombo || 0, gs.combo);
@@ -1791,7 +1799,7 @@ export function GameBoard() {
         // Didn't fall for a bomb dressed up as a piece
         if (b.modifier === 'fake-build' && !isTutorialActive) {
           useGameStore.getState().addCoins(3);
-          gs.floatTexts.push({ text: 'GOTCHA, SNEAKY BOMB! +3 🪙', x: w / 2, y: h * 0.65 - 70, life: 1, color: '#fb7185' });
+          gs.floatTexts.push({ text: 'GOTCHA, SNEAKY BOMB! +3 🪙', x: w / 2, y: Math.max(150, arenaTopFor(w, h) - 4), life: 1, color: '#fb7185' });
         }
       }
     }
@@ -2198,10 +2206,12 @@ export function GameBoard() {
       const lw = ctx.measureText(label).width + 20;
       ctx.fillStyle = 'rgba(2,6,23,0.6)';
       ctx.beginPath();
-      ctx.roundRect(w / 2 - lw / 2, h * 0.16 - 14, lw, 24, 12);
+      // Chip sits low on the left, beside the tower and clear of the toasts above the arena
+      const wy = Math.min(h - 120, cy + 70);
+      ctx.roundRect(12, wy - 14, lw, 24, 12);
       ctx.fill();
       ctx.fillStyle = strength > 0.66 ? '#fca5a5' : strength > 0.33 ? '#fde68a' : '#e2e8f0';
-      ctx.fillText(label, w / 2, h * 0.16 + 3);
+      ctx.fillText(label, 12 + lw / 2, wy + 3);
       ctx.restore();
     }
 
@@ -2876,18 +2886,15 @@ export function GameBoard() {
             </button>
           </div>
 
-          {/* IN-GAME COINS HUD (Passive, non-obstructive display) */}
-          <div className="pointer-events-none">
-            <div className="flex items-center gap-1.5 bg-black/70 px-3 py-1.5 rounded-2xl border border-amber-400/60 backdrop-blur-md text-amber-300 shadow-md">
+          {/* AEGIS SHIELD STATUS POD (Right), with the coin count stacked above it so the
+              bottom centre stays clear for the tower */}
+          <div className="pointer-events-auto flex flex-col items-end gap-1.5">
+            <div className="pointer-events-none flex items-center gap-1.5 bg-black/70 px-3 py-1.5 rounded-2xl border border-amber-400/60 backdrop-blur-md text-amber-300 shadow-md">
               <Coins className="w-4 h-4 fill-current text-amber-400" />
               <span className="font-mono font-black text-xs tabular-nums text-white">
                 {coins.toLocaleString()}
               </span>
             </div>
-          </div>
-
-          {/* AEGIS SHIELD STATUS POD (Right) */}
-          <div className="pointer-events-auto">
             <button 
               type="button"
               onClick={(e) => {
@@ -2948,7 +2955,13 @@ export function GameBoard() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-[calc(max(0.75rem,env(safe-area-inset-top,12px))+10rem)] left-1/2 -translate-x-1/2 w-[min(320px,88vw)] pointer-events-none z-30"
+              className={`absolute pointer-events-none z-30 ${
+                arenaTop - 104 < 130
+                  ? 'left-3 right-[92px]' // short screens: tuck it left so the score and hearts stay visible
+                  : 'left-1/2 -translate-x-1/2 w-[min(320px,88vw)]'
+              }`}
+              // Bottom edge pinned just above the arena, so however tall the card wraps it grows upward
+              style={{ bottom: Math.max(0, boardH - Math.min(arenaTop - 6, 268)) }}
             >
               <div className="rounded-2xl bg-slate-950/90 border border-cyan-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.5)] px-4 py-3 text-center backdrop-blur-md">
                 <div className="text-[11px] font-mono font-black tracking-widest text-cyan-300">TIP · {tipCard.title}</div>
@@ -2960,13 +2973,14 @@ export function GameBoard() {
 
         {/* Non-blocking in-game HUD feedback toasts (positioned cleanly at top, never covering the center playfield) */}
         <AnimatePresence>
-          {message && state === 'playing' && (
+          {message && state === 'playing' && (!tipCard || Math.min(132, arenaTop - 44) + 40 <= Math.min(172, arenaTop - 104)) && (
             <motion.div 
               initial={{ opacity: 0, y: -16, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.18 }}
-              className="absolute top-[calc(max(0.75rem,env(safe-area-inset-top,12px))+7.5rem)] left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center w-max max-w-[92vw]"
+              className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center w-max max-w-[92vw]"
+              style={{ top: Math.max(8, Math.min(132, arenaTop - 44)) }}
             >
               <div className="px-4 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/70 shadow-[0_0_20px_rgba(245,158,11,0.35)] flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-black text-[#FFD700] uppercase tracking-wider font-mono drop-shadow text-center">
