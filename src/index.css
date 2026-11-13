@@ -6,9 +6,9 @@
     padding: 0;
     width: 100%;
     height: 100%;
-    background-color: #030712; /* Deep void obsidian base */
+    background-color: #17243D; /* Royal Midnight */
     color: #f8fafc;
-    font-family: 'Fredoka', system-ui, -apple-system, sans-serif;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
@@ -19,44 +19,83 @@
   }
 }
 
-.font-display {
-  font-family: 'Lilita One', 'Fredoka', cursive;
+/* =====================================================================================
+   TOWER//SHIFT design system — "Cinematic Architectural Fantasy"
+   Tokens, type and the three material families used across every screen.
+   ===================================================================================== */
+:root {
+  /* Core palette */
+  --midnight: #17243D;   /* Royal Midnight: deep structural surfaces */
+  --slate: #263B55;      /* Ocean Slate: secondary panels */
+  --gold: #E8BE70;       /* Champagne Gold: premium highlights, primary progression */
+  --gold-deep: #B88943;  /* Burnished Gold: gold shadows and edges */
+  --ivory: #F5F0E6;      /* Porcelain Ivory: light surfaces */
+  --stone: #D8CBB6;      /* Warm Stone: secondary light surfaces */
+  --teal: #35D6C1;       /* Electric Teal: active play and precision */
+  --coral: #F47759;      /* Coral Ember: danger, energetic actions */
+  --azure: #5EA9ED;      /* Sky Azure: information and navigation */
+  --emerald: #43B98C;    /* Emerald: success, owned */
+  --lilac: #A99AE8;      /* Soft Lilac: advanced tech accents */
+  --ink: #202A38;        /* Text on light surfaces */
+  --cream: var(--ivory);
+  --hair: rgba(232, 190, 112, 0.32); /* champagne hairline edge */
+  --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
 }
 
-/* ---- Toon UI: chunky cartoon look shared by the home screen and in-game HUD ---- */
-:root {
-  --ink: #2a1a3c;
-  --cream: #fff7e6;
+/* Type: Sora for display, Manrope for interface, IBM Plex Mono for numbers */
+.font-display, .font-game, h1, h2, h3 {
+  font-family: 'Sora', 'Manrope', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
 }
-.font-game { font-family: 'Lilita One', 'Fredoka', system-ui, sans-serif; letter-spacing: 0.02em; }
-.toon {
-  border: 3px solid var(--ink);
-  box-shadow: 0 5px 0 var(--ink);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+.tabular-nums, .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* B. Warm crafted surface (ivory ceramic) for light pills and buttons */
+.toon, .toon-sm {
+  border: 1px solid rgba(184, 137, 67, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 0 rgba(23, 36, 61, 0.35), 0 8px 18px rgba(8, 14, 28, 0.22);
+  transition: transform 120ms var(--ease), box-shadow 120ms var(--ease), filter 120ms var(--ease);
 }
-.toon:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
-.toon-sm { border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
-.toon-sm:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.toon:active, .toon-sm:active { transform: translateY(1.5px) scale(0.985); box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 rgba(23,36,61,0.35), 0 4px 10px rgba(8,14,28,0.2); }
 .toon-text {
-  color: var(--cream);
-  -webkit-text-stroke: 6px var(--ink);
-  paint-order: stroke fill;
-  text-shadow: 0 5px 0 var(--ink);
+  color: var(--ivory);
+  text-shadow: 0 2px 0 rgba(23, 36, 61, 0.55), 0 10px 30px rgba(8, 14, 28, 0.45);
 }
-.toon-text-sm {
-  color: #fff;
-  -webkit-text-stroke: 4px var(--ink);
-  paint-order: stroke fill;
-  text-shadow: 0 3px 0 var(--ink);
-}
+.toon-text-sm { color: var(--ivory); text-shadow: 0 1px 0 rgba(23, 36, 61, 0.6); }
 .toon-shine { position: relative; overflow: hidden; }
 .toon-shine::after {
-  content: '';
-  position: absolute; left: 8%; right: 8%; top: 5px; height: 32%;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.28);
+  content: ''; position: absolute; inset: 0 0 55% 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
   pointer-events: none;
 }
+
+/* Gold-plated primary action */
+.btn-gold {
+  background: linear-gradient(180deg, #F3D493 0%, #E8BE70 45%, #D5A453 100%);
+  color: var(--ink);
+  border: 1px solid var(--gold-deep);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -2px 0 rgba(150,104,40,0.45), 0 6px 16px rgba(120, 82, 24, 0.35);
+}
+/* A. Architectural metal: satin navy enamel with champagne edging */
+.panel-metal {
+  background: linear-gradient(180deg, #24365A 0%, #17243D 100%);
+  border: 1px solid var(--hair);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 26px rgba(6, 10, 22, 0.38);
+}
+/* C. Precision technology: dark sapphire glass with fine cyan instrumentation */
+.panel-tech {
+  background: linear-gradient(180deg, rgba(22, 42, 61, 0.92), rgba(15, 30, 46, 0.96));
+  border: 1px solid rgba(53, 214, 193, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 10px 24px rgba(4, 12, 20, 0.4);
+}
+/* Light ivory ceramic card */
+.panel-ivory {
+  background: linear-gradient(180deg, #FBF8F1 0%, #F2EBDD 100%);
+  color: var(--ink);
+  border: 1px solid rgba(184, 137, 67, 0.45);
+  box-shadow: inset 0 1px 0 #fff, 0 10px 26px rgba(23, 36, 61, 0.25);
+}
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
 
 #root {
   width: 100%;
@@ -378,69 +417,55 @@
 }
 
 
-/* ---- App-wide de-"AI" pass: no typewriter labels, no stretched letter-spacing, no neon halos ---- */
-.font-mono {
-  font-family: 'Fredoka', system-ui, sans-serif !important;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-.tracking-widest, .tracking-wider, [class*="tracking-[0."] { letter-spacing: 0.03em !important; }
+/* ---- App-wide pass: brings every legacy screen onto the design system ---- */
+/* Typewriter labels become interface text; caps only where the copy itself is written in caps */
+.font-mono { font-family: 'Manrope', system-ui, sans-serif !important; font-weight: 600; letter-spacing: 0.01em; }
+.tracking-widest, .tracking-wider, [class*="tracking-[0."] { letter-spacing: 0.04em !important; }
+.uppercase:not(h1):not(h2):not(h3) { text-transform: none; }
+/* No neon halos, no frosted glass on everything */
 [class*="shadow-[0_0_"] { box-shadow: none !important; }
 [class*="drop-shadow-[0_0_"] { filter: none !important; }
-.font-black { font-weight: 700; }
-
-/* Cartoon game UI (Brawl/Clash style): chunky font for headings and caps labels, thick dark
-   outlines with solid drop shadows instead of thin neon borders and glows. */
-h1, h2, h3, .uppercase.font-black, .uppercase.font-bold {
-  font-family: 'Lilita One', 'Fredoka', system-ui, sans-serif !important;
-  font-weight: 400 !important;
-  letter-spacing: 0.02em !important;
-}
-[class*="border-cyan-"], [class*="border-sky-"], [class*="border-fuchsia-"], [class*="border-purple-"],
-[class*="border-violet-"], [class*="border-indigo-"], [class*="border-teal-"], [class*="border-emerald-"],
-[class*="border-amber-"], [class*="border-yellow-"], [class*="border-white/"], [class*="border-slate-"],
-[class*="border-rose-"], [class*="border-red-"], [class*="border-orange-"], [class*="border-blue-"] {
-  border-color: #140b22 !important;
-}
-.rounded-2xl.border-2, .rounded-3xl.border-2, .rounded-xl.border-2,
-.rounded-2xl[class*="border-"], .rounded-3xl[class*="border-"] {
-  box-shadow: 0 4px 0 #140b22 !important;
-}
-.bg-clip-text { -webkit-text-fill-color: currentColor; background: none !important; color: #fff7e6; -webkit-text-stroke: 5px #140b22; paint-order: stroke fill; }
 .backdrop-blur-md, .backdrop-blur-sm, .backdrop-blur-lg, .backdrop-blur-xl { backdrop-filter: none !important; }
-
-/* Panel surfaces: warm cartoon purples with visible dark outlines instead of near-black slate */
+.bg-clip-text { -webkit-text-fill-color: currentColor; background: none !important; color: var(--ivory); }
+.font-black { font-weight: 800; }
+/* Thin neon borders become a single champagne hairline */
+[class*="border-cyan-"], [class*="border-sky-"], [class*="border-fuchsia-"], [class*="border-purple-"],
+[class*="border-violet-"], [class*="border-indigo-"], [class*="border-teal-"],
+[class*="border-white/"], [class*="border-slate-"], [class*="border-blue-"], [class*="border-pink-"] {
+  border-color: var(--hair) !important;
+}
+[class*="border-amber-"], [class*="border-yellow-"] { border-color: rgba(232, 190, 112, 0.6) !important; }
+[class*="border-emerald-"], [class*="border-green-"] { border-color: rgba(67, 185, 140, 0.55) !important; }
+[class*="border-rose-"], [class*="border-red-"], [class*="border-orange-"] { border-color: rgba(244, 119, 89, 0.55) !important; }
+/* Surfaces: satin navy enamel (deep) and ocean slate (raised) instead of black and purple */
 [class*="bg-slate-950"], [class*="bg-[#0"], [class*="bg-[#1"], [class*="from-[#0"], [class*="from-[#1"],
-[class*="from-slate-9"], [class*="bg-gray-950"], [class*="bg-gray-900"], [class*="bg-zinc-9"] {
-  background-image: none !important;
-  background-color: #34266a !important;
+[class*="from-slate-9"], [class*="bg-gray-950"], [class*="bg-gray-900"], [class*="bg-zinc-9"], [class*="from-indigo-9"], [class*="from-purple-9"] {
+  background-image: linear-gradient(180deg, #22345A 0%, #17243D 100%) !important;
+  background-color: #17243D !important;
 }
 [class*="bg-slate-900"], [class*="bg-slate-800"], .rounded-2xl[class*="bg-black/"], .rounded-xl[class*="bg-black/"],
-.rounded-3xl[class*="bg-black/"], [class*="bg-white/5"], [class*="bg-white/10"] {
-  background-image: none !important;
-  background-color: #46378a !important;
+.rounded-3xl[class*="bg-black/"], [class*="bg-white/5"], [class*="bg-white/10"], [class*="bg-indigo-9"], [class*="bg-purple-9"] {
+  background-image: linear-gradient(180deg, #2C4462 0%, #263B55 100%) !important;
+  background-color: #263B55 !important;
 }
+.rounded-2xl[class*="border-"], .rounded-3xl[class*="border-"], .rounded-xl.border-2 {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 8px 20px rgba(6, 10, 22, 0.3) !important;
+}
+/* Corners: one radius family (10 / 14 / 18) instead of pills everywhere */
+.rounded-3xl { border-radius: 18px; }
+.rounded-2xl { border-radius: 14px; }
 
-/* Result card (win / lose): warm paper card, thick ink outline, rises from the bottom */
+/* Result card (win / lose) */
 .result-card {
-  background: linear-gradient(180deg, #fffaf0 0%, #fff1d6 100%);
-  border: 4px solid var(--ink);
+  background: linear-gradient(180deg, #FBF8F1 0%, #F1E9DA 100%);
+  color: var(--ink);
+  border: 1px solid rgba(184, 137, 67, 0.55);
   border-bottom-width: 0;
-  box-shadow: 0 -6px 0 rgba(42, 26, 60, 0.25), 0 -20px 40px rgba(0, 0, 0, 0.35);
-  font-family: 'Fredoka', system-ui, sans-serif;
+  box-shadow: inset 0 1px 0 #fff, 0 -18px 40px rgba(6, 10, 22, 0.4);
 }
-@media (min-width: 640px) { .result-card { border-bottom-width: 4px; } }
+.result-card.is-defeat { background: linear-gradient(180deg, #24365A 0%, #17243D 100%); color: var(--ivory); border-color: rgba(244, 119, 89, 0.5); }
+@media (min-width: 640px) { .result-card { border-bottom-width: 1px; } }
 
-/* Panels get a little material: lit from above, with a fine highlight on the top edge */
-[class*="bg-slate-950"], [class*="bg-[#0"], [class*="bg-[#1"], [class*="from-[#0"], [class*="from-[#1"],
-[class*="from-slate-9"], [class*="bg-gray-950"], [class*="bg-gray-900"], [class*="bg-zinc-9"] {
-  background-image: linear-gradient(180deg, #3f2f7d 0%, #2f2365 100%) !important;
-}
-[class*="bg-slate-900"], [class*="bg-slate-800"], .rounded-2xl[class*="bg-black/"], .rounded-xl[class*="bg-black/"],
-.rounded-3xl[class*="bg-black/"], [class*="bg-white/5"], [class*="bg-white/10"] {
-  background-image: linear-gradient(180deg, #4d3d93 0%, #41327f 100%) !important;
-}
-.rounded-2xl.border-2, .rounded-3xl.border-2, .rounded-xl.border-2,
-.rounded-2xl[class*="border-"], .rounded-3xl[class*="border-"] {
-  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.14), 0 4px 0 #140b22 !important;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

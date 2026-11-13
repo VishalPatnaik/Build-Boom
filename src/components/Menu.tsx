@@ -14,19 +14,20 @@ import { ReplayViewer } from './ReplayViewer';
 
 import { screenFadeSlideVariants } from '../utils/screenTransitions';
 
-function ModeTile({ color, dark, title, sub, icon, onClick, dot }: { color: string; dark: string; title: string; sub: string; icon: React.ReactNode; onClick: () => void; dot?: boolean }) {
+function ModeTile({ accent, title, sub, icon, onClick, dot }: { accent: string; title: string; sub: string; icon: React.ReactNode; onClick: () => void; dot?: boolean }) {
   return (
     <motion.button
-      whileTap={{ scale: 0.96 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ duration: 0.12 }}
       onClick={onClick}
-      className="toon toon-shine relative rounded-[20px] px-1.5 pt-2.5 pb-2 flex flex-col items-center cursor-pointer"
-      style={{ background: color }}
+      className="panel-metal relative rounded-[14px] px-2 pt-3 pb-2.5 flex flex-col items-center text-center cursor-pointer overflow-hidden"
       aria-label={title}
     >
-      {dot && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#7bd86a] border-2 border-[var(--ink)]" />}
-      <span className="w-11 h-11 rounded-full bg-white/90 border-2 border-[var(--ink)] flex items-center justify-center" style={{ color: dark }}>{icon}</span>
-      <span className="font-game toon-text-sm text-[17px] leading-none mt-1.5 whitespace-nowrap">{title}</span>
-      <span className="text-[11px] font-bold mt-1 leading-tight text-center" style={{ color: dark }}>{sub}</span>
+      <span className="absolute inset-x-0 top-0 h-[2px]" style={{ background: accent }} />
+      {dot && <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--emerald)', boxShadow: '0 0 0 2px #17243D' }} />}
+      <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ color: accent, background: 'rgba(255,255,255,0.06)', border: `1px solid ${accent}55` }}>{icon}</span>
+      <span className="mt-1.5 text-[14px] font-extrabold text-[var(--ivory)] leading-tight whitespace-nowrap" style={{ fontFamily: 'Sora, Manrope, sans-serif' }}>{title}</span>
+      <span className="mt-0.5 text-[11.5px] font-semibold text-[var(--stone)]/80 leading-tight">{sub}</span>
     </motion.button>
   );
 }
@@ -107,13 +108,16 @@ export function Menu() {
   const tap = () => { haptics.uiTap(); audio.playClickSound(); };
 
   const dock: Array<{ key: string; label: string; icon: React.ReactNode; color: string; badge?: string | number; onClick: () => void }> = [
-    { key: 'shop', label: 'Shop', icon: <ShoppingBag className="w-6 h-6" />, color: '#ffc93c', onClick: () => setMode('shop') },
-    { key: 'arsenal', label: 'Arsenal', icon: <Zap className="w-6 h-6" />, color: '#5ad1ff', badge: totalCharges || undefined, onClick: () => setArmoryOpen(true) },
-    { key: 'archive', label: 'Archive', icon: <Medal className="w-6 h-6" />, color: '#ff9f6b', badge: unclaimedCount || undefined, onClick: () => setAchievementsModalOpen(true) },
-    { key: 'replay', label: 'Replay', icon: <Play className="w-6 h-6" />, color: '#8fe38a', onClick: () => setReplayModalOpen(true) },
-    { key: 'lab', label: 'Shift Lab', icon: <FlaskConical className="w-6 h-6" />, color: '#b69cff', onClick: () => { useGameStore.getState().setState('idle'); setMode('academy'); } },
-    { key: 'forge', label: 'Shift Forge', icon: <Hammer className="w-6 h-6" />, color: '#ff8fc2', onClick: () => setMode('workshop') },
+    { key: 'shop', label: 'Shop', icon: <ShoppingBag className="w-5 h-5" />, color: 'var(--gold)', onClick: () => setMode('shop') },
+    { key: 'arsenal', label: 'Arsenal', icon: <Zap className="w-5 h-5" />, color: 'var(--teal)', badge: totalCharges || undefined, onClick: () => setArmoryOpen(true) },
+    { key: 'lab', label: 'Lab', icon: <FlaskConical className="w-5 h-5" />, color: 'var(--lilac)', onClick: () => { useGameStore.getState().setState('idle'); setMode('academy'); } },
+    { key: 'forge', label: 'Forge', icon: <Hammer className="w-5 h-5" />, color: '#C68A57', onClick: () => setMode('workshop') },
+    { key: 'archive', label: 'Archive', icon: <Medal className="w-5 h-5" />, color: 'var(--gold)', badge: unclaimedCount || undefined, onClick: () => setAchievementsModalOpen(true) },
+    { key: 'replay', label: 'Replay', icon: <Play className="w-5 h-5" />, color: 'var(--azure)', onClick: () => setReplayModalOpen(true) },
   ];
+
+  const stars = Object.keys(highScores).filter((k) => k.startsWith('stars-')).reduce((sum, k) => sum + (highScores[k] || 0), 0);
+  const worldNo = Math.min(20, Math.floor((Math.max(1, unlockedLevels) - 1) / 10) + 1);
 
   return (
     <motion.div 
@@ -121,81 +125,94 @@ export function Menu() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="w-full h-full overflow-y-auto overflow-x-hidden touch-pan-y overscroll-y-contain flex flex-col items-center relative z-10 pt-[max(0.75rem,env(safe-area-inset-top,12px))] pb-[max(1.25rem,env(safe-area-inset-bottom,20px))] pl-[max(1rem,env(safe-area-inset-left,16px))] pr-[max(1rem,env(safe-area-inset-right,16px))]"
-      style={{ scrollbarWidth: 'none', fontFamily: "'Fredoka', system-ui, sans-serif" }}
+      className="w-full h-full overflow-y-auto overflow-x-hidden touch-pan-y overscroll-y-contain flex flex-col items-center relative z-10 pt-[max(0.75rem,env(safe-area-inset-top,12px))] pb-[max(1rem,env(safe-area-inset-bottom,16px))] pl-[max(1rem,env(safe-area-inset-left,16px))] pr-[max(1rem,env(safe-area-inset-right,16px))]"
+      style={{ scrollbarWidth: 'none', fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
+      {/* soft shade at the bottom so the controls sit on the world, not on top of a bright sky */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 h-[58%] -z-10" style={{ background: 'linear-gradient(180deg, rgba(23,36,61,0) 0%, rgba(23,36,61,0.55) 45%, rgba(23,36,61,0.88) 100%)' }} />
+
       <div className="w-full max-w-md min-h-full flex flex-col items-center gap-3 [&>*]:shrink-0">
 
-        {/* Top bar: cups, settings, coins */}
+        {/* Top bar: player progress and currency */}
         <header className="w-full flex items-center justify-between gap-2 pt-1">
           <button
             onClick={() => { tap(); setMode('tournament'); }}
-            className="toon-sm rounded-full bg-[var(--cream)] pl-1 pr-3 py-1 flex items-center gap-2 cursor-pointer"
-            aria-label="Shift Arena cups"
+            className="panel-metal rounded-full pl-1 pr-3 py-1 flex items-center gap-2 cursor-pointer"
+            aria-label={`Player progress: world ${worldNo}, ${stars} stars`}
           >
-            <span className="w-8 h-8 rounded-full bg-[#ffb347] border-2 border-[var(--ink)] flex items-center justify-center text-base">{playerAvatar}</span>
-            <Trophy className="w-4 h-4 text-[#e8a400] fill-[#ffd23f]" />
-            <span className="font-game text-[var(--ink)] text-lg leading-none">{trophies.gold + trophies.silver + trophies.bronze}</span>
+            <span className="w-8 h-8 rounded-full flex items-center justify-center text-base" style={{ background: 'linear-gradient(180deg,#F3D493,#D5A453)', border: '1px solid var(--gold-deep)' }}>{playerAvatar}</span>
+            <span className="flex flex-col items-start leading-none">
+              <span className="text-[10px] font-bold text-[var(--stone)]/80 tracking-wide">WORLD {worldNo}</span>
+              <span className="num text-[13px] font-semibold text-[var(--gold)]">★ {stars}</span>
+            </span>
           </button>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { tap(); setSettingsModalOpen(true); }}
-              className="toon-sm rounded-full bg-[var(--cream)] w-11 h-11 flex items-center justify-center text-[var(--ink)] cursor-pointer"
-              aria-label="Settings"
-            >
-              <Settings className="w-6 h-6 stroke-[2.5]" />
-            </button>
-            <button
               onClick={() => { tap(); setShowIAP(true); }}
-              className="toon-sm rounded-full bg-[var(--cream)] pl-2 pr-1 py-1 flex items-center gap-1.5 cursor-pointer"
+              className="panel-metal rounded-full pl-1.5 pr-1 py-1 flex items-center gap-1.5 cursor-pointer"
               aria-label={`${coins} coins, get more`}
             >
-              <span className="w-7 h-7 rounded-full bg-[#ffd23f] border-2 border-[var(--ink)] flex items-center justify-center"><Coins className="w-4 h-4 text-[var(--ink)]" /></span>
-              <span className="font-game text-[var(--ink)] text-lg leading-none tabular-nums">{coins.toLocaleString()}</span>
-              <span className="w-7 h-7 rounded-full bg-[#7bd86a] border-2 border-[var(--ink)] flex items-center justify-center"><Plus className="w-4 h-4 text-[var(--ink)] stroke-[3.5]" /></span>
+              <span className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(180deg,#F3D493,#D5A453)' }}><Coins className="w-3.5 h-3.5 text-[var(--ink)]" /></span>
+              <span className="num text-[14px] font-semibold text-[var(--ivory)]">{coins.toLocaleString()}</span>
+              <span className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'var(--emerald)' }}><Plus className="w-3.5 h-3.5 text-white stroke-[3]" /></span>
+            </button>
+            <button
+              onClick={() => { tap(); setSettingsModalOpen(true); }}
+              className="panel-metal rounded-full w-10 h-10 flex items-center justify-center text-[var(--ivory)] cursor-pointer"
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5" />
             </button>
           </div>
         </header>
 
-        {/* Title */}
-        <motion.div
-          className="text-center mt-2 select-none"
-          animate={{ rotate: [-1.2, 1.2, -1.2] }}
-          transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut' }}
-        >
-          <h1 className="font-game toon-text text-[clamp(2.3rem,12vw,3.4rem)] leading-[0.95] whitespace-nowrap">
-            TOWER<span className="text-[#ff8a3d]">//</span>SHIFT
+        {/* Logo */}
+        <div className="text-center mt-3 select-none">
+          <h1 className="toon-text text-[clamp(2.1rem,11vw,3rem)] leading-none whitespace-nowrap" style={{ fontWeight: 800 }}>
+            TOWER<span style={{ color: 'var(--gold)' }}>//</span>SHIFT
           </h1>
-          <p className="mt-1 text-[15px] font-bold text-[var(--ink)]/80">Build. Balance. Deflect. Ascend.</p>
-        </motion.div>
+          <div className="mt-2 flex items-center justify-center gap-2 text-[11px] font-bold tracking-[0.18em] text-[var(--ivory)]/85">
+            <span className="h-px w-6" style={{ background: 'var(--gold)' }} />
+            BUILD · BALANCE · DEFLECT · ASCEND
+            <span className="h-px w-6" style={{ background: 'var(--gold)' }} />
+          </div>
+        </div>
 
-        {/* Hero: the actual critters, wobbling on their plate */}
-        <HeroStack skin={equippedCosmetic || 'skin-0'} plate={equippedPlate || 'plate-0'} />
+        {/* Hero: the player's tower in the active world */}
+        <div className="flex-1 min-h-[120px] flex items-end justify-center">
+          <HeroStack skin={equippedCosmetic || 'skin-0'} plate={equippedPlate || 'plate-0'} />
+        </div>
 
-        {/* PLAY: Shift Odyssey */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => { tap(); setMode('campaign'); }}
-          className="toon toon-shine w-full rounded-[26px] bg-[#6ad04a] py-3 flex flex-col items-center cursor-pointer"
-          aria-label={`Play Shift Odyssey, level ${unlockedLevels}`}
-        >
-          <span className="font-game toon-text-sm text-[2.6rem] leading-none flex items-center gap-2">
-            <Play className="w-9 h-9 fill-white text-white stroke-[var(--ink)] stroke-[2.5]" /> PLAY
-          </span>
-          <span className="mt-1 font-bold text-[15px] text-[#1f4a14]">Shift Odyssey · Level {unlockedLevels}</span>
-        </motion.button>
+        {/* Campaign progress + PLAY */}
+        <div className="w-full">
+          <div className="flex items-center justify-between px-1 mb-1.5 text-[12px] font-semibold text-[var(--ivory)]/85">
+            <span>Shift Odyssey · World {worldNo}</span>
+            <span className="num text-[var(--gold)]">Level {unlockedLevels} / 200</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full overflow-hidden mb-2.5" style={{ background: 'rgba(245,240,230,0.18)' }}>
+            <div className="h-full rounded-full" style={{ width: `${Math.min(100, (unlockedLevels / 200) * 100)}%`, background: 'linear-gradient(90deg,#D5A453,#F3D493)' }} />
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.12 }}
+            onClick={() => { tap(); setMode('campaign'); }}
+            className="btn-gold toon-shine w-full rounded-[16px] py-3.5 flex items-center justify-center gap-3 cursor-pointer"
+            aria-label={`Play Shift Odyssey, level ${unlockedLevels}`}
+          >
+            <Play className="w-7 h-7 fill-[var(--ink)] text-[var(--ink)]" />
+            <span className="flex flex-col items-start leading-none">
+              <span className="text-[26px] font-extrabold tracking-tight" style={{ fontFamily: 'Sora, Manrope, sans-serif' }}>Play</span>
+              <span className="text-[12px] font-bold opacity-75 mt-1">Continue level {unlockedLevels}</span>
+            </span>
+          </motion.button>
+        </div>
 
         {/* Modes */}
-        <div className="grid grid-cols-3 gap-2.5 w-full">
+        <div className="grid grid-cols-3 gap-2 w-full">
+          <ModeTile accent="var(--azure)" title="Shift Arena" sub={`${trophies.gold + trophies.silver + trophies.bronze} cups`} icon={<Trophy className="w-5 h-5" />} onClick={() => { tap(); setMode('tournament'); }} />
           <ModeTile
-            color="#ff9f1c" dark="#7a3d00" title="Shift Arena" sub={`${trophies.gold + trophies.silver + trophies.bronze} cups`}
-            icon={<Trophy className="w-7 h-7" />}
-            onClick={() => { tap(); setMode('tournament'); }}
-          />
-          <ModeTile
-            color="#9b6bff" dark="#3a1a7a" title="Endless" sub={`Best ${highScores['tower-endless'] || 0} tall`}
-            icon={<InfinityIcon className="w-7 h-7" />}
+            accent="var(--teal)" title="Endless" sub={`Best ${highScores['tower-endless'] || 0} tall`} icon={<InfinityIcon className="w-5 h-5" />}
             onClick={() => {
               tap();
               useGameStore.getState().setLevel(0);
@@ -203,34 +220,30 @@ export function Menu() {
               setMode('endless');
             }}
           />
-          <ModeTile
-            color="#ff5a5f" dark="#7a1418" title="Daily Ops" sub={`🔥 ${streakCount} day${streakCount === 1 ? '' : 's'} · ${activeMultiplier.toFixed(1)}x`}
-            icon={<Flame className="w-7 h-7" />} dot={!streakClaimedToday}
-            onClick={() => { tap(); setMode('daily'); }}
-          />
+          <ModeTile accent="var(--coral)" title="Daily Shift" sub={`${streakCount}-day streak · ${activeMultiplier.toFixed(1)}x`} icon={<Flame className="w-5 h-5" />} dot={!streakClaimedToday} onClick={() => { tap(); setMode('daily'); }} />
         </div>
 
-        {/* Dock */}
-        <div className="w-full grid grid-cols-6 gap-1 mt-1">
+        {/* Compact navigation */}
+        <nav className="panel-metal w-full rounded-[16px] grid grid-cols-6 py-2 mt-0.5">
           {dock.map((d) => (
-            <button key={d.key} onClick={() => { tap(); d.onClick(); }} className="flex flex-col items-center gap-1 cursor-pointer" aria-label={d.label}>
-              <span className="toon-sm relative w-12 h-12 rounded-2xl flex items-center justify-center text-[var(--ink)]" style={{ background: d.color }}>
+            <button key={d.key} onClick={() => { tap(); d.onClick(); }} className="relative flex flex-col items-center gap-1 py-1 cursor-pointer text-[var(--ivory)]/90 active:scale-95 transition-transform duration-100" aria-label={d.label}>
+              <span className="relative w-6 h-6 flex items-center justify-center" style={{ color: d.color }}>
                 {d.icon}
                 {d.badge !== undefined && (
-                  <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-white border-2 border-[var(--ink)] text-[11px] font-game text-[var(--ink)] flex items-center justify-center">{d.badge}</span>
+                  <span className="num absolute -top-2 -right-3 min-w-[18px] h-[16px] px-1 rounded-full text-[10px] font-semibold flex items-center justify-center" style={{ background: 'var(--coral)', color: '#fff' }}>{d.badge}</span>
                 )}
               </span>
-              <span className="text-[11px] font-bold text-[var(--ink)] leading-tight text-center whitespace-nowrap">{d.label}</span>
+              <span className="text-[10.5px] font-bold leading-tight whitespace-nowrap">{d.label}</span>
             </button>
           ))}
-        </div>
+        </nav>
 
         {!adsRemoved && (
           <button
             onClick={() => { tap(); useGameStore.getState().setShowRemoveAds(true); }}
-            className="mt-1 text-[13px] font-bold text-[var(--ink)]/70 underline decoration-2 underline-offset-4 cursor-pointer"
+            className="text-[12px] font-semibold text-[var(--stone)]/80 underline underline-offset-4 cursor-pointer"
           >
-            🚫 Remove ads
+            Remove ads
           </button>
         )}
       </div>

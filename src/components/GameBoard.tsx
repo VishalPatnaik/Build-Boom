@@ -2689,20 +2689,20 @@ export function GameBoard() {
         </div>
 
         {/* Centre: boss bar and streak (the tower itself shows its lean, no gauge needed) */}
-        <div className="flex flex-col items-center pointer-events-none min-w-0 max-w-[170px] sm:max-w-xs pt-1" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+        <div className="flex flex-col items-center pointer-events-none min-w-0 max-w-[170px] sm:max-w-xs pt-1" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
           {isBossLevel && (
-            <div className="toon-sm px-2.5 py-1 rounded-2xl bg-[#ff5a5f] text-center">
+            <div className="toon-sm px-2.5 py-1 rounded-2xl bg-[#F47759] text-center">
               <div className="font-game text-[13px] text-white leading-none whitespace-nowrap">👑 Boss</div>
               <div className="w-20 sm:w-36 h-2.5 bg-[var(--ink)]/40 rounded-full mt-1 overflow-hidden border-2 border-[var(--ink)]">
                 <div
-                  className="h-full bg-[#ffd23f] transition-all duration-300"
+                  className="h-full bg-[#E8BE70] transition-all duration-300"
                   style={{ width: `${Math.max(0, 100 - (builtCount / Math.max(1, totalBlocks)) * 100)}%` }}
                 />
               </div>
             </div>
           )}
           {(rapidComboData.active || activeCombo >= 3) && (
-            <div className={`toon-sm mt-1.5 px-3 py-0.5 rounded-full font-game text-[15px] whitespace-nowrap text-[var(--ink)] ${rapidComboData.active ? 'bg-[#ffd23f]' : 'bg-[var(--cream)]'}`}>
+            <div className={`toon-sm mt-1.5 px-3 py-0.5 rounded-full font-game text-[15px] whitespace-nowrap text-[var(--ink)] ${rapidComboData.active ? 'bg-[#E8BE70]' : 'bg-[var(--cream)]'}`}>
               {rapidComboData.active ? `⚡ ${rapidComboData.multiplier}x streak!` : `🔥 ${activeCombo} combo`}
             </div>
           )}
@@ -2735,7 +2735,7 @@ export function GameBoard() {
           {!isTutorialActive && (
             <div className="flex items-center gap-0.5 text-[22px] leading-none" aria-label={`${livesLeft} of ${MAX_LIVES} hearts left`}>
               {Array.from({ length: MAX_LIVES }, (_, i) => (
-                <span key={i} style={{ WebkitTextStroke: '2.5px var(--ink)', paintOrder: 'stroke fill' }} className={i < livesLeft ? 'text-[#ff4d6d]' : 'text-white/60'}>♥</span>
+                <span key={i} style={{ WebkitTextStroke: '2.5px var(--ink)', paintOrder: 'stroke fill' }} className={i < livesLeft ? 'text-[#F47759]' : 'text-white/60'}>♥</span>
               ))}
             </div>
           )}
@@ -2780,7 +2780,7 @@ export function GameBoard() {
               onTouchStart={(e) => { e.stopPropagation(); triggerStasis(); }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className={`toon-sm relative w-14 h-14 rounded-full flex items-center justify-center text-2xl cursor-pointer ${gameStateRef.current.physics.stasisActive ? 'bg-[#5ad1ff] animate-pulse' : 'bg-[#bfefff]'}`}
+              className={`toon-sm relative w-14 h-14 rounded-full flex items-center justify-center text-2xl cursor-pointer ${gameStateRef.current.physics.stasisActive ? 'bg-[#35D6C1] animate-pulse' : 'bg-[#F5F0E6]'}`}
               title="Chrono Stasis (Q)"
               aria-label={`Chrono Stasis, ${tacticalCharges.stasis} left`}
             >
@@ -2796,7 +2796,7 @@ export function GameBoard() {
               onTouchStart={(e) => { e.stopPropagation(); triggerEmp(); }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className="toon-sm relative w-14 h-14 rounded-full flex items-center justify-center text-2xl cursor-pointer bg-[#ffe27a]"
+              className="toon-sm relative w-14 h-14 rounded-full flex items-center justify-center text-2xl cursor-pointer bg-[#F5F0E6]"
               title="EMP (W)"
               aria-label={`EMP, ${tacticalCharges.emp} left`}
             >
@@ -2811,7 +2811,7 @@ export function GameBoard() {
               bottom centre stays clear for the tower */}
           <div className="pointer-events-auto flex flex-col items-end gap-1.5">
             <div className="toon-sm pointer-events-none flex items-center gap-1.5 bg-[var(--cream)] pl-1 pr-3 py-0.5 rounded-full">
-              <span className="w-6 h-6 rounded-full bg-[#ffd23f] border-2 border-[var(--ink)] flex items-center justify-center"><Coins className="w-3.5 h-3.5 text-[var(--ink)]" /></span>
+              <span className="w-6 h-6 rounded-full bg-[#E8BE70] border-2 border-[var(--ink)] flex items-center justify-center"><Coins className="w-3.5 h-3.5 text-[var(--ink)]" /></span>
               <span className="font-game text-[15px] tabular-nums text-[var(--ink)]">
                 {coins.toLocaleString()}
               </span>
@@ -2843,7 +2843,7 @@ export function GameBoard() {
               }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className={`toon-sm relative w-14 h-14 rounded-full flex items-center justify-center cursor-pointer ${tacticalCharges.shield ? 'bg-[#5ad1ff]' : 'bg-[#cfe7ff]'}`}
+              className={`toon-sm relative w-14 h-14 rounded-full flex items-center justify-center cursor-pointer ${tacticalCharges.shield ? 'bg-[#35D6C1]' : 'bg-[#F5F0E6]'}`}
               title="Aegis Barrier"
               aria-label={tacticalCharges.shield ? 'Aegis Barrier is up' : `Aegis Barrier, ${useGameStore.getState().powerups.shield} left`}
             >
@@ -2872,8 +2872,8 @@ export function GameBoard() {
               // Bottom edge pinned just above the arena, so however tall the card wraps it grows upward
               style={{ bottom: Math.max(0, boardH - Math.min(arenaTop - 6, 268)) }}
             >
-              <div className="toon-sm rounded-2xl bg-[var(--cream)] px-4 py-2.5 text-center" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
-                <div className="font-game text-[15px] text-[#e2563f]">💡 {tipCard.title}</div>
+              <div className="toon-sm rounded-2xl bg-[var(--cream)] px-4 py-2.5 text-center" style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}>
+                <div className="font-game text-[15px] text-[#F47759]">💡 {tipCard.title}</div>
                 <div className="mt-0.5 text-[14px] font-semibold leading-snug text-[var(--ink)]">{tipCard.body}</div>
               </div>
             </motion.div>
@@ -2891,7 +2891,7 @@ export function GameBoard() {
               className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center w-max max-w-[92vw]"
               style={{ top: Math.max(8, Math.min(132, arenaTop - 44)) }}
             >
-              <div className="toon-sm px-4 py-1 rounded-full bg-[#ffd23f] flex items-center gap-2">
+              <div className="toon-sm px-4 py-1 rounded-full bg-[#E8BE70] flex items-center gap-2">
                 <span className="font-game text-[15px] text-[var(--ink)] text-center">
                   {message}
                 </span>
@@ -3167,7 +3167,7 @@ export function GameBoard() {
                   initial={{ y: 20, scale: 0.8 }}
                   animate={{ y: 0, scale: 1 }}
                   className="font-game text-5xl mb-1 leading-none"
-                  style={{ color: state === 'won' ? '#7bd86a' : '#ff6b4a', WebkitTextStroke: '6px var(--ink)', paintOrder: 'stroke fill', textShadow: '0 5px 0 var(--ink)' }}
+                  style={{ color: state === 'won' ? '#43B98C' : '#ff6b4a', WebkitTextStroke: '6px var(--ink)', paintOrder: 'stroke fill', textShadow: '0 5px 0 var(--ink)' }}
                 >
                   {state === 'won' ? 'CLEARED!' : /TOPPLED|COLLAPSED/.test(lostReason) ? 'GRAVITY WINS!' : 'BOOM!'}
                 </motion.h2>
@@ -3187,14 +3187,14 @@ export function GameBoard() {
 
                 {state === 'won' && pendingCoins > 0 ? (
                   <div className="flex flex-col space-y-3 w-full max-w-md">
-                    <div className="font-game text-2xl text-[#e8a400] text-center mb-1">
+                    <div className="font-game text-2xl text-[#B88943] text-center mb-1">
                       +{pendingCoins} COINS EARNED!
                     </div>
                     <button
                       onClick={() => {
                         useGameStore.getState().showDoubleCoinsAd();
                       }}
-                      className="toon flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-[#ffd23f] text-[var(--ink)] rounded-2xl font-game text-xl cursor-pointer"
+                      className="toon flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-[#E8BE70] text-[var(--ink)] rounded-2xl font-game text-xl cursor-pointer"
                     >
                       <Video className="w-6 h-6" />
                       <span>Double it · watch a video</span>
@@ -3219,7 +3219,7 @@ export function GameBoard() {
                           haptics.vibrate([20]);
                           useGameStore.getState().showReviveAd();
                         }}
-                        className="toon w-full py-3.5 px-4 bg-[#5ad1ff] text-[var(--ink)] rounded-2xl font-game text-xl cursor-pointer flex items-center justify-center gap-2"
+                        className="toon w-full py-3.5 px-4 bg-[#35D6C1] text-[var(--ink)] rounded-2xl font-game text-xl cursor-pointer flex items-center justify-center gap-2"
                       >
                         <Video className="w-5 h-5 stroke-[2.5]" />
                         <span>Revive · watch a video</span>
@@ -3247,7 +3247,7 @@ export function GameBoard() {
                             setScore(0);
                             setState('playing');
                           }}
-                          className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#ffd23f] text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
+                          className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#E8BE70] text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
                         >
                           <RotateCcw className="w-5 h-5" strokeWidth={3} />
                           <span>Retry</span>
@@ -3274,7 +3274,7 @@ export function GameBoard() {
                               toLevel: nextLvl,
                             });
                           }}
-                          className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-[#7bd86a] text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
+                          className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-[#43B98C] text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
                         >
                           <Play className="w-5 h-5" fill="currentColor" />
                           <span>Next</span>
