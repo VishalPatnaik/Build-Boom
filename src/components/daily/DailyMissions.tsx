@@ -209,7 +209,7 @@ export function DailyMissions() {
           </motion.button>
           <div>
             <div className="text-[10px] font-bold text-cyan-400 tracking-[0.25em] uppercase flex items-center gap-1.5">
-              <span>PROTOCOL OPS</span>
+              <span>Today's jobs</span>
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 uppercase tracking-wider drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] font-mono">
@@ -278,7 +278,7 @@ export function DailyMissions() {
           `}
         >
           <ListTodo className="w-4 h-4" />
-          <span>Directives</span>
+          <span>Jobs</span>
           <span className={`text-[10px] px-1.5 py-0.2 rounded ${
             activeTab === 'directives' ? 'bg-slate-950/30' : 'bg-slate-900 text-slate-300 border border-slate-700'
           }`}>
@@ -415,7 +415,7 @@ export function DailyMissions() {
                     onClick={() => setActiveTab('calendar')}
                     className="text-amber-300 hover:text-amber-200 flex items-center gap-0.5 cursor-pointer uppercase underline text-[10px]"
                   >
-                    <span>View Calendar View</span>
+                    <span>See calendar</span>
                     <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
@@ -481,7 +481,7 @@ export function DailyMissions() {
             {/* DIRECTIVES SECTION HEADER */}
             <div className="flex items-center justify-between pt-1">
               <div className="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                <span>OPERATIONAL DIRECTIVES</span>
+                <span>TODAY'S JOBS</span>
                 <span className="text-[10px] px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-md text-slate-300">
                   {completedCount} / {tasks.length} COMPLETED
                 </span>
@@ -653,7 +653,7 @@ export function DailyMissions() {
             }}
             className="p-3 bg-slate-900/90 hover:bg-slate-800 border-2 border-purple-400/60 rounded-xl text-purple-300 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(168,85,247,0.3)] cursor-pointer"
           >
-            <span>♾️ Endless Protocol</span>
+            <span>♾️ Endless</span>
           </motion.button>
         </div>
 

@@ -115,7 +115,7 @@ export function TacticalRechargeModal({
           <div className="text-center mb-3 pr-8 sm:pr-0">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[10px] font-mono font-black uppercase tracking-widest mb-1.5">
               <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-              <span>TACTICAL ARSENAL RE-ARM</span>
+              <span>TOP UP POWER-UPS</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white drop-shadow">
               Field Power-Ups
@@ -255,7 +255,7 @@ export function TacticalRechargeModal({
             >
               <div className="flex items-center gap-2">
                 <Video className="w-4 h-4 text-cyan-200" />
-                <span>Watch Sponsor Ad</span>
+                <span>Watch a video</span>
               </div>
               <span className="bg-white/20 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold">
                 FREE {currentItem.highlight}
@@ -271,7 +271,7 @@ export function TacticalRechargeModal({
                   className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 border border-pink-400/50 text-white text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
                 >
                   <Gift className="w-3.5 h-3.5 text-pink-200" />
-                  <span>Claim +100 Coins Airdrop</span>
+                  <span>Claim +100 coins</span>
                 </button>
                 <button
                   onClick={() => setShowIAP(true)}

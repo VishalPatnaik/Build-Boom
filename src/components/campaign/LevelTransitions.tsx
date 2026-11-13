@@ -235,7 +235,7 @@ export function LevelWarpCurtain({
                 />
               </div>
               <div className="flex items-center justify-between text-[9px] font-mono text-slate-400 mt-1.5 px-0.5">
-                <span>CONDUIT ENGAGED</span>
+                <span>HERE WE GO!</span>
                 <span className="text-white font-bold">ENTERING ARENA</span>
               </div>
             </div>

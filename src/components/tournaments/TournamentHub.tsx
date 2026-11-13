@@ -296,7 +296,7 @@ export function TournamentHub() {
           SHIFT ARENA
         </h1>
         <p className="text-white/80 font-bold text-xs uppercase tracking-wider mt-0.5 font-mono">
-          Compete Globally • Win Exclusive Trophies & Coin Prizes
+          Climb the board, win cups and coins
         </p>
 
         {/* Tab Navigation Console */}
@@ -626,13 +626,13 @@ export function TournamentHub() {
                 </span>
                 <span className="text-white/80 font-bold flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Global Leaderboard Cloud</span>
+                  <span>Online leaderboard</span>
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-cyan-300/80 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-md flex items-center gap-1">
                   <Database className="w-3 h-3 text-cyan-400" />
-                  <span>Edge Sync (Firebase Offline)</span>
+                  <span>Cloud save (coming soon)</span>
                 </span>
                 <button
                   onClick={() => fetchGlobalLeaderboard(leaderboardCategory)}
@@ -985,7 +985,7 @@ export function TournamentHub() {
                           ) : myScore > 0 ? (
                             <span className="text-white/80">Your Best: {myScore.toLocaleString()} points</span>
                           ) : (
-                            <span className="text-white/70">Play a match to establish your global standing!</span>
+                            <span className="text-white/70">Play a match to get on the board!</span>
                           )}
                         </div>
                       </div>
@@ -1089,7 +1089,7 @@ export function TournamentHub() {
                       </div>
                     )}
                     <div className="flex justify-between items-center">
-                      <span className="text-white/50">Global Division:</span>
+                      <span className="text-white/50">League:</span>
                       <span className="font-bold text-emerald-400">Master League Tier I</span>
                     </div>
                   </div>

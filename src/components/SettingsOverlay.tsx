@@ -218,7 +218,7 @@ export function SettingsOverlay() {
               </div>
               <div>
                 <div className="text-[10px] font-bold text-cyan-400 tracking-[0.25em] uppercase flex items-center gap-1.5">
-                  <span>SYSTEM MATRIX</span>
+                  <span>Make it yours</span>
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 </div>
                 <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider">
@@ -347,7 +347,7 @@ export function SettingsOverlay() {
                           )}
                         </div>
                         <div className="text-[11px] text-slate-400 font-sans mt-0.5">
-                          Atmospheric cyber ambient synth soundtrack
+                          Chill background tunes
                         </div>
                       </div>
                     </div>
@@ -1100,7 +1100,7 @@ export function SettingsOverlay() {
                       </div>
                       <div>
                         <div className="text-xs font-black text-white uppercase tracking-wider font-mono flex items-center gap-2">
-                          <span>Ad Delivery Engine</span>
+                          <span>Ads</span>
                           <span className="text-[9px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 px-2 py-0.5 rounded-full font-mono">
                             {AdService.getStatus().providerLabel}
                           </span>
@@ -1255,7 +1255,7 @@ export function SettingsOverlay() {
           <div className="p-3 sm:p-4 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 relative z-10">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="uppercase tracking-widest font-mono text-[9px]">Settings Synchronized</span>
+              <span className="uppercase tracking-widest font-mono text-[9px]">Saved automatically</span>
             </div>
 
             <motion.button

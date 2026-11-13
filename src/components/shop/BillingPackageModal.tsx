@@ -146,7 +146,7 @@ export function BillingPackageModal({ isOpen, onClose, initialTab = 'bundle' }: 
                       TOWER//SHIFT STORE
                     </h2>
                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
-                      OFFICIAL VAULT
+                      STORE
                     </span>
                   </div>
                   <p className="text-xs text-white/60">

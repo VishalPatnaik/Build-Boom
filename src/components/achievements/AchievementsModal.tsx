@@ -106,7 +106,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
           {/* Overall Progress Bar */}
           <div className="px-5 pt-3 pb-2 shrink-0 z-10">
             <div className="flex justify-between items-center text-[11px] font-mono font-bold text-white/70 mb-1">
-              <span>ARCHITECT MASTERY</span>
+              <span>BUILDER BADGES</span>
               <span>{Math.round((unlockedCount / totalAchievements) * 100)}%</span>
             </div>
             <div className="w-full h-3 bg-black/60 rounded-full overflow-hidden border border-white/15 p-0.5 shadow-inner">
@@ -254,7 +254,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
 
           {/* Modal Footer */}
           <div className="p-4 bg-black/60 border-t border-white/10 flex items-center justify-between text-xs text-white/60 shrink-0 z-10">
-            <span className="font-mono text-[11px]">Keep stacking towers to unlock elite badges!</span>
+            <span className="font-mono text-[11px]">Keep stacking to unlock more badges!</span>
             <button
               onClick={() => {
                 haptics.uiTap();

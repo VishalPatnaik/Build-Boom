@@ -66,7 +66,7 @@ export const RewardCalendarView: React.FC<RewardCalendarViewProps> = ({
         <div className="relative z-10">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded-md border border-cyan-500/40">
-              <Calendar className="w-3.5 h-3.5" /> 7-DAY REWARD HORIZON
+              <Calendar className="w-3.5 h-3.5" /> THIS WEEK'S GIFTS
             </span>
             <span className="text-[10px] text-slate-400 font-bold uppercase">
               {calendarDays[0].dateFormatted} — {calendarDays[6].dateFormatted}
@@ -74,7 +74,7 @@ export const RewardCalendarView: React.FC<RewardCalendarViewProps> = ({
           </div>
 
           <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wide mt-1">
-            CONSECUTIVE LOG-IN REWARDS SCHEDULE
+            COME BACK EACH DAY FOR BIGGER GIFTS
           </h3>
           <p className="text-[11px] text-slate-300 font-sans mt-0.5">
             Log in daily without interruption to climb multipliers and unlock upcoming mystery vaults!

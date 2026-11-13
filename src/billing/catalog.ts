@@ -8,8 +8,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_100',
     name: 'Starter Coins',
-    subtitle: '100 Architectural Credits',
-    description: 'Instant pocket cache of coins for quick powerup replenishment and basic cosmetic unlocks.',
+    subtitle: '100 coins',
+    description: 'A handful of coins for a quick top-up.',
     type: 'coin_pack',
     rarity: 'common',
     rewards: {
@@ -21,8 +21,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_500',
     name: 'Value Pack',
-    subtitle: '500 Architectural Credits',
-    description: 'Great boost for unlocking high-tier cosmetic skins, plates, and specialized tech tree perks.',
+    subtitle: '500 coins',
+    description: 'Enough for a fancy new critter or plate.',
     type: 'coin_pack',
     rarity: 'rare',
     rewards: {
@@ -36,8 +36,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_1200',
     name: 'Mega Pack',
-    subtitle: '1,200 Architectural Credits',
-    description: 'Substantial resource depot providing full freedom in the cosmetic shop and workshop.',
+    subtitle: '1,200 coins',
+    description: 'A proper shopping spree.',
     type: 'coin_pack',
     rarity: 'epic',
     rewards: {
@@ -49,8 +49,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_2500',
     name: 'Ultra Pack',
-    subtitle: '2,500 Architectural Credits',
-    description: 'Massive balance expansion. Dominate tournament rankings and unlock entire biome themes.',
+    subtitle: '2,500 coins',
+    description: 'Unlock whole worlds of goodies.',
     type: 'coin_pack',
     rarity: 'epic',
     rewards: {
@@ -64,8 +64,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'coins_5000',
     name: 'Legend Pack',
-    subtitle: '5,000 Architectural Credits',
-    description: 'The ultimate royal treasury for elite master architects and competitive tower builders.',
+    subtitle: '5,000 coins',
+    description: 'The big treasure chest. Go wild!',
     type: 'coin_pack',
     rarity: 'legendary',
     rewards: {
@@ -83,8 +83,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'powerup_stasis_10',
     name: 'Stasis Pack',
-    subtitle: '10 Chrono Stasis Charges',
-    description: '10 Stasis field activations to slow temporal velocity during frantic multi-angle block descents.',
+    subtitle: '10 Chrono Stasis',
+    description: 'Slow everything down when it gets hectic.',
     type: 'powerup_pack',
     rarity: 'rare',
     rewards: {
@@ -98,8 +98,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'powerup_emp_10',
     name: 'EMP Pack',
-    subtitle: '10 EMP Shockwave Charges',
-    description: '10 Electromagnetic pulses to vaporize hazardous boom blocks before they impact the tower.',
+    subtitle: '10 EMP',
+    description: 'Pop bombs before they reach your tower.',
     type: 'powerup_pack',
     rarity: 'rare',
     rewards: {
@@ -113,8 +113,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'powerup_shield_10',
     name: 'Shield Pack',
-    subtitle: '10 Kinetic Blast Shields',
-    description: '10 Aegis shield deployments. Each one absorbs a single fatal mistake: a toppling tower, a bomb tap or a premature tap.',
+    subtitle: '10 Aegis Barriers',
+    description: 'Each one forgives one big oops: a topple, a bomb tap or an early tap.',
     type: 'powerup_pack',
     rarity: 'rare',
     rewards: {
@@ -129,7 +129,7 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
     id: 'powerup_tactical_pack',
     name: 'Tactical Arsenal Pack',
     subtitle: '5 Stasis • 5 EMP • 5 Shields',
-    description: 'Balanced tactical loadout providing five deployments of every core defensive mechanism.',
+    description: 'Five of each power-up.',
     type: 'powerup_pack',
     rarity: 'epic',
     rewards: {
@@ -151,8 +151,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'bundle_starter_architect',
     name: 'Starter Architect Pack',
-    subtitle: '350 Coins + 15 Powerup Charges + Chibi Moon Bunny Skin',
-    description: 'Everything an aspiring architect needs: 350 Coins, 5 Stasis, 5 EMP, 5 Shields, and the Chibi Moon Bunny Skin.',
+    subtitle: '350 coins + 15 power-ups + Chibi Moon Bunny',
+    description: '350 coins, 5 of each power-up and the Chibi Moon Bunny.',
     type: 'bundle',
     rarity: 'rare',
     badge: 'STARTER BUNDLE',
@@ -172,8 +172,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'bundle_tactical_architect',
     name: 'Tactical Architect Pack',
-    subtitle: '1,000 Coins + 36 Tactical Charges + Cosmic Meteorite Skin',
-    description: 'Advanced engineering arsenal: 1,000 Coins, 12 Stasis, 12 EMP, 12 Kinetic Shields, and the Cosmic Meteorite Skin.',
+    subtitle: '1,000 coins + 36 power-ups + Cosmic Meteorite',
+    description: '1,000 coins, 12 of each power-up and the Cosmic Meteorite.',
     type: 'bundle',
     rarity: 'epic',
     badge: 'BEST SELLER',
@@ -194,8 +194,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'bundle_legend_architect',
     name: 'Legend Architect Pack',
-    subtitle: '3,500 Coins + 75 Tactical Charges + 2 Master Skins',
-    description: 'The pinnacle grand package: 3,500 Coins, 25 Stasis, 25 EMP, 25 Shields, plus the 24K Minted Gold Bullion & Cyber Mecha-Kitty Skins.',
+    subtitle: '3,500 coins + 75 power-ups + 2 rare critters',
+    description: '3,500 coins, 25 of each power-up, plus the Gold Bullion and Mecha-Kitty critters.',
     type: 'bundle',
     rarity: 'legendary',
     badge: 'MASTER ARCHITECT',
@@ -220,8 +220,8 @@ export const BILLING_CATALOG: ProductCatalogItem[] = [
   {
     id: 'remove_ads',
     name: 'Ad Blocker VIP Pass',
-    subtitle: 'Permanent Interstitial Removal',
-    description: 'Permanently removes all interstitial and random ads, and enables VIP Instant Unlocks for rewarded shop bonuses without ads!',
+    subtitle: 'No more ads between runs',
+    description: 'Removes ads between runs for good, and lets you grab ad rewards without watching.',
     type: 'utility',
     rarity: 'epic',
     rewards: {

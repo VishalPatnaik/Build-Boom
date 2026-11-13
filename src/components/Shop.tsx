@@ -638,7 +638,7 @@ export function Shop() {
               </div>
 
               <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between">
-                <span className="text-[10px] font-mono text-cyan-300/80 uppercase">Tactical Research Matrix</span>
+                <span className="text-[10px] font-mono text-cyan-300/80 uppercase">Power-ups for your next run</span>
                 <button
                   type="button"
                   onClick={() => {

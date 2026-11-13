@@ -18,7 +18,7 @@ export const POWERUP_CONFIG: Record<PowerupType, PowerupItemDef> = {
     name: 'Chrono Stasis Pods',
     icon: '⏳',
     badge: 'TIME DILATION',
-    desc: 'Slows approaching hazards and blocks to half speed for a tactical window.',
+    desc: 'Slows everything to half speed for a moment.',
     coinPrice: 60,
     chargesGranted: { stasis: 2 },
     highlight: '+2 Stasis Charges',
@@ -28,17 +28,17 @@ export const POWERUP_CONFIG: Record<PowerupType, PowerupItemDef> = {
     name: 'EMP Bomb Defusers',
     icon: '⚡',
     badge: 'HAZARD DISARM',
-    desc: 'Detonates incoming bombs safely, converting hazardous explosive energy into coins.',
+    desc: 'Pops incoming bombs safely and turns them into coins.',
     coinPrice: 60,
     chargesGranted: { emp: 2 },
     highlight: '+2 EMP Charges',
   },
   shield: {
     id: 'shield',
-    name: 'Aegis Kinetic Barrier',
+    name: 'Aegis Barrier',
     icon: '🛡️',
     badge: 'FORCE FIELD',
-    desc: 'Deploys an orbital kinetic shield that absorbs 1 fatal mistake: a toppling tower, a misclick or a bomb.',
+    desc: 'Forgives one big oops: a topple, a misclick or a bomb.',
     coinPrice: 84,
     chargesGranted: { shield: 1 },
     highlight: '+1 Shield Barrier',
@@ -48,7 +48,7 @@ export const POWERUP_CONFIG: Record<PowerupType, PowerupItemDef> = {
     name: 'Tactical Arsenal Crate',
     icon: '🧰',
     badge: 'VALUE ARSENAL',
-    desc: 'Complete field airdrop: +2 Chrono Stasis, +2 EMP Defusers, and +1 Aegis Kinetic Barrier.',
+    desc: '+2 Chrono Stasis, +2 EMP and +1 Aegis Barrier.',
     coinPrice: 144,
     chargesGranted: { stasis: 2, emp: 2, shield: 1 },
     highlight: '5x Total Tactical Charges',
@@ -78,12 +78,12 @@ export interface PerkDefinition {
 export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
   chrono_stasis: {
     id: 'chrono_stasis',
-    name: 'Chrono Stasis Unit',
+    name: 'Chrono Stasis',
     category: 'tactical',
-    badge: 'TACTICAL GADGET [Q]',
+    badge: 'POWER-UP',
     icon: '⏳',
     hotkey: 'Q',
-    summary: 'Dilates temporal flux, slowing approaching hazards and blocks to a crawl.',
+    summary: 'Slows everything way down so you can line up the tap.',
     tiers: [
       {
         tier: 1,
@@ -114,12 +114,12 @@ export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
 
   emp_defuser: {
     id: 'emp_defuser',
-    name: 'EMP Disarm Matrix',
+    name: 'EMP',
     category: 'tactical',
-    badge: 'TACTICAL GADGET [W]',
+    badge: 'POWER-UP',
     icon: '⚡',
     hotkey: 'W',
-    summary: 'High-frequency resonance pulse that vaporizes incoming bombs into glittering coins.',
+    summary: 'Zaps incoming bombs and turns them into coins.',
     tiers: [
       {
         tier: 1,
@@ -150,11 +150,11 @@ export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
 
   aegis_shield: {
     id: 'aegis_shield',
-    name: 'Aegis Kinetic Barrier',
+    name: 'Aegis Barrier',
     category: 'tactical',
-    badge: 'TACTICAL GADGET',
+    badge: 'POWER-UP',
     icon: '🛡️',
-        summary: 'Hardlight energy barrier that absorbs fatal structural collisions or accidental bomb taps.',
+        summary: 'Forgives a topple or an accidental bomb tap.',
     tiers: [
       {
         tier: 1,
@@ -185,11 +185,11 @@ export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
 
   structural_gyro: {
     id: 'structural_gyro',
-    name: 'Structural Gyro Stabilizer',
+    name: 'Gyro Stability',
     category: 'engineering',
-    badge: 'FOUNDATION PASSIVE',
+    badge: 'ALWAYS ON',
     icon: '📐',
-    summary: 'Active counterweights that balance tower sway, increase critical tilt threshold, and damp oscillations.',
+    summary: 'Your tower can lean further before it tips, and wobbles calm down faster.',
     tiers: [
       {
         tier: 1,
@@ -220,16 +220,16 @@ export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
 
   precision_optics: {
     id: 'precision_optics',
-    name: 'Precision Optics & Guidance',
+    name: 'Precision Aim',
     category: 'precision',
-    badge: 'CYBERNETIC SENSOR',
+    badge: 'ALWAYS ON',
     icon: '🎯',
-    summary: 'Laser trajectory sightlines that widen the PERFECT timing window, cut landing slip by 10% per tier, and amplify combo multipliers.',
+    summary: 'Shows where each critter will land and makes PERFECT taps easier to hit.',
     tiers: [
       {
         tier: 1,
         title: 'Vector Laser Sight',
-        description: 'Projects holographic trajectory beams for incoming blocks. Expands PERFECT window by +20% and cuts landing slip by 10%.',
+        description: 'Shows where each critter will land. PERFECT window +20%, landing slip -10%.',
         cost: 180,
         effectValue: 1.2,
         highlightStat: '+20% Perfect Window & Laser Tracers',
@@ -255,11 +255,11 @@ export const PERK_DEFINITIONS: Record<string, PerkDefinition> = {
 
   midas_foundation: {
     id: 'midas_foundation',
-    name: 'Midas Economics & Rare Alloys',
+    name: 'Midas Coins',
     category: 'economics',
-    badge: 'PROSPERITY FORGE',
+    badge: 'ALWAYS ON',
     icon: '🪙',
-    summary: 'Boosts payouts from bombs, rare alloy blocks (Prism Cores, Gold Ingots) and end-of-run rewards.',
+    summary: 'More coins from bombs you dodge, rare critters and end-of-run rewards.',
     tiers: [
       {
         tier: 1,

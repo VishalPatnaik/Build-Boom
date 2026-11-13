@@ -71,7 +71,7 @@ const PRESETS: Preset[] = [
   {
     id: 'zen',
     name: 'Zen Architecture',
-    desc: 'Pure structural harmony with 0% bombs, gentle approach velocity and no wind.',
+    desc: 'No bombs, slow critters, no wind. Pure chill.',
     icon: '🧘',
     options: {
       speedMultiplier: 0.8,
@@ -87,7 +87,7 @@ const PRESETS: Preset[] = [
   {
     id: 'hurricane',
     name: 'Hurricane Gyro',
-    desc: 'High velocity gale winds with intense structural tilt forces.',
+    desc: 'Big gusty winds that shove your tower around.',
     icon: '🌪️',
     options: {
       speedMultiplier: 1.35,
@@ -103,7 +103,7 @@ const PRESETS: Preset[] = [
   {
     id: 'bullet_hell',
     name: 'Neon Bullet Hell',
-    desc: 'Extreme 50% bomb saturation with deceptive phantom and blinking hazards.',
+    desc: 'Half the drops are bombs, and some are sneaky.',
     icon: '⚡',
     options: {
       speedMultiplier: 1.6,
@@ -119,7 +119,7 @@ const PRESETS: Preset[] = [
   {
     id: 'midas_rush',
     name: 'Midas Rush',
-    desc: 'Rare Prism, Titan and Gold alloy blocks mixed into the stack, with a light breeze.',
+    desc: 'Rare Prism, Titan and Gold critters, with a light breeze.',
     icon: '🪙',
     options: {
       speedMultiplier: 1.1,
@@ -238,7 +238,7 @@ export function BlueprintWorkshop() {
           </button>
           <div className="min-w-0">
             <div className="text-[9px] sm:text-[10px] font-mono tracking-widest text-sky-400 uppercase truncate">
-              PHYSICS & SIMULATION LAB
+              YOUR OWN RULES
             </div>
             <h1 className="text-base sm:text-xl font-black tracking-tight text-white uppercase flex items-center gap-1.5 sm:gap-2 truncate font-mono">
               <span className="truncate">Shift Forge</span>
@@ -254,7 +254,7 @@ export function BlueprintWorkshop() {
           className="hidden sm:flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-black font-black text-xs uppercase tracking-wider items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.4)] active:translate-y-0.5 cursor-pointer shrink-0"
         >
           <Play className="w-4 h-4 fill-current" />
-          <span>Launch Simulation</span>
+          <span>Play it</span>
         </button>
       </header>
 
@@ -290,12 +290,12 @@ export function BlueprintWorkshop() {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-            <span>Skin Schematics & Synthesis</span>
+            <span>Make a critter</span>
           </button>
         </div>
 
         <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono text-white/50">
-          <span>ARCHITECT TELEMETRY LAB</span>
+          <span>Build your own challenge</span>
         </div>
       </div>
 
@@ -309,7 +309,7 @@ export function BlueprintWorkshop() {
               <div>
                 <div className="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest flex items-center gap-1.5">
                   <Cpu className="w-3.5 h-3.5" />
-                  <span>Architectural Alloy Schematics</span>
+                  <span>Critter recipes</span>
                 </div>
                 <h2 className="text-lg sm:text-xl font-black text-white mt-0.5">
                   Synthesize & Forge Block Skins
@@ -369,7 +369,7 @@ export function BlueprintWorkshop() {
                         ) : (
                           <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-white/10 text-white/50 border border-white/10 shrink-0 flex items-center gap-1">
                             <Lock className="w-2.5 h-2.5" />
-                            <span>SCHEMATIC</span>
+                            <span>RECIPE</span>
                           </span>
                         )}
                       </div>
@@ -408,12 +408,12 @@ export function BlueprintWorkshop() {
                         {!isOwned ? (
                           <>
                             <Sparkles className="w-3.5 h-3.5 fill-current" />
-                            <span>Synthesize Blueprint</span>
+                            <span>Make it!</span>
                           </>
                         ) : (
                           <>
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Inspect & Sandbox Trial</span>
+                            <span>Try it out</span>
                           </>
                         )}
                       </button>
@@ -433,7 +433,7 @@ export function BlueprintWorkshop() {
           <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-white/10 p-4 sm:p-6 space-y-4 bg-[#0a0f1d]/40 lg:overflow-y-auto overscroll-contain shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold tracking-wider text-sky-400 uppercase">
-                Architectural Presets
+                Quick picks
               </span>
               <span className="text-[10px] font-mono text-white/40">1-CLICK LOAD</span>
             </div>
@@ -469,7 +469,7 @@ export function BlueprintWorkshop() {
             <div className="mt-4 sm:mt-6 p-4 rounded-2xl bg-black/40 border border-white/10 text-xs text-white/60 space-y-2">
               <div className="font-mono text-white/80 font-bold uppercase text-[10px] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                <span>Sandbox Telemetry Notes</span>
+                <span>How Shift Forge works</span>
               </div>
               <p className="leading-relaxed">
                 Custom simulations do not alter campaign level progression or consume tournament passes. Use this
@@ -482,9 +482,9 @@ export function BlueprintWorkshop() {
           <div className="lg:col-span-8 p-4 sm:p-6 space-y-6 lg:overflow-y-auto overscroll-contain pb-28 lg:pb-12 min-w-0">
             <div>
               <span className="text-xs font-mono font-bold tracking-wider text-sky-400 uppercase">
-                Vector & Ballistics Calibration
+                Fine-tune it
               </span>
-              <h2 className="text-lg sm:text-xl font-black text-white mt-1">Physics Parameters</h2>
+              <h2 className="text-lg sm:text-xl font-black text-white mt-1">How it plays</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -493,7 +493,7 @@ export function BlueprintWorkshop() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Wind className="w-4 h-4 text-sky-400 shrink-0" />
-                    <span className="text-xs font-bold text-white uppercase truncate">Approach Velocity</span>
+                    <span className="text-xs font-bold text-white uppercase truncate">Drop speed</span>
                   </div>
                   <span className="font-mono font-black text-sky-400 text-sm tabular-nums shrink-0">
                     {options.speedMultiplier.toFixed(2)}x
@@ -523,7 +523,7 @@ export function BlueprintWorkshop() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Flame className="w-4 h-4 text-rose-400 shrink-0" />
-                    <span className="text-xs font-bold text-white uppercase truncate">Hazard Density</span>
+                    <span className="text-xs font-bold text-white uppercase truncate">Bombs</span>
                   </div>
                   <span className="font-mono font-black text-rose-400 text-sm tabular-nums shrink-0">
                     {Math.round(options.boomChance * 100)}%
@@ -583,7 +583,7 @@ export function BlueprintWorkshop() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Sliders className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="text-xs font-bold text-white uppercase truncate">Simulation Length</span>
+                    <span className="text-xs font-bold text-white uppercase truncate">Run length</span>
                   </div>
                   <span className="font-mono font-black text-amber-400 text-sm tabular-nums shrink-0">
                     {options.blockCount} Blocks
@@ -614,7 +614,7 @@ export function BlueprintWorkshop() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span className="text-xs font-bold text-white uppercase truncate">Rare Alloys</span>
+                    <span className="text-xs font-bold text-white uppercase truncate">Rare critters</span>
                   </div>
                   <span className="font-mono font-bold text-emerald-400 text-xs shrink-0">
                     {options.allowSpecialBlocks ? 'ENABLED' : 'DISABLED'}
@@ -674,7 +674,7 @@ export function BlueprintWorkshop() {
                   <div className="text-sm font-black flex items-center gap-1.5 truncate">
                     <span>👁️</span> Strobe Blink
                   </div>
-                  <div className="text-[10px] text-white/60 mt-1 leading-snug">High-frequency optical strobing</div>
+                  <div className="text-[10px] text-white/60 mt-1 leading-snug">Blinks in and out</div>
                 </button>
 
                 <button
@@ -707,7 +707,7 @@ export function BlueprintWorkshop() {
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_0_#0284c7] active:translate-y-1 active:shadow-none cursor-pointer"
           >
             <Play className="w-5 h-5 fill-current" />
-            <span>Launch Simulation</span>
+            <span>Play it</span>
           </button>
         </div>
       )}
