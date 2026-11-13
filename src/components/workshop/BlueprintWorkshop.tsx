@@ -199,7 +199,7 @@ export function BlueprintWorkshop() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="relative w-full h-full flex flex-col bg-[#080d18] text-white select-none overflow-hidden"
+      className="skin-forge relative w-full h-full flex flex-col text-white select-none overflow-hidden"
     >
       {/* CSS-based Blueprint Skin Reveal Modal */}
       {revealSkin && (
@@ -339,7 +339,7 @@ export function BlueprintWorkshop() {
                 return (
                   <div
                     key={skin.id}
-                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between relative overflow-hidden bg-gradient-to-b ${
+                    className={`forge-card p-4 rounded-2xl border transition-all flex flex-col justify-between relative overflow-hidden bg-gradient-to-b ${
                       isEquipped
                         ? 'from-[#0d2238] to-[#071322] border-sky-400 shadow-[0_0_16px_rgba(56,189,248,0.3)]'
                         : isOwned
@@ -445,7 +445,7 @@ export function BlueprintWorkshop() {
                   <div
                     key={p.id}
                     onClick={() => applyPreset(p)}
-                    className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
+                    className={`forge-card p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-sky-950/40 border-sky-400 shadow-[0_0_16px_rgba(56,189,248,0.2)]'
                         : 'bg-white/5 hover:bg-white/10 border-white/10'
@@ -489,7 +489,7 @@ export function BlueprintWorkshop() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Speed Multiplier Slider */}
-              <div className="p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
+              <div className="forge-card p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Wind className="w-4 h-4 text-sky-400 shrink-0" />
@@ -519,7 +519,7 @@ export function BlueprintWorkshop() {
               </div>
 
               {/* Bomb / Hazard Ratio Slider */}
-              <div className="p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
+              <div className="forge-card p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Flame className="w-4 h-4 text-rose-400 shrink-0" />
@@ -549,7 +549,7 @@ export function BlueprintWorkshop() {
               </div>
 
               {/* Wind Slider */}
-              <div className="p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
+              <div className="forge-card p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Wind className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -579,7 +579,7 @@ export function BlueprintWorkshop() {
               </div>
 
               {/* Block Length Selector */}
-              <div className="p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
+              <div className="forge-card p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Sliders className="w-4 h-4 text-amber-400 shrink-0" />
@@ -610,7 +610,7 @@ export function BlueprintWorkshop() {
               </div>
 
               {/* Special Blocks Toggle */}
-              <div className="p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
+              <div className="forge-card p-4 rounded-2xl bg-[#0e1628] border border-white/10 space-y-3 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />

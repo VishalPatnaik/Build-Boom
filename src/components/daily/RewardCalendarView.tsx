@@ -58,7 +58,7 @@ export const RewardCalendarView: React.FC<RewardCalendarViewProps> = ({
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-2 border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.2)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
+        className="daily-feature p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-2 border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.2)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-cyber-scanlines opacity-10 pointer-events-none" />
         <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />

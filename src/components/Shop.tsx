@@ -443,36 +443,32 @@ export function Shop() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="flex flex-col w-full h-full bg-[#090d16] relative mx-auto overflow-hidden shadow-2xl"
+      className="skin-shop flex flex-col w-full h-full bg-[#1C2C43] relative mx-auto overflow-hidden shadow-2xl"
       style={{ ...worldTheme.cssVariables, maxWidth: '600px' }}
     >
       {/* Fixed Top Header */}
       <div 
-        className="w-full px-4 py-2.5 flex items-center justify-between z-50 bg-[#090d16]/95 backdrop-blur-md border-b border-white/10 shrink-0"
+        className="shop-masthead w-full px-4 py-2.5 flex items-center justify-between z-50 shrink-0"
       >
         <motion.button 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setMode('menu')}
-          className="p-2.5 bg-gradient-to-b from-[#1e293b] to-[#0f172a] border-2 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.6)] text-white cursor-pointer active:scale-95 transition-all"
-          style={{
-            borderColor: `${themePalette.accent}80`,
-            boxShadow: `0 0 15px ${themePalette.glow}`,
-            color: themePalette.accent,
-          }}
+          className="toon-sm p-2.5 rounded-full cursor-pointer"
+          aria-label="Back to menu"
         >
           <ArrowLeft className="w-5 h-5" />
         </motion.button>
         <div className="flex flex-col items-center min-w-0 px-1">
           <div 
             className="font-black text-base min-[400px]:text-lg sm:text-xl uppercase tracking-wider min-[400px]:tracking-widest whitespace-nowrap drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] font-mono transition-colors duration-300"
-            style={{ color: themePalette.accent }}
+            style={{ color: '#1C2C43', fontFamily: 'Sora, sans-serif' }}
           >
             ARMORY & LOCKER
           </div>
           <span 
             className="text-[10px] font-mono tracking-wider uppercase font-bold transition-colors duration-300 whitespace-nowrap"
-            style={{ color: themePalette.primary }}
+            style={{ color: '#9C7434' }}
           >
             {activeCategory === 'background' ? `${worldTheme.worldName} • World` : 'Try it on before you buy'}
           </span>
@@ -493,10 +489,8 @@ export function Shop() {
 
       {/* Fixed Unobstructed Live Preview Viewport (Never Scrolls Out of View) */}
       <div 
-        className="relative w-full h-[36vh] min-h-[210px] max-h-[300px] shrink-0 overflow-hidden bg-black border-b-2 z-20"
+        className="shop-stage-frame relative w-full h-[40vh] min-h-[230px] max-h-[340px] shrink-0 overflow-hidden bg-black z-20"
         style={{
-          borderColor: `${themePalette.accent}55`,
-          boxShadow: `0 8px 30px -8px ${themePalette.glow}`,
         }}
       >
         <LivePreviewCanvas previewState={previewState} worldTheme={worldTheme} />

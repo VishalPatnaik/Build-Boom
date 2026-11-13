@@ -219,7 +219,7 @@ export function TournamentHub() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="relative flex flex-col w-full h-full max-w-2xl mx-auto p-4 z-10 text-white font-display overflow-hidden rounded-[32px] sm:rounded-[36px] bg-gradient-to-b from-slate-950/95 via-[#0c1228]/95 to-slate-950/95 border-2 border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-xl"
+      className="skin-arena relative flex flex-col w-full h-full max-w-2xl mx-auto p-4 z-10 text-white font-display overflow-hidden rounded-[32px] sm:rounded-[36px] bg-gradient-to-b from-slate-950/95 via-[#0c1228]/95 to-slate-950/95 border-2 border-white/20 shadow-[0_25px_60px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-xl"
     >
       {/* Decorative Blueprint Grid Underlay */}
       <div className="absolute inset-0 bg-blueprint-grid opacity-15 pointer-events-none rounded-[36px]" />
@@ -290,8 +290,7 @@ export function TournamentHub() {
       {/* TITLE & TACTICAL SWITCHBOARD TABS */}
       <div className="text-center shrink-0 mb-3 relative z-20">
         <h1 
-          className="text-4xl md:text-5xl font-black uppercase text-[#FFD700] drop-shadow-[0_4px_0_#B8860B] leading-none tracking-wide font-mono"
-          style={{ WebkitTextStroke: '1.5px #8B4513' }}
+          className="arena-title text-4xl md:text-5xl leading-none"
         >
           SHIFT ARENA
         </h1>
@@ -408,7 +407,7 @@ export function TournamentHub() {
                 if (tournamentFilter === 'locked') return !isUnlocked;
                 return true;
               })
-              .map((t) => {
+              .map((t, tIdx) => {
                 const hasPlayed = !!t.myEntry;
                 const reqLevel = t.requiredLevel || (((t.worldNumber || 1) - 1) * 10 + 1);
                 const isUnlocked = unlockedLevels >= reqLevel;
@@ -419,7 +418,7 @@ export function TournamentHub() {
                   <motion.div
                     key={t.id}
                     whileHover={{ scale: isUnlocked ? 1.01 : 1.0 }}
-                    className={`bg-gradient-to-br ${t.gradient} p-4 rounded-3xl border-3 ${
+                    className={`arena-card ${tIdx === 0 ? 'is-featured' : ''} p-4 rounded-3xl border-3 ${
                       isUnlocked ? t.bannerBorder : 'border-slate-500/60'
                     } shadow-[0_12px_30px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] relative overflow-hidden text-white transition-all`}
                   >
@@ -528,7 +527,7 @@ export function TournamentHub() {
                     </div>
 
                     {/* Top 3 Podium Preview Container */}
-                    <div className="grid grid-cols-3 gap-2 bg-black/45 p-2.5 rounded-2xl border border-white/20 mb-3 text-center relative z-20 shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
+                    <div className="arena-podium grid grid-cols-3 gap-2 bg-black/45 p-2.5 rounded-2xl border border-white/20 mb-3 text-center relative z-20 shadow-[inset_0_2px_6px_rgba(0,0,0,0.5)]">
                       {t.entries.slice(0, 3).map((entry, idx) => (
                         <div 
                           key={entry.id} 

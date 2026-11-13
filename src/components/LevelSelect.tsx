@@ -28,6 +28,11 @@ const SIGN_H = 270; // island sign at the bottom of the world
 const PAGE_H = HEADER_H + GATE_H + LEVELS_PER_WORLD * NODE_GAP + SIGN_H;
 const SEEN_KEY = 'ts_seen_world';
 
+// Expedition-atlas palette (Shift Odyssey map)
+const ATLAS = { paper: '#E9DDC5', paperDeep: '#DCCBAA', forest: '#456D57', ocean: '#4C7F9B', route: '#D5A653', ink: '#283746', ivory: '#F5F0E6', stone: '#CDBC9C' };
+/** Each world is a region of the atlas: land (forest) or sea (ocean) tint. */
+const REGION_TINT = (w: number) => (w % 3 === 1 ? ATLAS.ocean : ATLAS.forest);
+
 /** Little scenery that floats beside each world (pure emoji, so it costs nothing to draw). */
 const WORLD_DECOR: string[][] = [
   ['🌼', '🐝', '🌷', '🍃'],
@@ -104,7 +109,7 @@ const MAP_CSS = `
 @keyframes odys-cloud { 0% { transform: translateX(-8%) } 100% { transform: translateX(8%) } }
 @keyframes odys-crown { 0%,100% { transform: translate(-50%, 0) rotate(-8deg) } 50% { transform: translate(-50%, -6px) rotate(8deg) } }
 @keyframes odys-shake { 0%,100% { transform: rotate(0) } 20% { transform: rotate(-14deg) } 40% { transform: rotate(12deg) } 60% { transform: rotate(-9deg) } 80% { transform: rotate(6deg) } }
-@keyframes odys-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(253,224,71,0.0) } 50% { box-shadow: 0 0 34px 8px rgba(253,224,71,0.55) } }
+@keyframes odys-glow { 0%,100% { filter: brightness(1) } 50% { filter: brightness(1.08) } }
 .odys-bob { animation: odys-bob 3.6s ease-in-out infinite }
 .odys-spin3d { animation: odys-spin3d 7s ease-in-out infinite; transform-style: preserve-3d }
 .odys-hop { animation: odys-hop 1.1s cubic-bezier(.3,.7,.4,1) infinite; transform-origin: 50% 100% }
@@ -114,6 +119,9 @@ const MAP_CSS = `
 .odys-crown { animation: odys-crown 2.4s ease-in-out infinite }
 .odys-shake { animation: odys-shake 0.5s ease-in-out infinite }
 .odys-glow { animation: odys-glow 1.4s ease-in-out infinite }
+.atlas-chip { background: #F5F0E6; border: 1px solid rgba(40,55,70,0.28); box-shadow: 0 2px 0 rgba(40,55,70,0.18), 0 6px 12px rgba(40,55,70,0.12); }
+.atlas-eyebrow { font-family: Manrope, sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #456D57; }
+.atlas-cartouche { background: linear-gradient(170deg, #F5F0E6, #E4D6BA); border: 1.5px solid rgba(40,55,70,0.45); box-shadow: inset 0 0 0 4px #F5F0E6, inset 0 0 0 5px #D5A653, 0 10px 22px rgba(40,55,70,0.22); color: #283746; }
 .odys-node { transition: transform 110ms ease, box-shadow 110ms ease, filter 160ms ease }
 .odys-node:active:not(:disabled) { transform: translateY(7px) }
 @media (prefers-reduced-motion: reduce) {
@@ -300,34 +308,29 @@ export function LevelSelect() {
       animate="animate"
       exit="exit"
       className="flex flex-col w-full h-full relative z-10 overflow-hidden"
-      style={{ background: pal.dark, transition: 'background 600ms ease' }}
+      style={{ background: ATLAS.paper, color: ATLAS.ink }}
     >
       <style>{MAP_CSS}</style>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top,16px))] pb-6 absolute top-0 left-0 w-full z-40 pointer-events-none" style={{ background: `linear-gradient(to bottom, ${pal.dark}f5, ${pal.dark}b0 70%, transparent)` }}>
+      <div className="flex items-center justify-between gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top,16px))] pb-6 absolute top-0 left-0 w-full z-40 pointer-events-none" style={{ background: `linear-gradient(to bottom, ${ATLAS.paper} 0%, ${ATLAS.paper}ee 62%, ${ATLAS.paper}00)` }}>
         <motion.button
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           onClick={() => setMode('menu')}
-          className="p-2.5 bg-slate-900/80 border-2 rounded-2xl pointer-events-auto cursor-pointer shrink-0"
-          style={{ borderColor: `${pal.accent}80`, boxShadow: `0 0 16px ${pal.glow}`, color: pal.accent }}
+          className="p-2.5 rounded-full pointer-events-auto cursor-pointer shrink-0 atlas-chip"
+          style={{ color: ATLAS.ink }}
           aria-label="Back to menu"
         >
           <ArrowLeft className="w-6 h-6" />
         </motion.button>
 
         <div className="flex flex-col items-center min-w-0">
-          <span className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase" style={{ color: pal.accent }}>
-            WORLD {view + 1} OF {WORLDS}
-          </span>
-          <h2
-            className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text uppercase tracking-widest font-mono whitespace-nowrap"
-            style={{ backgroundImage: `linear-gradient(to right, ${pal.accent}, ${pal.primary})`, filter: `drop-shadow(0 0 15px ${pal.glow})` }}
-          >
-            SHIFT ODYSSEY
+          <span className="atlas-eyebrow">Region {view + 1} of {WORLDS}</span>
+          <h2 className="font-display text-[26px] sm:text-3xl leading-none whitespace-nowrap" style={{ color: ATLAS.ink, letterSpacing: '0.02em' }}>
+            Shift Odyssey
           </h2>
-          <span className="mt-0.5 text-[11px] font-black text-yellow-300 bg-black/50 border border-yellow-400/40 rounded-full px-2.5 py-0.5 tabular-nums">
+          <span className="mt-1 num text-[11px] font-semibold rounded-full px-2.5 py-0.5" style={{ color: ATLAS.ink, background: `${ATLAS.route}38`, border: `1px solid ${ATLAS.route}` }}>
             ★ {totalStars} / {TOTAL_LEVELS * 3}
           </span>
         </div>
@@ -336,12 +339,12 @@ export function LevelSelect() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowQuickStartModal(true)}
-          className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/90 border rounded-2xl font-mono font-bold text-xs uppercase pointer-events-auto cursor-pointer shrink-0"
-          style={{ borderColor: `${pal.accent}60`, boxShadow: `0 0 12px ${pal.glow}`, color: pal.accent }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-xs pointer-events-auto cursor-pointer shrink-0 atlas-chip"
+          style={{ color: ATLAS.ink }}
           aria-label="Quick-start guide"
         >
           <GraduationCap className="w-4 h-4 shrink-0" />
-          <span className="hidden sm:inline">GUIDE</span>
+          <span className="hidden sm:inline">Guide</span>
         </motion.button>
       </div>
 
@@ -351,8 +354,8 @@ export function LevelSelect() {
           {Array.from({ length: 9 }, (_, i) => (
             <div
               key={i}
-              className="absolute odys-cloud rounded-full bg-white/[0.07] blur-2xl"
-              style={{ top: i * 300 + (i % 2) * 90, left: `${((i * 37) % 80) - 10}%`, width: 260 + (i % 3) * 80, height: 90 + (i % 2) * 40, animationDelay: `${-i * 2.3}s` }}
+              className="absolute rounded-[50%]"
+              style={{ top: i * 300 + (i % 2) * 90, left: `${((i * 37) % 80) - 10}%`, width: 260 + (i % 3) * 80, height: 120 + (i % 2) * 50, border: `1px solid ${ATLAS.ink}14`, boxShadow: `0 0 0 14px ${ATLAS.paper}00, 0 0 0 15px ${ATLAS.ink}0f, 0 0 0 30px ${ATLAS.paper}00, 0 0 0 31px ${ATLAS.ink}0a` }}
             />
           ))}
         </div>
@@ -377,10 +380,43 @@ export function LevelSelect() {
             style={{
               height: PAGE_H,
               transformOrigin: '50% 50%',
-              background: `linear-gradient(to bottom, ${nextPal.dark} 0%, color-mix(in srgb, ${pal.secondary} 38%, ${pal.dark}) 32%, color-mix(in srgb, ${pal.primary} 24%, ${pal.dark}) 72%, ${pal.dark} 100%)`,
+              background: `radial-gradient(120% 60% at 50% 55%, color-mix(in srgb, ${REGION_TINT(view)} 16%, ${ATLAS.paper}) 0%, color-mix(in srgb, ${REGION_TINT(view)} 9%, ${ATLAS.paper}) 55%, ${ATLAS.paper} 100%)`,
             }}
           >
-            {/* Floating scenery */}
+            {/* Atlas relief: contour lines, a coastline wash and a compass rose */}
+            <svg className="absolute inset-0 pointer-events-none" width={width} height={PAGE_H} aria-hidden="true">
+              <defs>
+                <pattern id="atlas-grain" width="6" height="6" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r="0.6" fill={ATLAS.ink} opacity="0.05" />
+                </pattern>
+              </defs>
+              <rect width={width} height={PAGE_H} fill="url(#atlas-grain)" />
+              {[0, 1, 2, 3].map((r) => (
+                <g key={`relief-${r}`} fill="none" stroke={REGION_TINT(view)} strokeOpacity={0.22 - r * 0.035} strokeWidth={1.2}>
+                  {[0, 1, 2].map((ring) => (
+                    <ellipse
+                      key={ring}
+                      cx={width * (r % 2 ? 0.86 : 0.12)}
+                      cy={HEADER_H + GATE_H + 120 + r * ((LEVELS_PER_WORLD * NODE_GAP) / 4)}
+                      rx={70 + ring * 26}
+                      ry={44 + ring * 18}
+                      transform={`rotate(${r % 2 ? -14 : 12} ${width * (r % 2 ? 0.86 : 0.12)} ${HEADER_H + GATE_H + 120 + r * ((LEVELS_PER_WORLD * NODE_GAP) / 4)})`}
+                    />
+                  ))}
+                </g>
+              ))}
+              <rect x={0} y={0} width={width} height={PAGE_H} fill="none" stroke={ATLAS.ink} strokeOpacity={0.25} strokeWidth={10} />
+              <rect x={9} y={0} width={width - 18} height={PAGE_H} fill="none" stroke={ATLAS.route} strokeOpacity={0.55} strokeWidth={1} />
+              <g transform={`translate(${width - 46} ${PAGE_H - SIGN_H - 40})`} opacity={0.55}>
+                <circle r={22} fill="none" stroke={ATLAS.ink} strokeWidth={1} />
+                <circle r={16} fill="none" stroke={ATLAS.route} strokeWidth={1} />
+                <path d="M0 -28 L4 0 L0 28 L-4 0 Z" fill={ATLAS.ink} />
+                <path d="M-28 0 L0 -3 L28 0 L0 3 Z" fill={ATLAS.route} />
+                <text y={-31} textAnchor="middle" fontSize={9} fontWeight={700} fill={ATLAS.ink} fontFamily="Sora, sans-serif">N</text>
+              </g>
+            </svg>
+
+            {/* Landmarks of this region */}
             {(WORLD_DECOR[view] || WORLD_DECOR[0]).map((emoji, k) => (
               <span
                 key={`decor-${k}`}
@@ -389,9 +425,9 @@ export function LevelSelect() {
                   top: HEADER_H + GATE_H + 40 + k * ((LEVELS_PER_WORLD * NODE_GAP - 80) / 4),
                   [k % 2 === 0 ? 'left' : 'right']: `${4 + ((k * 7) % 9)}%`,
                   fontSize: 28 + (k % 3) * 8,
-                  opacity: 0.6,
+                  opacity: 0.7,
                   animationDelay: `${-k * 0.9}s`,
-                  filter: 'drop-shadow(0 6px 6px rgba(0,0,0,0.35))',
+                  filter: 'sepia(0.55) saturate(0.85) drop-shadow(0 3px 2px rgba(40,55,70,0.25))',
                 } as React.CSSProperties}
                 aria-hidden="true"
               >
@@ -401,19 +437,19 @@ export function LevelSelect() {
 
             {/* Trail */}
             <svg className="absolute top-0 left-0 pointer-events-none z-10" width={width} height={PAGE_H} aria-hidden="true">
-              <path d={trail.all} fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth={16} strokeLinecap="round" />
-              <path d={trail.all} fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth={6} strokeDasharray="2 14" strokeLinecap="round" />
-              {trail.done && <path d={trail.done} fill="none" stroke="#fde047" strokeWidth={7} strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 6px rgba(253,224,71,0.8))' }} />}
-              {trail.done && <path d={trail.done} className="odys-trail-live" fill="none" stroke="#fff7d6" strokeWidth={3} strokeDasharray="10 12" strokeLinecap="round" />}
+              <path d={trail.all} fill="none" stroke={ATLAS.ink} strokeOpacity={0.45} strokeWidth={2.2} strokeDasharray="1 9" strokeLinecap="round" />
+              {trail.done && <path d={trail.done} fill="none" stroke={ATLAS.ink} strokeOpacity={0.18} strokeWidth={9} strokeLinecap="round" />}
+              {trail.done && <path d={trail.done} fill="none" stroke={ATLAS.route} strokeWidth={5} strokeLinecap="round" />}
+              {trail.done && <path d={trail.done} className="odys-trail-live" fill="none" stroke={ATLAS.ivory} strokeOpacity={0.85} strokeWidth={1.4} strokeDasharray="6 10" strokeLinecap="round" />}
             </svg>
 
             {/* Sky gate at the top: padlocked until this world's last level is beaten */}
             <div className="absolute inset-x-0 flex justify-center z-30" style={{ top: HEADER_H + 12 }}>
               {view === WORLDS - 1 ? (
-                <div className="odys-bob text-center px-6 py-4 rounded-[28px] bg-white/10 border-2 border-white/30 backdrop-blur-sm w-[min(320px,86vw)]">
+                <div className="text-center px-6 py-4 rounded-[18px] atlas-cartouche w-[min(320px,86vw)]">
                   <div className="text-3xl">☁️🏰☁️</div>
-                  <div className="mt-1 font-black text-lg uppercase tracking-widest text-yellow-200">More worlds coming</div>
-                  <div className="text-xs font-bold text-white/75">The sky's not the limit. Keep stacking!</div>
+                  <div className="mt-1 font-display text-lg" style={{ color: ATLAS.ink }}>More worlds coming</div>
+                  <div className="text-xs font-semibold" style={{ color: `${ATLAS.ink}b0` }}>The sky's not the limit. Keep stacking!</div>
                 </div>
               ) : (
                 <motion.button
@@ -422,14 +458,13 @@ export function LevelSelect() {
                   whileTap={{ scale: 0.95 }}
                   animate={gateBursting ? { scale: [1, 1.12, 1], rotateX: [0, -18, 0] } : {}}
                   transition={{ duration: 0.6 }}
-                  className={`relative w-[min(320px,86vw)] rounded-[28px] px-4 pt-4 pb-3 border-2 text-center cursor-pointer ${gateOpen ? 'odys-glow' : ''}`}
+                  className={`relative w-[min(320px,86vw)] rounded-[18px] px-4 pt-4 pb-3 text-center cursor-pointer ${gateOpen ? 'odys-glow' : ''}`}
                   style={{
                     transformPerspective: 800,
-                    background: gateOpen
-                      ? `linear-gradient(160deg, ${nextPal.primary}f0, ${nextPal.secondary}f0 60%, ${nextPal.dark}f5)`
-                      : 'linear-gradient(160deg, #334155f0, #1e293bf5)',
-                    borderColor: gateOpen ? nextPal.accent : 'rgba(148,163,184,0.5)',
-                    boxShadow: `0 12px 0 ${gateOpen ? nextPal.dark : '#0f172a'}, 0 22px 36px rgba(0,0,0,0.5)`,
+                    background: gateOpen ? `linear-gradient(170deg, #F0D79C, ${ATLAS.route} 70%)` : `linear-gradient(170deg, ${ATLAS.ivory}, ${ATLAS.paperDeep})`,
+                    border: `1.5px solid ${gateOpen ? '#9C7434' : `${ATLAS.ink}55`}`,
+                    boxShadow: `inset 0 0 0 4px ${gateOpen ? '#F7E5BA' : ATLAS.ivory}, inset 0 0 0 5px ${gateOpen ? '#9C7434' : `${ATLAS.ink}30`}, 0 10px 22px rgba(40,55,70,0.25)`,
+                    color: ATLAS.ink,
                   }}
                   aria-label={gateOpen ? `Fly up to world ${view + 2}` : `World ${view + 2} is locked`}
                 >
@@ -440,10 +475,10 @@ export function LevelSelect() {
                         key="lock"
                         exit={{ scale: 2.4, rotate: 40, y: -60, opacity: 0 }}
                         transition={{ duration: 0.5 }}
-                        className={`absolute -top-7 left-1/2 -ml-7 w-14 h-14 rounded-2xl bg-slate-900 border-2 flex items-center justify-center ${showComplete ? 'odys-shake' : ''}`}
-                        style={{ borderColor: showComplete ? '#fde047' : '#94a3b8' }}
+                        className={`absolute -top-7 left-1/2 -ml-7 w-14 h-14 rounded-full border-2 flex items-center justify-center ${showComplete ? 'odys-shake' : ''}`}
+                        style={{ background: ATLAS.ink, borderColor: showComplete ? ATLAS.route : '#8A99AA' }}
                       >
-                        <Lock className={`w-7 h-7 ${showComplete ? 'text-yellow-300' : 'text-slate-300'}`} strokeWidth={2.75} />
+                        <Lock className="w-6 h-6" style={{ color: showComplete ? ATLAS.route : ATLAS.ivory }} strokeWidth={2.5} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -452,13 +487,13 @@ export function LevelSelect() {
                       <Critter world={view + 1} size={64} />
                     </div>
                   )}
-                  <div className="mt-6 text-[10px] font-mono font-black tracking-[0.25em] text-white/80">
-                    {gateOpen ? `WORLD ${view + 2} IS OPEN` : `WORLD ${view + 2} · LOCKED`}
+                  <div className="mt-6 atlas-eyebrow">
+                    {gateOpen ? `World ${view + 2} is open` : `World ${view + 2} · uncharted`}
                   </div>
-                  <div className="text-lg font-black uppercase tracking-wide text-white leading-tight">
+                  <div className="font-display text-lg leading-tight" style={{ color: ATLAS.ink }}>
                     {gateOpen ? next?.name : '? ? ?'}
                   </div>
-                  <div className="mt-1 text-[11px] font-bold text-white/85">
+                  <div className="mt-1 text-[11px] font-semibold" style={{ color: `${ATLAS.ink}c0` }}>
                     {gateOpen ? 'Tap to fly up ▲' : `Beat level ${last} to unlock`}
                   </div>
                 </motion.button>
@@ -477,9 +512,9 @@ export function LevelSelect() {
                   className="absolute inset-x-0 z-40 flex justify-center pointer-events-none"
                   style={{ top: HEADER_H + GATE_H + 10 }}
                 >
-                  <div className="px-5 py-3 rounded-3xl bg-yellow-300 text-slate-950 border-4 border-white shadow-[0_8px_0_#a16207,0_18px_30px_rgba(0,0,0,0.5)] text-center">
-                    <div className="text-2xl font-black tracking-wide">🎉 WORLD COMPLETE! 🎉</div>
-                    <div className="text-xs font-black">{col.name} conquered · ★ {worldStars}/30</div>
+                  <div className="px-5 py-3 rounded-[18px] text-center btn-gold">
+                    <div className="font-display text-2xl">🎉 World complete! 🎉</div>
+                    <div className="text-xs font-bold">{col.name} conquered · ★ {worldStars}/30</div>
                   </div>
                 </motion.div>
               )}
@@ -495,12 +530,15 @@ export function LevelSelect() {
               const isPerfect = lvl < reached && stars >= 3;
               const twist = TWIST_BADGE[levelTwist(lvl)];
               const size = isCurrent ? 74 : isBoss ? 70 : 60;
-              const face = isUnlocked
-                ? isBoss
-                  ? 'linear-gradient(160deg, #fde68a, #f59e0b 55%, #b45309)'
-                  : `linear-gradient(160deg, ${pal.accent}, ${pal.primary} 55%, ${pal.secondary})`
-                : 'linear-gradient(160deg, #475569, #334155 60%, #1e293b)';
-              const edge = isUnlocked ? (isBoss ? '#92400e' : pal.dark) : '#0f172a';
+              const face = !isUnlocked
+                ? `radial-gradient(circle at 35% 30%, #E4D7BD, ${ATLAS.stone})`
+                : isCurrent
+                  ? 'radial-gradient(circle at 35% 28%, #FBE7B4, #E8BE70 55%, #B88943)'
+                  : isBoss
+                    ? `radial-gradient(circle at 35% 28%, #3A4D66, ${ATLAS.ink})`
+                    : `radial-gradient(circle at 35% 28%, #FFFFFF, ${ATLAS.ivory} 60%, #E6DCC8)`;
+              const ring = !isUnlocked ? `${ATLAS.ink}40` : isBoss || isPerfect || isCurrent ? ATLAS.route : REGION_TINT(view);
+              const numColor = isBoss && isUnlocked && !isCurrent ? ATLAS.ivory : ATLAS.ink;
               const launching = launchingLevel === lvl;
 
               return (
@@ -519,7 +557,7 @@ export function LevelSelect() {
                   >
                     {isCurrent && (
                       <>
-                        <span className="absolute left-1/2 top-[62%] w-24 h-24 rounded-full border-4 pointer-events-none" style={{ borderColor: pal.accent, animation: 'odys-ring 1.6s ease-out infinite' }} />
+                        <span className="absolute left-1/2 top-[62%] w-24 h-24 rounded-full border-2 pointer-events-none" style={{ borderColor: ATLAS.route, animation: 'odys-ring 1.8s ease-out infinite' }} />
                         <div className="absolute -top-[58px] left-1/2 -translate-x-1/2 pointer-events-none">
                           <div className="odys-hop">
                             <Critter world={view} size={58} live />
@@ -540,55 +578,51 @@ export function LevelSelect() {
                       aria-label={`Level ${lvl}${isBoss ? ', boss level' : ''}${twist ? `, ${twist.label}` : ''}${
                         !isUnlocked ? ', locked' : isPerfect ? ', perfect, 3 stars' : stars ? `, ${stars} of 3 stars, play again for more` : ''
                       }`}
-                      className="odys-node relative flex items-center justify-center rounded-[22px] cursor-pointer disabled:cursor-default select-none"
+                      className="odys-node relative flex items-center justify-center rounded-full cursor-pointer disabled:cursor-default select-none"
                       style={{
                         width: size,
                         height: size,
                         background: face,
-                        filter: isPerfect ? 'saturate(0.85) brightness(0.92)' : undefined,
-                        boxShadow: `inset 0 3px 0 rgba(255,255,255,0.45), inset 0 -4px 0 rgba(0,0,0,0.18), 0 8px 0 ${edge}, 0 16px 22px rgba(0,0,0,0.5)${
-                          isCurrent ? `, 0 0 28px ${pal.glow}` : isPerfect ? ', 0 0 16px rgba(253,224,71,0.55)' : ''
-                        }`,
-                        border: `2px solid ${isPerfect ? '#fde047' : isUnlocked ? 'rgba(255,255,255,0.55)' : 'rgba(148,163,184,0.35)'}`,
+                        boxShadow: `0 0 0 3px ${ATLAS.paper}, 0 0 0 ${isCurrent || isBoss ? 5.5 : 4.5}px ${ring}, inset 0 -3px 0 rgba(40,55,70,0.14), 0 6px 0 rgba(40,55,70,${isUnlocked ? 0.28 : 0.14}), 0 12px 18px rgba(40,55,70,0.22)`,
                       }}
                     >
                       {isUnlocked ? (
                         <span
-                          className={`font-black tabular-nums ${isCurrent ? 'text-3xl' : 'text-2xl'} text-white`}
-                          style={{ textShadow: `0 2px 0 ${edge}, 0 3px 6px rgba(0,0,0,0.5)`, WebkitTextStroke: '1px rgba(0,0,0,0.25)' }}
+                          className={`font-display tabular-nums ${isCurrent ? 'text-[28px]' : 'text-[22px]'}`}
+                          style={{ color: numColor }}
                         >
                           {lvl}
                         </span>
                       ) : (
                         <span className="flex flex-col items-center leading-none">
-                          <Lock className="w-4 h-4 text-slate-300/80" strokeWidth={2.75} />
-                          <span className="text-[11px] font-black text-slate-300/70 mt-0.5 tabular-nums">{lvl}</span>
+                          <Lock className="w-4 h-4" style={{ color: `${ATLAS.ink}80` }} strokeWidth={2.5} />
+                          <span className="num text-[11px] font-semibold mt-0.5" style={{ color: `${ATLAS.ink}90` }}>{lvl}</span>
                         </span>
                       )}
                       {twist && (
-                        <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-slate-950/85 border border-white/40 flex items-center justify-center text-sm shadow-md" title={twist.label} aria-hidden="true">
+                        <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-md" style={{ background: ATLAS.ivory, border: `1px solid ${ATLAS.ink}55` }} title={twist.label} aria-hidden="true">
                           {twist.icon}
                         </span>
                       )}
                       {isPerfect && (
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 rounded-full bg-yellow-300 text-[8px] font-black text-slate-950 border border-white whitespace-nowrap" aria-hidden="true">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 rounded-full text-[8px] font-extrabold whitespace-nowrap" style={{ background: ATLAS.route, color: ATLAS.ink, border: `1px solid ${ATLAS.ivory}` }} aria-hidden="true">
                           PERFECT
                         </span>
                       )}
                     </button>
 
                     {isCurrent ? (
-                      <span className="mt-3 px-3 py-0.5 rounded-full text-[11px] font-black text-slate-950 bg-yellow-300 border-2 border-white shadow-[0_3px_0_#a16207] tracking-wide">
-                        ▶ PLAY{isBoss ? ' BOSS' : ''}
+                      <span className="mt-3 px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wide" style={{ background: ATLAS.ink, color: ATLAS.ivory, boxShadow: `0 0 0 1.5px ${ATLAS.route}, 0 3px 6px rgba(40,55,70,0.3)` }}>
+                        ▶ Play{isBoss ? ' boss' : ''}
                       </span>
                     ) : isUnlocked ? (
-                      <span className="mt-3 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/55 border border-yellow-400/40" aria-hidden="true">
+                      <span className="mt-3 flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: `${ATLAS.ivory}e6`, border: `1px solid ${ATLAS.route}` }} aria-hidden="true">
                         {[1, 2, 3].map((n) => (
-                          <span key={n} className={`text-[11px] leading-none ${n <= stars ? 'text-yellow-300' : 'text-white/25'}`}>
+                          <span key={n} className="text-[11px] leading-none" style={{ color: n <= stars ? '#C9962F' : `${ATLAS.ink}30` }}>
                             ★
                           </span>
                         ))}
-                        {!isPerfect && <span className="text-[9px] font-black text-white/70 ml-0.5">↻</span>}
+                        {!isPerfect && <span className="text-[9px] font-black ml-0.5" style={{ color: `${ATLAS.ink}99` }}>↻</span>}
                       </span>
                     ) : null}
                   </motion.div>
@@ -605,14 +639,9 @@ export function LevelSelect() {
                 style={{ transformPerspective: 800 }}
                 className="w-[min(340px,88vw)]"
               >
-                <div className="odys-sway">
+                <div>
                   <div
-                    className="relative rounded-[28px] px-4 pt-3 pb-4 border-2 text-center"
-                    style={{
-                      background: `linear-gradient(160deg, ${pal.primary}ee, ${pal.secondary}ee 55%, ${pal.dark}f2)`,
-                      borderColor: `${pal.accent}cc`,
-                      boxShadow: `0 14px 0 ${pal.dark}, 0 24px 40px rgba(0,0,0,0.55), 0 0 30px ${pal.glow}`,
-                    }}
+                    className="relative rounded-[18px] px-4 pt-3 pb-4 text-center atlas-cartouche"
                   >
                     <div className="absolute -top-11 left-1/2 -translate-x-1/2 odys-bob">
                       <Critter world={view} size={72} />
@@ -622,17 +651,17 @@ export function LevelSelect() {
                         initial={{ scale: 0, rotate: -10 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: 'spring', stiffness: 200, damping: 10, delay: 0.5 }}
-                        className="absolute -top-3 left-3 px-2.5 py-1 rounded-full bg-yellow-300 text-slate-950 text-[11px] font-black border-2 border-white shadow-md"
+                        className="absolute -top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md" style={{ background: ATLAS.route, color: ATLAS.ink, border: `1.5px solid ${ATLAS.ivory}` }}
                       >
-                        ✨ NEW WORLD!
+                        ✨ New world!
                       </motion.div>
                     )}
-                    <div className="mt-6 text-[10px] font-mono font-black tracking-[0.25em] text-white/80">
-                      WORLD {String(view + 1).padStart(2, '0')} · LEVELS {first}–{last}
+                    <div className="mt-6 atlas-eyebrow">
+                      World {String(view + 1).padStart(2, '0')} · Levels {first}–{last}
                     </div>
-                    <div className="text-xl font-black uppercase tracking-wide text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)] leading-tight">{col.name}</div>
-                    <div className="mt-1 text-[11px] font-bold text-white/85">
-                      Meet the <span style={{ color: pal.accent }}>{col.block.name}</span> · <span className="text-yellow-300">★ {worldStars}/30</span>
+                    <div className="font-display text-xl leading-tight" style={{ color: ATLAS.ink }}>{col.name}</div>
+                    <div className="mt-1 text-[11px] font-semibold" style={{ color: `${ATLAS.ink}c0` }}>
+                      Meet the <span style={{ color: REGION_TINT(view), fontWeight: 800 }}>{col.block.name}</span> · <span className="num" style={{ color: '#9C7434' }}>★ {worldStars}/30</span>
                     </div>
                   </div>
                 </div>
@@ -645,7 +674,7 @@ export function LevelSelect() {
                 <button
                   type="button"
                   onClick={() => goWorld(view - 1)}
-                  className="px-4 py-2 rounded-full bg-black/50 border border-white/30 text-white text-xs font-black tracking-wide backdrop-blur-sm active:scale-95 transition-transform"
+                  className="px-4 py-2 rounded-full text-xs font-bold active:scale-95 transition-transform atlas-chip" style={{ color: ATLAS.ink }}
                 >
                   ▼ World {view}: {(COLLECTIONS[view - 1] || COLLECTIONS[0]).name}
                 </button>
@@ -663,7 +692,7 @@ export function LevelSelect() {
             initial={{ opacity: 0, y: 16, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,20px))] left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-slate-950/90 border border-yellow-300/60 text-yellow-100 text-xs font-black shadow-lg whitespace-nowrap pointer-events-none"
+            className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom,20px))] left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-bold shadow-lg whitespace-nowrap pointer-events-none" style={{ background: ATLAS.ink, color: ATLAS.ivory, border: `1px solid ${ATLAS.route}` }}
           >
             {toast}
           </motion.div>

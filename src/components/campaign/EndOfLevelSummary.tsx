@@ -127,8 +127,10 @@ export function EndOfLevelSummary({
         exit={{ y: '80%', opacity: 0, scale: 0.95 }}
         transition={{ type: 'spring', damping: 26, stiffness: 280 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg bg-gradient-to-b from-[#180d30] via-[#100722] to-[#0a0416] border-t-2 sm:border-2 border-yellow-400/60 rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(250,204,21,0.2)] p-4 sm:p-6 text-white flex flex-col max-h-[92vh] overflow-y-auto select-none z-10"
+        className="victory-card overflow-hidden relative w-full max-w-lg bg-gradient-to-b from-[#180d30] via-[#100722] to-[#0a0416] border-t-2 sm:border-2 border-yellow-400/60 rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(250,204,21,0.2)] p-4 sm:p-6 text-white flex flex-col max-h-[92vh] overflow-y-auto select-none z-10"
       >
+        <div className="victory-rays" aria-hidden="true" />
+        <div className="victory-sparks" aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 7) * 0.35}s` }} />)}</div>
         {/* Top Decorative Grab Handle (Mobile UX) */}
         <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-2 shrink-0 sm:hidden" />
 
@@ -347,7 +349,7 @@ export function EndOfLevelSummary({
               haptics.vibrate([25]);
               onNextLevel();
             }}
-            className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-black font-black text-base sm:text-lg uppercase tracking-wider rounded-2xl shadow-[0_4px_0_#0d9488,0_8px_20px_rgba(20,184,166,0.4)] flex items-center justify-center gap-2 border-2 border-emerald-200 cursor-pointer active:translate-y-1 active:shadow-none transition-all"
+            className="btn-gold victory-next w-full py-3.5 sm:py-4 text-black font-black text-base sm:text-lg uppercase tracking-wider rounded-2xl shadow-[0_4px_0_#0d9488,0_8px_20px_rgba(20,184,166,0.4)] flex items-center justify-center gap-2 border-2 border-emerald-200 cursor-pointer active:translate-y-1 active:shadow-none transition-all"
           >
             <span>{metrics.level % 10 === 0 ? 'UNLOCK NEXT WORLD 🔓' : 'NEXT LEVEL'}</span>
             <ChevronRight className="w-5 h-5 stroke-[3]" />

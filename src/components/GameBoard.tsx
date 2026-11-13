@@ -3056,7 +3056,7 @@ export function GameBoard() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="result-card relative w-full max-w-md p-5 sm:p-6 rounded-t-[28px] sm:rounded-[28px] flex flex-col items-center pointer-events-auto z-10 touch-pan-y max-h-[85vh] overflow-y-auto"
+              className={`result-card ${state === 'lost' ? 'is-defeat' : 'is-victory'} relative w-full max-w-md p-5 sm:p-6 rounded-t-[28px] sm:rounded-[28px] flex flex-col items-center pointer-events-auto z-10 touch-pan-y max-h-[85vh] overflow-y-auto`}
             >
               {/* Grab Handle */}
               <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mb-3 shrink-0" />

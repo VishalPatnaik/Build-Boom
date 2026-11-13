@@ -56,7 +56,7 @@ export function TechAcademy() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="relative w-full h-full flex flex-col bg-[#0b0f19] text-white select-none overflow-hidden"
+      className="skin-lab relative w-full h-full flex flex-col text-white select-none overflow-hidden"
     >
       {/* Ambient Blueprint Background Mesh */}
       <div 
@@ -203,7 +203,7 @@ export function TechAcademy() {
                   setSelectedPerkId(perk.id);
                   setMobileTab('detail');
                 }}
-                className={`p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 min-w-0 ${
+                className={`lab-module ${isSelected ? 'is-on' : ''} p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 min-w-0 ${
                   isSelected
                     ? 'bg-gradient-to-r from-[#172554]/60 to-[#1e1b4b]/50 border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.15)]'
                     : 'bg-[#111726]/60 hover:bg-[#161f33]/80 border-white/10'

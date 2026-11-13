@@ -144,7 +144,7 @@ export function DailyMissions() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="flex flex-col w-full h-full max-w-2xl p-4 sm:p-6 py-6 sm:py-8 relative z-10 mx-auto font-mono text-slate-100"
+      className="skin-daily flex flex-col w-full h-full max-w-2xl p-4 sm:p-6 py-6 sm:py-8 relative z-10 mx-auto font-mono text-slate-100"
     >
       {/* Floating Claim Feedback Toast */}
       <AnimatePresence>
@@ -196,7 +196,7 @@ export function DailyMissions() {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 sm:mb-5 gap-3">
+      <div className="daily-masthead flex items-center justify-between mb-4 sm:mb-5 gap-3">
         <div className="flex items-center gap-3">
           <motion.button 
             whileHover={{ scale: 1.08 }}

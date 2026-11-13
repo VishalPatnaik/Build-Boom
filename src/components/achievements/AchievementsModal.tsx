@@ -54,7 +54,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-lg bg-gradient-to-b from-[#141b2e] via-[#0d1322] to-[#141b2e] border-t-3 sm:border-2 border-amber-400/80 rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col pointer-events-auto z-50 touch-pan-y max-h-[85vh]"
+          className="skin-archive relative w-full max-w-lg bg-gradient-to-b from-[#141b2e] via-[#0d1322] to-[#141b2e] border-t-3 sm:border-2 border-amber-400/80 rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col pointer-events-auto z-50 touch-pan-y max-h-[85vh]"
         >
           {/* Top Grab Handle */}
           <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mt-2.5 mb-1 shrink-0 cursor-pointer" onClick={onClose} />
@@ -164,7 +164,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
               return (
                 <div
                   key={ach.id}
-                  className={`relative p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 overflow-hidden ${
+                  className={`archive-shelf ${isUnlocked ? 'is-earned' : ''} relative p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 overflow-hidden ${
                     isUnlocked
                       ? 'bg-gradient-to-r from-[#17223b] to-[#121c2e] border-amber-400/60 shadow-[0_4px_15px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.15)]'
                       : 'bg-black/40 border-white/10'
