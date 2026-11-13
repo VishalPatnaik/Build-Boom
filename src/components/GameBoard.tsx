@@ -28,6 +28,7 @@ import { getThemePalette } from '../utils/themeAccents';
 import { useWorldTheme } from '../hooks/useWorldTheme';
 import { useWorldAmbience } from '../hooks/useWorldAmbience';
 import { PerformanceMonitor } from './PerformanceMonitor';
+import { drawForegroundTerrain, worldIndexFromBg } from '../game/backdrop/foregroundTerrain';
 import { LevelIntroBanner, LevelWarpCurtain, LevelStageShutter } from './campaign/LevelTransitions';
 import { screenFadeSlideVariants } from '../utils/screenTransitions';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -2088,7 +2089,11 @@ export function GameBoard() {
       const plateW = BASE_HALF_WIDTH * 2 + 16;
       const n = gs.physics.stack.length;
       const plateY = cy + (n + 1) * VISUAL_LAYER + gs.towerSink - BLOCK_HALF_WIDTH - 5;
-      if (plateY < h + 10) renderPlate(ctx, cx - gs.camX - plateW / 2, plateY + bounce, plateW, 28, activePlate, time);
+      if (plateY < h + 10) {
+        // The ground the plate stands on, so the tower lives in the world instead of floating in the sky
+        drawForegroundTerrain(ctx, w, h, worldIndexFromBg(activeWorldInfo.worldId), plateY + bounce + 24, cx - gs.camX, time, plateW);
+        renderPlate(ctx, cx - gs.camX - plateW / 2, plateY + bounce, plateW, 28, activePlate, time);
+      }
     }
 
     // Rapid Perfect Multiplier Dynamic Canvas Resonance (off: the HUD streak chip shows this,
@@ -2165,6 +2170,14 @@ export function GameBoard() {
         ctx.rotate(layerTilt + wiggleAngle);
         ctx.scale(squashX, squashY);
         
+        // Soft contact shadow where this piece rests on the one below (grounds the stack visually)
+        {
+          const cs = ctx.createRadialGradient(0, hw * 0.92, 2, 0, hw * 0.92, hw * 0.95);
+          cs.addColorStop(0, 'rgba(15,8,25,0.32)');
+          cs.addColorStop(1, 'rgba(15,8,25,0)');
+          ctx.fillStyle = cs;
+          ctx.beginPath(); ctx.ellipse(0, hw * 0.92, hw * 0.95, hw * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+        }
         renderBlock(ctx, -hw, -hw, hw * 2, hw * 2, activeSkin, true, time, layerBlock?.archetype);
 
         // Glow the joint that is closest to giving way
@@ -3043,7 +3056,7 @@ export function GameBoard() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="relative w-full max-w-md bg-[#190E2D] p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl border-t-4 sm:border-4 border-amber-400 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] flex flex-col items-center pointer-events-auto z-10 touch-pan-y max-h-[85vh] overflow-y-auto"
+              className="result-card relative w-full max-w-md p-5 sm:p-6 rounded-t-[28px] sm:rounded-[28px] flex flex-col items-center pointer-events-auto z-10 touch-pan-y max-h-[85vh] overflow-y-auto"
             >
               {/* Grab Handle */}
               <div className="w-12 h-1.5 bg-white/25 rounded-full mx-auto mb-3 shrink-0" />
@@ -3153,48 +3166,47 @@ export function GameBoard() {
                 <motion.h2 
                   initial={{ y: 20, scale: 0.8 }}
                   animate={{ y: 0, scale: 1 }}
-                  className={`text-4xl sm:text-5xl font-black mb-1 uppercase tracking-wide ${
-                    state === 'won' ? 'text-[#00ffcc] drop-shadow-[0_4px_0_#00aa88]' : 'text-[#FF4500] drop-shadow-[0_4px_0_#8B0000]'
-                  }`}
-                  style={{ WebkitTextStroke: '2px #fff' }}
+                  className="font-game text-5xl mb-1 leading-none"
+                  style={{ color: state === 'won' ? '#7bd86a' : '#ff6b4a', WebkitTextStroke: '6px var(--ink)', paintOrder: 'stroke fill', textShadow: '0 5px 0 var(--ink)' }}
                 >
                   {state === 'won' ? 'CLEARED!' : /TOPPLED|COLLAPSED/.test(lostReason) ? 'GRAVITY WINS!' : 'BOOM!'}
                 </motion.h2>
                 {state !== 'won' && lostReason && (
-                  <div className="text-xs sm:text-sm font-bold tracking-wider text-white/80 mb-2 uppercase">{lostReason}</div>
+                  <div className="text-sm font-bold text-[var(--ink)]/75 mb-2">{lostReason}</div>
                 )}
                 {state !== 'won' && gravityNote && /TOPPLED|COLLAPSED/.test(lostReason) && (
-                  <div className="max-w-xs mx-auto mb-3 px-3 py-2 rounded-xl bg-orange-500/15 border border-orange-300/40 text-[13px] leading-snug text-orange-100 font-semibold">
+                  <div className="max-w-xs mx-auto mb-3 px-3 py-2 rounded-xl bg-[#ffe3c7] text-[13px] leading-snug text-[#7a3d10] font-semibold">
                     ⬇ {gravityNote}
                   </div>
                 )}
                 
-                <div className="text-2xl sm:text-3xl text-white font-black mb-5 drop-shadow-md" style={{ WebkitTextStroke: '1.5px #333' }}>
-                  SCORE: {score}
+                <div className="mb-5 flex flex-col items-center">
+                  <span className="text-[13px] font-bold text-[var(--ink)]/60 tracking-wide">SCORE</span>
+                  <span className="font-game text-[44px] leading-none text-[var(--ink)] tabular-nums">{score}</span>
                 </div>
 
                 {state === 'won' && pendingCoins > 0 ? (
                   <div className="flex flex-col space-y-3 w-full max-w-md">
-                    <div className="text-xl text-[#FFD700] font-black text-center mb-1" style={{ WebkitTextStroke: '1px #333' }}>
+                    <div className="font-game text-2xl text-[#e8a400] text-center mb-1">
                       +{pendingCoins} COINS EARNED!
                     </div>
                     <button
                       onClick={() => {
                         useGameStore.getState().showDoubleCoinsAd();
                       }}
-                      className="flex-1 flex items-center justify-center space-x-2 px-6 py-3.5 bg-[#FFD700] border-3 border-white text-[#B8860B] rounded-2xl font-black text-lg uppercase transition-all shadow-[0_4px_0_#B8860B] active:translate-y-1 active:shadow-none cursor-pointer"
+                      className="toon flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-[#ffd23f] text-[var(--ink)] rounded-2xl font-game text-xl cursor-pointer"
                     >
                       <Video className="w-6 h-6" />
-                      <span>WATCH AD: 2X COINS</span>
+                      <span>Double it · watch a video</span>
                     </button>
                     <button
                       onClick={() => {
                         useGameStore.getState().addCoins(pendingCoins);
                         useGameStore.getState().setPendingCoins(0);
                       }}
-                      className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-white/20 hover:bg-white/30 border-2 border-white/50 text-white rounded-2xl font-black text-base uppercase transition-all shadow-md active:translate-y-1 cursor-pointer"
+                      className="flex-1 flex items-center justify-center px-6 py-2.5 text-[var(--ink)]/70 font-bold text-[15px] underline underline-offset-4 decoration-2 cursor-pointer"
                     >
-                      <span>CLAIM NORMAL</span>
+                      <span>No thanks, just collect</span>
                     </button>
                   </div>
                 ) : (
@@ -3207,10 +3219,10 @@ export function GameBoard() {
                           haptics.vibrate([20]);
                           useGameStore.getState().showReviveAd();
                         }}
-                        className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 border-2 border-emerald-300 text-slate-950 rounded-2xl font-black text-base uppercase tracking-wider transition-all shadow-[0_4px_0_#0f766e,0_0_20px_rgba(20,184,166,0.4)] active:translate-y-1 active:shadow-none cursor-pointer flex items-center justify-center gap-2"
+                        className="toon w-full py-3.5 px-4 bg-[#5ad1ff] text-[var(--ink)] rounded-2xl font-game text-xl cursor-pointer flex items-center justify-center gap-2"
                       >
                         <Video className="w-5 h-5 stroke-[2.5]" />
-                        <span>REVIVE TOWER (WATCH AD)</span>
+                        <span>Revive · watch a video</span>
                       </button>
                     )}
 
@@ -3223,10 +3235,10 @@ export function GameBoard() {
                             useGameStore.getState().setMode('menu');
                           }
                         }}
-                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-2xl font-black text-base uppercase transition-all cursor-pointer shadow-md"
+                        className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
                       >
                         <Home className="w-5 h-5" strokeWidth={2.5} />
-                        <span>HOME</span>
+                        <span>Home</span>
                       </button>
 
                       {(state === 'lost' || mode !== 'campaign') && (
@@ -3235,10 +3247,10 @@ export function GameBoard() {
                             setScore(0);
                             setState('playing');
                           }}
-                          className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-amber-950 rounded-2xl font-black text-base uppercase transition-all shadow-[0_4px_0_#b45309] active:translate-y-1 active:shadow-none cursor-pointer"
+                          className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#ffd23f] text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
                         >
                           <RotateCcw className="w-5 h-5" strokeWidth={3} />
-                          <span>RETRY</span>
+                          <span>Retry</span>
                         </button>
                       )}
 
@@ -3262,10 +3274,10 @@ export function GameBoard() {
                               toLevel: nextLvl,
                             });
                           }}
-                          className="flex-1 flex items-center justify-center space-x-2 px-4 py-3.5 bg-[#4facfe] hover:bg-[#3b9be8] border-2 border-white text-white rounded-2xl font-black text-base uppercase transition-all shadow-[0_4px_0_#2a82c9] active:translate-y-1 active:shadow-none cursor-pointer"
+                          className="toon flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-[#7bd86a] text-[var(--ink)] rounded-2xl font-game text-lg cursor-pointer"
                         >
                           <Play className="w-5 h-5" fill="currentColor" />
-                          <span>NEXT</span>
+                          <span>Next</span>
                         </button>
                       )}
                     </div>

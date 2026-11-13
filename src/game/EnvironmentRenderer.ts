@@ -1,5 +1,4 @@
 import { renderCinematicWorld } from './cinematicWorlds/renderCinematicWorld';
-import { renderLayeredBackdrop } from './backdrop/layeredBackdrop';
 import { ParallaxState, ParallaxLayerOffset, setActiveParallax, getParallaxTierOffset } from './cinematicWorlds/worldUtils';
 import { 
   renderHighContrastEnvironment, 
@@ -1548,12 +1547,6 @@ export class EnvironmentRenderer {
       }
     }
 
-    // Home screen: layered storybook backdrop with depth (gentle look-around, no sheet-like bobbing)
-    if (mode === 'menu') {
-      renderLayeredBackdrop(ctx, w, h, worldInfo.worldIndex, safeTime, { altitude: 0, pointerX: this.smoothPointerX });
-      return;
-    }
-
     // Dynamic world rendering with smooth crossfade support
     this.setTargetWorld(worldInfo.worldId, safeTime);
 
@@ -1624,7 +1617,7 @@ export class EnvironmentRenderer {
       this.targetAltitudePixels = Math.max(0, towerHeight * 22);
     } else {
       // Gentle cinematic breathing floating in menu or level select
-      this.targetAltitudePixels = Math.sin(time * 0.0006) * 14 + 10;
+      this.targetAltitudePixels = 0; // still scenery on menus (no sheet-like bobbing)
     }
 
     // Fluid spring damping for camera altitude
@@ -1735,9 +1728,8 @@ export class EnvironmentRenderer {
     }
 
     // 4. Parallax Multi-Altitude Cloud Strata Pass (Layer 4 - Sinks below view as tower climbs)
-    if (this.parallaxEnabled) {
-      this.renderParallaxCloudStrataPass(ctx, w, h, time, this.currentAltitudePixels);
-    }
+    // (Generic white cloud-deck blobs and ellipse streaks removed: they sat over every world the
+    // same way and read as cheap cartoon clouds. Each world draws its own atmosphere.)
 
     // 5. Parallax Vertical Altitude Milestone Markers & Ascending Thermals Pass (Layer 5)
     if (this.parallaxEnabled) {
