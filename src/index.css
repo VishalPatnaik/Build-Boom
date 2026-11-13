@@ -23,6 +23,41 @@
   font-family: 'Lilita One', 'Fredoka', cursive;
 }
 
+/* ---- Toon UI: chunky cartoon look shared by the home screen and in-game HUD ---- */
+:root {
+  --ink: #2a1a3c;
+  --cream: #fff7e6;
+}
+.font-game { font-family: 'Lilita One', 'Fredoka', system-ui, sans-serif; letter-spacing: 0.02em; }
+.toon {
+  border: 3px solid var(--ink);
+  box-shadow: 0 5px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.toon:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.toon-sm { border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+.toon-sm:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.toon-text {
+  color: var(--cream);
+  -webkit-text-stroke: 6px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 5px 0 var(--ink);
+}
+.toon-text-sm {
+  color: #fff;
+  -webkit-text-stroke: 4px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 var(--ink);
+}
+.toon-shine { position: relative; overflow: hidden; }
+.toon-shine::after {
+  content: '';
+  position: absolute; left: 8%; right: 8%; top: 5px; height: 32%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
 #root {
   width: 100%;
   height: 100%;

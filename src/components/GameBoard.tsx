@@ -2656,14 +2656,10 @@ export function GameBoard() {
                 useGameStore.getState().setMode('menu');
               }
             }}
-            className="p-3.5 bg-black/40 backdrop-blur-md border-2 rounded-2xl hover:bg-black/60 transition-all text-white shadow-lg active:scale-95 cursor-pointer"
-            style={{
-              borderColor: `${activePalette.accent}60`,
-              boxShadow: `0 0 12px ${activePalette.glow}`,
-            }}
+            className="toon-sm w-12 h-12 rounded-full bg-[var(--cream)] text-[var(--ink)] flex items-center justify-center cursor-pointer"
             aria-label="Back"
           >
-            <ArrowLeft className="w-6 h-6 stroke-[2.5]" />
+            <ArrowLeft className="w-6 h-6 stroke-[3]" />
           </button>
 
           {/* Sound, vibration and Silly Mode toggles live in Settings, keeping the HUD to one row on phones */}
@@ -2672,79 +2668,33 @@ export function GameBoard() {
             onClick={() => {
               useGameStore.getState().setSettingsModalOpen(true);
             }}
-            className="p-3.5 backdrop-blur-md border-2 border-white/20 hover:border-cyan-400/60 bg-black/40 hover:bg-black/60 rounded-2xl transition-all shadow-lg text-cyan-300 active:scale-95 cursor-pointer"
-            title="Audio & Theme Settings"
+            className="toon-sm w-12 h-12 rounded-full bg-[var(--cream)] text-[var(--ink)] flex items-center justify-center cursor-pointer"
             aria-label="Open Settings"
           >
-            <Settings className="w-6 h-6 stroke-[2.2]" />
+            <Settings className="w-6 h-6 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Center: Inclinometer Attitude Gyro & Boss Titan Gauge */}
-        <div className="flex flex-col items-center pointer-events-auto min-w-0 max-w-[170px] sm:max-w-xs">
-          {/* Boss Titan Bar if Boss Level */}
+        {/* Centre: boss bar and streak (the tower itself shows its lean, no gauge needed) */}
+        <div className="flex flex-col items-center pointer-events-none min-w-0 max-w-[170px] sm:max-w-xs pt-1" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
           {isBossLevel && (
-            <div className="mb-1.5 px-3 py-1 rounded-xl bg-red-950/80 border border-red-500/50 backdrop-blur-md text-center shadow-lg animate-pulse">
-              <div className="text-[9px] font-mono font-black tracking-widest text-red-400 uppercase flex items-center justify-center gap-1">
-                <span>⚡ TITAN SIEGE • BOSS LVL {level}</span>
-              </div>
-              <div className="w-36 sm:w-44 h-2 bg-black/60 rounded-full mt-1 overflow-hidden border border-red-500/30">
-                <div 
-                  className="h-full bg-gradient-to-r from-red-500 to-amber-500 transition-all duration-300"
+            <div className="toon-sm px-2.5 py-1 rounded-2xl bg-[#ff5a5f] text-center">
+              <div className="font-game text-[13px] text-white leading-none whitespace-nowrap">👑 Boss</div>
+              <div className="w-20 sm:w-36 h-2.5 bg-[var(--ink)]/40 rounded-full mt-1 overflow-hidden border-2 border-[var(--ink)]">
+                <div
+                  className="h-full bg-[#ffd23f] transition-all duration-300"
                   style={{ width: `${Math.max(0, 100 - (builtCount / Math.max(1, totalBlocks)) * 100)}%` }}
                 />
               </div>
             </div>
           )}
-
-          {/* Gyro Inclinometer Attitude Bar */}
-          <div 
-            className="px-3.5 py-1.5 rounded-2xl bg-black/40 backdrop-blur-md border text-center shadow-lg transition-all"
-            style={{
-              borderColor: `${activePalette.accent}55`,
-              boxShadow: `0 0 16px ${activePalette.glow}`,
-            }}
-          >
-            <div 
-              className="flex items-center justify-center gap-1.5 text-[10px] font-mono tracking-wider uppercase font-bold"
-              style={{ color: activePalette.accent }}
-            >
-              <Compass className="w-3 h-3" style={{ color: activePalette.accent }} />
-              <span className="truncate">GYRO</span>
-              <span className={`font-black tabular-nums ${stressDisplay > 70 ? 'text-rose-400 animate-ping' : stressDisplay > 40 ? 'text-amber-300' : 'text-emerald-400'}`}>
-                {tiltDisplay > 0 ? `+${tiltDisplay.toFixed(1)}°` : `${tiltDisplay.toFixed(1)}°`}
-              </span>
-            </div>
-
-            {/* Attitude Horizon Line */}
-            <div className="w-28 sm:w-40 h-2 bg-black/60 rounded-full mt-1 relative overflow-hidden border border-white/10">
-              {/* Safe center bracket */}
-              <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-8 bg-emerald-500/20 border-x border-emerald-400/40" />
-              {/* Horizon Pip */}
-              <div 
-                className={`absolute top-0 bottom-0 w-2.5 rounded-full transition-all duration-100 ${
-                  stressDisplay > 70 ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : stressDisplay > 40 ? 'bg-amber-400' : 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]'
-                }`}
-                style={{
-                  left: `calc(50% + ${(tiltDisplay / 35) * 45}%)`,
-                  transform: 'translateX(-50%)'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Compact streak chip: the old full-size cards spilled off phone screens */}
           {(rapidComboData.active || activeCombo >= 3) && (
-            <div
-              className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black tabular-nums tracking-wide whitespace-nowrap border backdrop-blur-md shadow ${
-                rapidComboData.active ? 'bg-amber-400/90 text-black border-amber-200' : 'bg-black/45 text-amber-300 border-amber-300/40'
-              }`}
-            >
-              {rapidComboData.active ? `⚡ ${rapidComboData.multiplier}x STREAK` : `🔥 ${activeCombo} COMBO`}
+            <div className={`toon-sm mt-1.5 px-3 py-0.5 rounded-full font-game text-[15px] whitespace-nowrap text-[var(--ink)] ${rapidComboData.active ? 'bg-[#ffd23f]' : 'bg-[var(--cream)]'}`}>
+              {rapidComboData.active ? `⚡ ${rapidComboData.multiplier}x streak!` : `🔥 ${activeCombo} combo`}
             </div>
           )}
         </div>
-        
+
         {/* Right: Score, Level Header & Performance Telemetry Monitor */}
         <div className="text-right pointer-events-none flex flex-col items-end gap-1">
           {/* Lightweight Frame-Rate & Memory Telemetry Monitor */}
@@ -2752,27 +2702,27 @@ export function GameBoard() {
             {import.meta.env.DEV && <PerformanceMonitor className="relative z-40" />}
           </div>
 
-          <div className="text-white font-black uppercase tracking-wider text-xs md:text-sm flex items-center justify-end gap-1.5 drop-shadow mt-0.5">
+          <div className="font-game toon-text-sm text-[15px] flex items-center justify-end gap-1.5 mt-0.5 whitespace-nowrap">
             {mode === 'tournament' ? (
               <span className="flex items-center gap-1 text-yellow-300">
                 <Trophy className="w-4 h-4 text-yellow-300" />
                 {useGameStore.getState().activeTournament?.title || 'TOURNAMENT'}
               </span>
             ) : mode === 'workshop' ? (
-              <span className="text-sky-300 font-mono text-xs">SHIFT FORGE</span>
+              <span>Shift Forge</span>
             ) : mode === 'campaign' ? (
-              TWIST_INFO[levelTwist(level)].label && levelTwist(level) !== 'boss' ? `LEVEL ${level} · ${TWIST_INFO[levelTwist(level)].label}` : `LEVEL ${level}`
-            ) : (
+              TWIST_INFO[levelTwist(level)].label && levelTwist(level) !== 'boss' ? `Level ${level} · ${TWIST_INFO[levelTwist(level)].label}` : `Level ${level}`
+            ) : mode === 'endless' ? 'Endless' : mode === 'daily' ? 'Daily Ops' : (
               mode
             )}
           </div>
-          <div className="text-4xl md:text-5xl font-black text-white tabular-nums drop-shadow-[0_4px_0_#b45309]" style={{ WebkitTextStroke: '1.5px #f59e0b' }}>
+          <div className="font-game toon-text text-5xl tabular-nums leading-none">
             {score}
           </div>
           {!isTutorialActive && (
-            <div className="flex items-center gap-0.5 text-lg leading-none drop-shadow" aria-label={`${livesLeft} of ${MAX_LIVES} hearts left`}>
+            <div className="flex items-center gap-0.5 text-[22px] leading-none" aria-label={`${livesLeft} of ${MAX_LIVES} hearts left`}>
               {Array.from({ length: MAX_LIVES }, (_, i) => (
-                <span key={i} className={i < livesLeft ? 'text-rose-500' : 'text-white/25'}>{i < livesLeft ? '♥' : '♡'}</span>
+                <span key={i} style={{ WebkitTextStroke: '2.5px var(--ink)', paintOrder: 'stroke fill' }} className={i < livesLeft ? 'text-[#ff4d6d]' : 'text-white/60'}>♥</span>
               ))}
             </div>
           )}
@@ -2811,87 +2761,45 @@ export function GameBoard() {
         <div className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom,12px))] left-[max(0.75rem,env(safe-area-inset-left,12px))] right-[max(0.75rem,env(safe-area-inset-right,12px))] flex items-end justify-between pointer-events-none z-20">
           {/* Tactical Gadgets (Left) */}
           <div className="flex items-center gap-2 pointer-events-auto">
-            {/* STASIS POD */}
+            {/* Chrono Stasis */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                triggerStasis();
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-                triggerStasis();
-              }}
+              onClick={(e) => { e.stopPropagation(); triggerStasis(); }}
+              onTouchStart={(e) => { e.stopPropagation(); triggerStasis(); }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className={`p-2.5 sm:px-3 sm:py-2 rounded-2xl border backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                gameStateRef.current.physics.stasisActive
-                  ? 'bg-cyan-500/30 border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.5)] animate-pulse text-cyan-300'
-                  : tacticalCharges.stasis > 0
-                  ? 'bg-black/50 hover:bg-cyan-950/60 border-cyan-500/40 text-white'
-                  : 'bg-cyan-950/40 hover:bg-cyan-900/60 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-              }`}
-              title="Chrono Stasis (Hotkey: Q)"
+              className={`toon-sm relative w-14 h-14 rounded-full flex items-center justify-center text-2xl cursor-pointer ${gameStateRef.current.physics.stasisActive ? 'bg-[#5ad1ff] animate-pulse' : 'bg-[#bfefff]'}`}
+              title="Chrono Stasis (Q)"
+              aria-label={`Chrono Stasis, ${tacticalCharges.stasis} left`}
             >
-              <div className="w-7 h-7 rounded-xl bg-cyan-500/20 flex items-center justify-center text-sm font-black text-cyan-400">
-                ⏳
-              </div>
-              <div className="hidden sm:block text-left leading-tight">
-                <div className="text-[9px] font-mono text-cyan-300 font-bold uppercase">STASIS [Q]</div>
-                <div className="text-xs font-black text-white tabular-nums flex items-center gap-1">
-                  {tacticalCharges.stasis > 0 ? (
-                    `${tacticalCharges.stasis} Left`
-                  ) : (
-                    <span className="text-cyan-300 flex items-center gap-0.5">
-                      <Plus className="w-3 h-3" /> RE-ARM
-                    </span>
-                  )}
-                </div>
-              </div>
+              ⏳
+              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-white border-2 border-[var(--ink)] font-game text-[12px] text-[var(--ink)] flex items-center justify-center">
+                {tacticalCharges.stasis > 0 ? tacticalCharges.stasis : '+'}
+              </span>
             </button>
 
-            {/* EMP POD */}
+            {/* EMP */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                triggerEmp();
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
-                triggerEmp();
-              }}
+              onClick={(e) => { e.stopPropagation(); triggerEmp(); }}
+              onTouchStart={(e) => { e.stopPropagation(); triggerEmp(); }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className={`p-2.5 sm:px-3 sm:py-2 rounded-2xl border backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                tacticalCharges.emp > 0
-                  ? 'bg-black/50 hover:bg-amber-950/60 border-amber-500/40 text-white'
-                  : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-500/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-              }`}
-              title="EMP Defuser (Hotkey: W)"
+              className="toon-sm relative w-14 h-14 rounded-full flex items-center justify-center text-2xl cursor-pointer bg-[#ffe27a]"
+              title="EMP (W)"
+              aria-label={`EMP, ${tacticalCharges.emp} left`}
             >
-              <div className="w-7 h-7 rounded-xl bg-amber-500/20 flex items-center justify-center text-sm font-black text-amber-400">
-                ⚡
-              </div>
-              <div className="hidden sm:block text-left leading-tight">
-                <div className="text-[9px] font-mono text-amber-300 font-bold uppercase">EMP [W]</div>
-                <div className="text-xs font-black text-white tabular-nums flex items-center gap-1">
-                  {tacticalCharges.emp > 0 ? (
-                    `${tacticalCharges.emp} Left`
-                  ) : (
-                    <span className="text-amber-300 flex items-center gap-0.5">
-                      <Plus className="w-3 h-3" /> RE-ARM
-                    </span>
-                  )}
-                </div>
-              </div>
+              ⚡
+              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-white border-2 border-[var(--ink)] font-game text-[12px] text-[var(--ink)] flex items-center justify-center">
+                {tacticalCharges.emp > 0 ? tacticalCharges.emp : '+'}
+              </span>
             </button>
           </div>
 
           {/* AEGIS SHIELD STATUS POD (Right), with the coin count stacked above it so the
               bottom centre stays clear for the tower */}
           <div className="pointer-events-auto flex flex-col items-end gap-1.5">
-            <div className="pointer-events-none flex items-center gap-1.5 bg-black/70 px-3 py-1.5 rounded-2xl border border-amber-400/60 backdrop-blur-md text-amber-300 shadow-md">
-              <Coins className="w-4 h-4 fill-current text-amber-400" />
-              <span className="font-mono font-black text-xs tabular-nums text-white">
+            <div className="toon-sm pointer-events-none flex items-center gap-1.5 bg-[var(--cream)] pl-1 pr-3 py-0.5 rounded-full">
+              <span className="w-6 h-6 rounded-full bg-[#ffd23f] border-2 border-[var(--ink)] flex items-center justify-center"><Coins className="w-3.5 h-3.5 text-[var(--ink)]" /></span>
+              <span className="font-game text-[15px] tabular-nums text-[var(--ink)]">
                 {coins.toLocaleString()}
               </span>
             </div>
@@ -2900,7 +2808,7 @@ export function GameBoard() {
               onClick={(e) => {
                 e.stopPropagation();
                 if (tacticalCharges.shield) {
-                  setMessage('AEGIS BARRIER ACTIVE');
+                  setMessage('AEGIS BARRIER IS ALREADY UP! 🛡️');
                   setTimeout(() => setMessage(''), 800);
                   return;
                 }
@@ -2912,36 +2820,24 @@ export function GameBoard() {
                   setTacticalCharges((c) => ({ ...c, shield: true }));
                   audio.playBuildSound(1.5);
                   haptics.shieldActivated();
-                  setMessage('AEGIS BARRIER ENGAGED!');
+                  setMessage('AEGIS BARRIER UP! 🛡️');
                   setTimeout(() => setMessage(''), 1000);
                 } else {
                   audio.playTiltWarning();
-                  setMessage('NO SHIELD CHARGES IN INVENTORY');
+                  setMessage('NO BARRIERS LEFT! GRAB ONE IN THE ARSENAL');
                   setTimeout(() => setMessage(''), 900);
                 }
               }}
               onMouseDown={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              className={`px-3 py-2 rounded-2xl border backdrop-blur-md flex items-center gap-2 transition-all cursor-pointer active:scale-95 ${
-                tacticalCharges.shield
-                  ? 'bg-sky-500/20 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.4)] text-sky-300'
-                  : 'bg-sky-950/40 hover:bg-sky-900/60 border-sky-500/50 text-sky-300 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
-              }`}
+              className={`toon-sm relative w-14 h-14 rounded-full flex items-center justify-center cursor-pointer ${tacticalCharges.shield ? 'bg-[#5ad1ff]' : 'bg-[#cfe7ff]'}`}
               title="Aegis Barrier"
+              aria-label={tacticalCharges.shield ? 'Aegis Barrier is up' : `Aegis Barrier, ${useGameStore.getState().powerups.shield} left`}
             >
-              <Shield className={`w-4 h-4 ${tacticalCharges.shield ? 'text-sky-400' : 'text-sky-300'}`} />
-              <div className="text-left leading-tight">
-                <div className="text-[9px] font-mono uppercase font-bold text-sky-300">AEGIS BARRIER</div>
-                <div className="text-xs font-black text-white flex items-center gap-1">
-                  {tacticalCharges.shield ? (
-                    'ACTIVE'
-                  ) : (
-                    <span className="text-sky-300 font-mono text-[10px]">
-                      OFFLINE
-                    </span>
-                  )}
-                </div>
-              </div>
+              <Shield className="w-7 h-7 text-[var(--ink)] stroke-[2.5]" fill={tacticalCharges.shield ? '#ffffff' : 'none'} />
+              <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 rounded-full bg-white border-2 border-[var(--ink)] font-game text-[12px] text-[var(--ink)] flex items-center justify-center">
+                {tacticalCharges.shield ? '✓' : (useGameStore.getState().powerups.shield || '+')}
+              </span>
             </button>
           </div>
         </div>
@@ -2963,9 +2859,9 @@ export function GameBoard() {
               // Bottom edge pinned just above the arena, so however tall the card wraps it grows upward
               style={{ bottom: Math.max(0, boardH - Math.min(arenaTop - 6, 268)) }}
             >
-              <div className="rounded-2xl bg-slate-950/90 border border-cyan-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.5)] px-4 py-3 text-center backdrop-blur-md">
-                <div className="text-[11px] font-mono font-black tracking-widest text-cyan-300">TIP · {tipCard.title}</div>
-                <div className="mt-1 text-sm font-semibold leading-snug text-white">{tipCard.body}</div>
+              <div className="toon-sm rounded-2xl bg-[var(--cream)] px-4 py-2.5 text-center" style={{ fontFamily: "'Fredoka', system-ui, sans-serif" }}>
+                <div className="font-game text-[15px] text-[#e2563f]">💡 {tipCard.title}</div>
+                <div className="mt-0.5 text-[14px] font-semibold leading-snug text-[var(--ink)]">{tipCard.body}</div>
               </div>
             </motion.div>
           )}
@@ -2982,8 +2878,8 @@ export function GameBoard() {
               className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center w-max max-w-[92vw]"
               style={{ top: Math.max(8, Math.min(132, arenaTop - 44)) }}
             >
-              <div className="px-4 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/70 shadow-[0_0_20px_rgba(245,158,11,0.35)] flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-black text-[#FFD700] uppercase tracking-wider font-mono drop-shadow text-center">
+              <div className="toon-sm px-4 py-1 rounded-full bg-[#ffd23f] flex items-center gap-2">
+                <span className="font-game text-[15px] text-[var(--ink)] text-center">
                   {message}
                 </span>
               </div>
