@@ -1,5 +1,4 @@
 import { drawGameplayReadabilityBackdrop, setActiveParallax, ParallaxState } from './worldUtils';
-import { renderLayeredBackdrop } from '../backdrop/layeredBackdrop';
 import { renderSpringMeadow, renderAutumnMeadow, renderSunsetMeadow } from './meadows';
 import { renderMoon, renderMars, renderDeepSpace } from './spaceAndPlanets';
 import { renderWinter, renderBeach, renderVolcano } from './natureAndElements';
@@ -30,18 +29,11 @@ export function renderCinematicWorld(
   const cleanId = (id || '').toLowerCase();
   const t = Math.abs(parseInt(cleanId.replace('bg-', '').replace('campaign-', '')) || 0) % 20;
 
-  // Storybook layered backdrop (see backdrop/layeredBackdrop.ts). The older painted scenes
-  // below are kept for reference but no longer drawn.
   void isPreview;
-  const variant = cleanId.includes('autumn') ? 'autumn' : cleanId.includes('sunset-meadow') ? 'sunset' : undefined;
-  renderLayeredBackdrop(ctx, w, h, t, time, {
-    altitude: parallax?.rawAltitudePixels || 0,
-    tiltDeg: parallax?.towerTilt || 0,
-    pointerX: parallax?.pointerDisplacementX || 0,
-  }, variant);
+  renderLegacyCinematicWorld(ctx, w, h, id, time, parallax);
 }
 
-// Previous painted scenes (unused, kept so they can be compared or restored)
+// The painted world scenes used in gameplay, shop, map and replays
 export function renderLegacyCinematicWorld(
   ctx: CanvasRenderingContext2D,
   w: number,

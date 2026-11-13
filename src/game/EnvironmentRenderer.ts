@@ -1,4 +1,5 @@
 import { renderCinematicWorld } from './cinematicWorlds/renderCinematicWorld';
+import { renderLayeredBackdrop } from './backdrop/layeredBackdrop';
 import { ParallaxState, ParallaxLayerOffset, setActiveParallax, getParallaxTierOffset } from './cinematicWorlds/worldUtils';
 import { 
   renderHighContrastEnvironment, 
@@ -1547,6 +1548,12 @@ export class EnvironmentRenderer {
       }
     }
 
+    // Home screen: layered storybook backdrop with depth (gentle look-around, no sheet-like bobbing)
+    if (mode === 'menu') {
+      renderLayeredBackdrop(ctx, w, h, worldInfo.worldIndex, safeTime, { altitude: 0, pointerX: this.smoothPointerX });
+      return;
+    }
+
     // Dynamic world rendering with smooth crossfade support
     this.setTargetWorld(worldInfo.worldId, safeTime);
 
@@ -1590,8 +1597,8 @@ export class EnvironmentRenderer {
       renderCinematicWorld(ctx, w, h, this.currentWorldId, safeTime, false, this.currentParallaxState || undefined);
     }
 
-    // The layered backdrop does its own depth, light and weather, so the old bloom/haze passes
-    // (which made every world look the same glowy way) are skipped for the 20 worlds.
+    // Apply Post-Processing Passes: Environmental Lighting, Depth Haze, Emissive Bloom, Parallax Decks, Milestones & Weather Particles
+    this.applyPostProcessingPasses(ctx, w, h, safeTime, worldInfo);
   }
 
   /**
