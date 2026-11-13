@@ -5,6 +5,7 @@ import { SandboxOptions } from '../../game/LevelGenerator';
 import { COLLECTIONS, CosmeticDef } from '../../game/collections';
 import { renderBlock } from '../../game/themeRenderer';
 import { BlueprintSkinRevealModal } from './BlueprintSkinRevealModal';
+import { DraftingTable } from './DraftingTable';
 import { 
   ArrowLeft, 
   Play, 
@@ -251,7 +252,7 @@ export function BlueprintWorkshop() {
 
         <button
           onClick={handleLaunch}
-          className="hidden sm:flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-black font-black text-xs uppercase tracking-wider items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.4)] active:translate-y-0.5 cursor-pointer shrink-0"
+          className="forge-launch hidden sm:flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-black font-black text-xs uppercase tracking-wider items-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.4)] active:translate-y-0.5 cursor-pointer shrink-0"
         >
           <Play className="w-4 h-4 fill-current" />
           <span>Play it</span>
@@ -429,6 +430,17 @@ export function BlueprintWorkshop() {
         /* STANDARD PHYSICS SANDBOX VIEW                                     */
         /* ================================================================= */
         <div className="relative z-10 flex-1 flex flex-col lg:grid lg:grid-cols-12 overflow-y-auto lg:overflow-hidden min-h-0 overflow-x-hidden touch-pan-y overscroll-contain">
+          {/* Central workspace: a live drawing of the run being configured */}
+          <div className="lg:col-span-12 px-4 pt-4 shrink-0">
+            <div className="forge-table">
+              <div className="flex items-center justify-between px-1 pb-2">
+                <span className="text-[11px] font-extrabold tracking-[0.14em] uppercase" style={{ color: '#C68A57' }}>Drafting table</span>
+                <span className="num text-[10px]" style={{ color: '#E9E2D5', opacity: 0.6 }}>practice only · no progress used</span>
+              </div>
+              <DraftingTable options={options} />
+            </div>
+          </div>
+
           {/* Left: Simulation Presets */}
           <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-white/10 p-4 sm:p-6 space-y-4 bg-[#0a0f1d]/40 lg:overflow-y-auto overscroll-contain shrink-0">
             <div className="flex items-center justify-between">
@@ -438,14 +450,14 @@ export function BlueprintWorkshop() {
               <span className="text-[10px] font-mono text-white/40">1-CLICK LOAD</span>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 snap-x">
               {PRESETS.map((p) => {
                 const isSelected = activePreset === p.id;
                 return (
                   <div
                     key={p.id}
                     onClick={() => applyPreset(p)}
-                    className={`forge-card p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer ${
+                    className={`forge-card forge-sample snap-start shrink-0 w-[150px] p-3 rounded-2xl border transition-all cursor-pointer ${isSelected ? 'is-on ' : ''}${
                       isSelected
                         ? 'bg-sky-950/40 border-sky-400 shadow-[0_0_16px_rgba(56,189,248,0.2)]'
                         : 'bg-white/5 hover:bg-white/10 border-white/10'
@@ -460,22 +472,12 @@ export function BlueprintWorkshop() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-xs text-white/60 pl-9 leading-relaxed">{p.desc}</p>
+                    <p className="text-[11px] text-white/60 leading-snug line-clamp-2">{p.desc}</p>
                   </div>
                 );
               })}
             </div>
 
-            <div className="mt-4 sm:mt-6 p-4 rounded-2xl bg-black/40 border border-white/10 text-xs text-white/60 space-y-2">
-              <div className="font-mono text-white/80 font-bold uppercase text-[10px] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                <span>How Shift Forge works</span>
-              </div>
-              <p className="leading-relaxed">
-                Custom simulations do not alter campaign level progression or consume tournament passes. Use this
-                sandbox to master bullet-hell speeds, train against gale-force wind, and hone reaction timing!
-              </p>
-            </div>
           </div>
 
           {/* Right: Fine-Grained Parameter Tuning Controls */}
@@ -704,7 +706,7 @@ export function BlueprintWorkshop() {
         <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-[#080d18]/95 backdrop-blur-md border-t border-white/10 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
           <button
             onClick={handleLaunch}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_0_#0284c7] active:translate-y-1 active:shadow-none cursor-pointer"
+            className="forge-launch w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 text-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_0_#0284c7] active:translate-y-1 active:shadow-none cursor-pointer"
           >
             <Play className="w-5 h-5 fill-current" />
             <span>Play it</span>

@@ -1891,13 +1891,49 @@ export function drawThemedBlock(
  * Marks special blocks on any object art: gold turns the object gold, crystal makes it
  * shimmer, the heavy anchor gets a steel base. `drawArt` draws the object at (0,0).
  */
-export function drawWithArchetype(ctx: Ctx, w: number, h: number, archetype: string | undefined, time: number, drawArt: () => void) {
+// Scratch surface for filtered (gold / crystal / heavy) blocks. Applying ctx.filter to every
+// primitive of a character costs 5-40x a plain draw (measured up to ~4.5 ms per critter at 2x DPR);
+// drawing the art unfiltered here and filtering one drawImage gives the same look for one filter op.
+let archScratch: HTMLCanvasElement | null = null;
+let archScratchCtx: CanvasRenderingContext2D | null = null;
+const ARCH_PAD = 2.4; // art (wings, ears, shadows) can reach past the block box
+
+export function drawWithArchetype(ctx: Ctx, w: number, h: number, archetype: string | undefined, time: number, drawArt: (c: Ctx) => void) {
   ctx.save();
-  if (archetype === 'gold_ingot') ctx.filter = 'sepia(1) saturate(3.2) brightness(1.08)';
-  else if (archetype === 'prism') ctx.filter = `hue-rotate(${Math.round(time / 8) % 360}deg) saturate(1.6) brightness(1.12)`;
-  else if (archetype === 'titan') ctx.filter = 'saturate(0.75) contrast(1.15) brightness(0.92)';
-  drawArt();
-  ctx.filter = 'none';
+  let filter = '';
+  if (archetype === 'gold_ingot') filter = 'sepia(1) saturate(3.2) brightness(1.08)';
+  else if (archetype === 'prism') filter = `hue-rotate(${Math.round(time / 8) % 360}deg) saturate(1.6) brightness(1.12)`;
+  else if (archetype === 'titan') filter = 'saturate(0.75) contrast(1.15) brightness(0.92)';
+  if (!filter) {
+    drawArt(ctx);
+  } else {
+    if (!archScratch && typeof document !== 'undefined') {
+      archScratch = document.createElement('canvas');
+      archScratchCtx = archScratch.getContext('2d');
+    }
+    const m = ctx.getTransform();
+    const sc = Math.min(4, Math.max(1, Math.hypot(m.a, m.b)));
+    const rw = w * ARCH_PAD, rh = h * ARCH_PAD;
+    const pw = Math.ceil(rw * sc), ph = Math.ceil(rh * sc);
+    if (archScratch && archScratchCtx && pw > 0 && ph > 0 && pw < 2048 && ph < 2048) {
+      if (archScratch.width < pw || archScratch.height < ph) {
+        archScratch.width = Math.max(archScratch.width, pw);
+        archScratch.height = Math.max(archScratch.height, ph);
+      }
+      const s = archScratchCtx;
+      s.setTransform(1, 0, 0, 1, 0, 0);
+      s.clearRect(0, 0, pw, ph);
+      s.setTransform(sc, 0, 0, sc, (rw * sc) / 2, (rh * sc) / 2);
+      drawArt(s);
+      ctx.filter = filter;
+      ctx.drawImage(archScratch, 0, 0, pw, ph, -rw / 2, -rh / 2, rw, rh);
+      ctx.filter = 'none';
+    } else {
+      ctx.filter = filter;
+      drawArt(ctx);
+      ctx.filter = 'none';
+    }
+  }
   archetypeOverlay(ctx, w / 2, h / 2, archetype, time);
   ctx.restore();
 }

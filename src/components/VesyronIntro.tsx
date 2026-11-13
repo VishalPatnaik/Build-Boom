@@ -7,6 +7,8 @@ import maskUrl from '../assets/vesyron-logo-mask.webp';
 // Timeline (s): 0 black → 0.2–1.4 logo focuses in → 1.4 flares ignite on V and S
 // → 1.7–2.6 light sweeps across the gold → embers drift up → 4.2 fade into the game.
 const T = 4.2;
+const STUDIO_END = 3.5;   // studio ident hands over to the game title here
+const TOTAL = 5.0;        // whole sequence, then the menu
 
 // Flare positions as fractions of the logo image (1536×1024)
 const FLARES = [
@@ -84,11 +86,14 @@ export function VesyronIntro() {
     try { return sessionStorage.getItem('vy_intro') !== '1'; } catch { return true; }
   });
 
+  // Studio ident → TOWER//SHIFT title card → menu. Tap anywhere skips the rest.
+  const [phase, setPhase] = useState<'studio' | 'title'>('studio');
   useEffect(() => {
     if (!show) return;
     try { sessionStorage.setItem('vy_intro', '1'); } catch { /* ignore */ }
-    const t = setTimeout(() => setShow(false), (reduce ? 2.4 : T) * 1000);
-    return () => clearTimeout(t);
+    const toTitle = setTimeout(() => setPhase('title'), (reduce ? 1.6 : STUDIO_END) * 1000);
+    const end = setTimeout(() => setShow(false), (reduce ? 2.8 : TOTAL) * 1000);
+    return () => { clearTimeout(toTitle); clearTimeout(end); };
   }, [show, reduce]);
 
   return (
@@ -102,6 +107,9 @@ export function VesyronIntro() {
           role="presentation"
           aria-label="Vesyron"
         >
+          <AnimatePresence>
+          {phase === 'studio' && (
+          <motion.div key="studio" className="absolute inset-0 flex items-center justify-center" exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.4 } }}>
           {/* logo box keeps the image's 3:2 shape so flares line up with the letters */}
           <motion.div
             className="relative w-[min(100vw,150vh)] aspect-[3/2]"
@@ -141,6 +149,38 @@ export function VesyronIntro() {
           </motion.div>
 
           {!reduce && <Embers />}
+          </motion.div>
+          )}
+          {phase === 'title' && (
+            <motion.div
+              key="title"
+              className="absolute inset-0 flex flex-col items-center justify-center"
+              style={{ background: 'radial-gradient(120% 70% at 50% 40%, #263B55 0%, #17243D 60%, #0E1729 100%)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35 }}
+            >
+              <motion.div
+                className="font-display text-[44px] leading-none tracking-tight text-[var(--ivory)]"
+                style={{ fontFamily: 'Sora, sans-serif', fontWeight: 800 }}
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10, letterSpacing: '0.12em' }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, letterSpacing: '-0.01em' }}
+                transition={{ duration: 0.55, ease: [0.22, 0.8, 0.24, 1] }}
+              >
+                TOWER<span style={{ color: 'var(--gold)' }}>//</span>SHIFT
+              </motion.div>
+              <motion.div
+                className="mt-3 h-px w-40"
+                style={{ background: 'linear-gradient(90deg, transparent, #E8BE70, transparent)' }}
+                initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.25, duration: 0.45 }}
+              />
+              <motion.div className="mt-3 text-[11px] font-bold tracking-[0.3em] text-[var(--stone)]"
+                initial={{ opacity: 0 }} animate={{ opacity: 0.9 }} transition={{ delay: 0.4, duration: 0.4 }}>
+                BUILD · BALANCE · DEFLECT · ASCEND
+              </motion.div>
+            </motion.div>
+          )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

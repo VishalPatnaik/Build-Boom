@@ -97,7 +97,7 @@ export function renderBlock(
 
   void mood;
   const draw = (c: CanvasRenderingContext2D, t: number) =>
-    drawWithArchetype(c, w, h, archetype, t, () => renderCinematicBlock(c, w, h, id, isCenter, t, archetype));
+    drawWithArchetype(c, w, h, archetype, t, (cc) => renderCinematicBlock(cc, w, h, id, isCenter, t, archetype));
 
   // Tower pieces are drawn many times per frame, so they come from a small cache of
   // pre-rendered animation frames instead of being redrawn from scratch every time.

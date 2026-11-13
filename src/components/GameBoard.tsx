@@ -29,6 +29,7 @@ import { useWorldTheme } from '../hooks/useWorldTheme';
 import { useWorldAmbience } from '../hooks/useWorldAmbience';
 import { PerformanceMonitor } from './PerformanceMonitor';
 import { drawForegroundTerrain, worldIndexFromBg } from '../game/backdrop/foregroundTerrain';
+import { drawMidground } from '../game/backdrop/midground';
 import { LevelIntroBanner, LevelWarpCurtain, LevelStageShutter } from './campaign/LevelTransitions';
 import { screenFadeSlideVariants } from '../utils/screenTransitions';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -2089,6 +2090,8 @@ export function GameBoard() {
       const plateW = BASE_HALF_WIDTH * 2 + 16;
       const n = gs.physics.stack.length;
       const plateY = cy + (n + 1) * VISUAL_LAYER + gs.towerSink - BLOCK_HALF_WIDTH - 5;
+      // Horizon scenery bands (far + landmark band); they sink slower than the ground as the tower climbs
+      drawMidground(ctx, w, h, worldIndexFromBg(activeWorldInfo.worldId), plateY + 24, cy + VISUAL_LAYER - BLOCK_HALF_WIDTH + 19, gs.camX, time);
       if (plateY < h + 10) {
         // The ground the plate stands on, so the tower lives in the world instead of floating in the sky
         drawForegroundTerrain(ctx, w, h, worldIndexFromBg(activeWorldInfo.worldId), plateY + bounce + 24, cx - gs.camX, time, plateW);

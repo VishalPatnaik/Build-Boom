@@ -14,20 +14,22 @@ import { ReplayViewer } from './ReplayViewer';
 
 import { screenFadeSlideVariants } from '../utils/screenTransitions';
 
-function ModeTile({ accent, title, sub, icon, onClick, dot }: { accent: string; title: string; sub: string; icon: React.ReactNode; onClick: () => void; dot?: boolean }) {
+function ModePlaque({ accent, title, sub, icon, onClick, dot }: { accent: string; title: string; sub: string; icon: React.ReactNode; onClick: () => void; dot?: boolean }) {
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.12 }}
       onClick={onClick}
-      className="panel-metal relative rounded-[14px] px-2 pt-3 pb-2.5 flex flex-col items-center text-center cursor-pointer overflow-hidden"
+      className="mode-plaque relative rounded-[14px] pl-2 pr-2.5 py-2 flex items-center gap-2.5 text-left cursor-pointer overflow-hidden"
+      style={{ ['--plaque' as string]: accent }}
       aria-label={title}
     >
-      <span className="absolute inset-x-0 top-0 h-[2px]" style={{ background: accent }} />
-      {dot && <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--emerald)', boxShadow: '0 0 0 2px #17243D' }} />}
-      <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ color: accent, background: 'rgba(255,255,255,0.06)', border: `1px solid ${accent}55` }}>{icon}</span>
-      <span className="mt-1.5 text-[14px] font-extrabold text-[var(--ivory)] leading-tight whitespace-nowrap" style={{ fontFamily: 'Sora, Manrope, sans-serif' }}>{title}</span>
-      <span className="mt-0.5 text-[11.5px] font-semibold text-[var(--stone)]/80 leading-tight">{sub}</span>
+      {dot && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: 'var(--emerald)', boxShadow: '0 0 0 2px #17243D' }} />}
+      <span className="shrink-0 w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ color: accent, background: 'rgba(255,255,255,0.06)', border: `1px solid ${accent}66` }}>{icon}</span>
+      <span className="min-w-0">
+        <span className="block text-[14px] font-extrabold text-[var(--ivory)] leading-tight whitespace-nowrap" style={{ fontFamily: 'Sora, Manrope, sans-serif' }}>{title}</span>
+        <span className="block mt-0.5 text-[11px] font-semibold text-[var(--stone)]/85 leading-tight truncate">{sub}</span>
+      </span>
     </motion.button>
   );
 }
@@ -208,10 +210,27 @@ export function Menu() {
           </motion.button>
         </div>
 
-        {/* Modes */}
-        <div className="grid grid-cols-3 gap-2 w-full">
-          <ModeTile accent="var(--azure)" title="Shift Arena" sub={`${trophies.gold + trophies.silver + trophies.bronze} cups`} icon={<Trophy className="w-5 h-5" />} onClick={() => { tap(); setMode('tournament'); }} />
-          <ModeTile
+        {/* Modes: a championship banner and two plaques, not three identical tiles */}
+        <div className="grid grid-cols-[1.05fr_1fr] grid-rows-2 gap-2 w-full">
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.12 }}
+            onClick={() => { tap(); setMode('tournament'); }}
+            className="arena-banner row-span-2 relative rounded-[16px] overflow-hidden text-left px-3.5 pt-3 pb-3 flex flex-col justify-between cursor-pointer"
+            aria-label="Shift Arena"
+          >
+            <span className="eyebrow" style={{ color: '#C8D5E2' }}>Championship</span>
+            <Trophy className="absolute right-2.5 top-2.5 w-9 h-9" style={{ color: 'var(--gold)', filter: 'drop-shadow(0 2px 0 rgba(8,14,30,0.6))' }} />
+            <span>
+              <span className="block text-[19px] font-extrabold text-[var(--ivory)] leading-none" style={{ fontFamily: 'Sora, Manrope, sans-serif' }}>Shift Arena</span>
+              <span className="mt-1.5 flex items-center gap-2 num text-[12px]">
+                <span style={{ color: '#EBC16F' }}>● {trophies.gold}</span>
+                <span style={{ color: '#C8D5E2' }}>● {trophies.silver}</span>
+                <span style={{ color: '#C98B5B' }}>● {trophies.bronze}</span>
+              </span>
+            </span>
+          </motion.button>
+          <ModePlaque
             accent="var(--teal)" title="Endless" sub={`Best ${highScores['tower-endless'] || 0} tall`} icon={<InfinityIcon className="w-5 h-5" />}
             onClick={() => {
               tap();
@@ -220,23 +239,31 @@ export function Menu() {
               setMode('endless');
             }}
           />
-          <ModeTile accent="var(--coral)" title="Daily Shift" sub={`${streakCount}-day streak · ${activeMultiplier.toFixed(1)}x`} icon={<Flame className="w-5 h-5" />} dot={!streakClaimedToday} onClick={() => { tap(); setMode('daily'); }} />
+          <ModePlaque accent="var(--coral)" title="Daily Shift" sub={`${streakCount}-day streak · ${activeMultiplier.toFixed(1)}x`} icon={<Flame className="w-5 h-5" />} dot={!streakClaimedToday} onClick={() => { tap(); setMode('daily'); }} />
         </div>
 
-        {/* Compact navigation */}
-        <nav className="panel-metal w-full rounded-[16px] grid grid-cols-6 py-2 mt-0.5">
-          {dock.map((d) => (
-            <button key={d.key} onClick={() => { tap(); d.onClick(); }} className="relative flex flex-col items-center gap-1 py-1 cursor-pointer text-[var(--ivory)]/90 active:scale-95 transition-transform duration-100" aria-label={d.label}>
-              <span className="relative w-6 h-6 flex items-center justify-center" style={{ color: d.color }}>
-                {d.icon}
-                {d.badge !== undefined && (
-                  <span className="num absolute -top-2 -right-3 min-w-[18px] h-[16px] px-1 rounded-full text-[10px] font-semibold flex items-center justify-center" style={{ background: 'var(--coral)', color: '#fff' }}>{d.badge}</span>
-                )}
-              </span>
-              <span className="text-[10.5px] font-bold leading-tight whitespace-nowrap">{d.label}</span>
+        {/* Navigation: the Shop as a gold medallion, everything else on one engraved rail */}
+        <div className="w-full flex items-center gap-2 mt-0.5">
+          {(() => { const d = dock[0]; return (
+            <button onClick={() => { tap(); d.onClick(); }} className="shop-medallion shrink-0 w-[60px] h-[60px] rounded-full flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform duration-100" aria-label={d.label}>
+              <ShoppingBag className="w-5 h-5" />
+              <span className="text-[10.5px] font-extrabold leading-none mt-0.5">{d.label}</span>
             </button>
-          ))}
-        </nav>
+          ); })()}
+          <nav className="home-rail flex-1 grid grid-cols-5 rounded-full px-1 py-1.5">
+            {dock.slice(1).map((d, i) => (
+              <button key={d.key} onClick={() => { tap(); d.onClick(); }} className={`relative flex flex-col items-center gap-0.5 py-0.5 cursor-pointer active:scale-95 transition-transform duration-100 ${i ? 'home-rail-sep' : ''}`} aria-label={d.label}>
+                <span className="relative w-6 h-6 flex items-center justify-center text-[var(--ivory)]">
+                  {d.icon}
+                  {d.badge !== undefined && (
+                    <span className="num absolute -top-1.5 -right-3 min-w-[17px] h-[15px] px-1 rounded-full text-[9.5px] font-semibold flex items-center justify-center" style={{ background: 'var(--coral)', color: '#fff' }}>{d.badge}</span>
+                  )}
+                </span>
+                <span className="text-[10px] font-bold leading-tight whitespace-nowrap text-[var(--stone)]">{d.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
 
         {!adsRemoved && (
           <button

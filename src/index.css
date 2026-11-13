@@ -581,3 +581,40 @@
 .victory-card [class*="bg-cyan-950"] { color: #1F7F92 !important; }
 .victory-card .victory-next { background: linear-gradient(180deg, #F3D28E 0%, #E8BE70 45%, #B88943 100%) !important; color: #202A38 !important; font-family: Sora, sans-serif; text-transform: none; font-size: 1.15rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 4px 0 #8E6528, 0 10px 22px rgba(120,80,20,0.3) !important; }
 .skin-shop .shop-masthead .toon-sm { color: #1C2C43; }
+
+/* ---- Home lobby navigation ---- */
+.arena-banner { background: radial-gradient(120% 90% at 85% 0%, #3C6CB4 0%, #22447A 45%, #142A4D 100%); border: 1px solid rgba(200,213,226,0.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 0 rgba(8,14,30,0.35), 0 8px 20px rgba(6,10,22,0.45); min-height: 112px; }
+.arena-banner::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 14px); -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%); mask-image: linear-gradient(90deg, transparent, #000 70%); }
+.mode-plaque { background: linear-gradient(180deg, #2C4462, #213651); border: 1px solid rgba(232,190,112,0.28); border-left: 3px solid var(--plaque);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 14px rgba(6,10,22,0.35); }
+.shop-medallion { color: #202A38; background: radial-gradient(circle at 35% 28%, #FFF1C9, #E8BE70 55%, #B88943); border: 2px solid #F5F0E6;
+  box-shadow: 0 0 0 2px #B88943, 0 4px 0 #7E5A26, 0 10px 18px rgba(6,10,22,0.45); }
+.home-rail { background: linear-gradient(180deg, rgba(23,36,61,0.92), rgba(16,26,46,0.92)); border: 1px solid rgba(232,190,112,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(6,10,22,0.4); }
+.home-rail-sep::before { content: ''; position: absolute; left: 0; top: 22%; bottom: 22%; width: 1px; background: linear-gradient(transparent, rgba(232,190,112,0.45), transparent); }
+/* Forge drafting table + material samples */
+.skin-forge .forge-table { padding: 10px; border-radius: 10px; background: linear-gradient(180deg, #3D4A57, #2E3843); border: 1px solid rgba(198,138,87,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 26px rgba(8,12,18,0.45); }
+.skin-forge .forge-sample { background: linear-gradient(180deg, #3D4A57, #333F4B) !important; }
+.skin-forge .forge-sample.is-on { background: linear-gradient(180deg, #E9E2D5, #D9CFBC) !important; border-color: #C68A57 !important; }
+.skin-forge .forge-sample.is-on * { color: #303B46 !important; }
+.skin-forge .forge-launch { background: linear-gradient(180deg, #5FE0CF 0%, #43C9B8 50%, #2E9C8F 100%) !important; color: #1C2A33 !important; font-family: Sora, sans-serif; text-transform: none !important; letter-spacing: 0.01em !important; font-size: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 0 #1F6E65, 0 10px 22px rgba(8,12,18,0.45) !important; border: 1px solid #C68A57; }
+/* Shift Lab: upgrades as an interconnected matrix of engineered modules */
+.skin-lab .lab-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; padding: 4px 2px 12px; }
+.skin-lab .lab-matrix .lab-module { flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 12px 10px 10px !important; overflow: visible;
+  border-left-width: 1px !important; border-top: 3px solid #38D8C0 !important; border-radius: 12px !important; }
+.skin-lab .lab-matrix .lab-module:not(.is-powered) { border-top-color: #728A9A !important; }
+.skin-lab .lab-matrix .lab-module > :last-child { display: none; }           /* chevron */
+.skin-lab .lab-matrix .lab-module p { display: none; }                         /* one-line summary lives in the detail panel */
+.skin-lab .lab-matrix .lab-module .flex.items-center.justify-between { flex-direction: column; gap: 2px; }
+.skin-lab .lab-matrix .lab-module h3 { white-space: normal; font-size: 13px; line-height: 1.15; }
+.skin-lab .lab-matrix .lab-module::after { display: none; }
+.skin-lab .lab-matrix .lab-module:nth-child(odd)::before { content: ''; position: absolute; right: -21px; top: 50%; width: 20px; height: 2px; background: rgba(114,138,154,0.7); }
+.skin-lab .lab-matrix .lab-module.is-powered:nth-child(odd)::before { background: #38D8C0; box-shadow: 0 0 6px rgba(56,216,192,0.6); }
+.skin-lab .lab-matrix { position: relative; }
+.skin-lab .lab-matrix::before { content: ''; position: absolute; left: 25%; right: 75%; top: 20px; bottom: 30px; border-left: 2px dashed rgba(56,216,192,0.35); pointer-events: none; }
+.skin-lab .lab-matrix::after { content: ''; position: absolute; left: 75%; top: 20px; bottom: 30px; border-left: 2px dashed rgba(163,156,241,0.35); pointer-events: none; }
+.skin-lab .lab-matrix > * { position: relative; z-index: 1; }

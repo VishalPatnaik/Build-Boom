@@ -265,7 +265,7 @@ const loadProgress = () => {
         parsed.hapticsEnabled = true;
       }
       if (parsed.showFpsMonitor === undefined) {
-        parsed.showFpsMonitor = true;
+        parsed.showFpsMonitor = false;
       }
       if (parsed.screenShakeEnabled === undefined) {
         parsed.screenShakeEnabled = true;
@@ -333,7 +333,7 @@ const loadProgress = () => {
     unlockedPerks: {}, // NO FREE PERKS
     powerups: { stasis: 0, emp: 0, shield: 0 }, // NO FREE POWERUPS
     hapticsEnabled: true,
-    showFpsMonitor: true,
+    showFpsMonitor: false,
     screenShakeEnabled: true,
     sillyMode: true,
     motionSway: true,

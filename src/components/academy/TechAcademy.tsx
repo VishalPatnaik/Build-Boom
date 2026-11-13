@@ -186,10 +186,11 @@ export function TechAcademy() {
       <div className="relative z-10 flex-1 md:grid md:grid-cols-12 gap-0 overflow-hidden min-h-0">
         {/* Left List of Tech Nodes */}
         <div
-          className={`md:col-span-5 lg:col-span-5 border-r border-white/10 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-2.5 touch-pan-y overflow-x-hidden ${
+          className={`lab-matrix-wrap md:col-span-5 lg:col-span-5 border-r border-white/10 overflow-y-auto overscroll-contain p-3 sm:p-4 touch-pan-y overflow-x-hidden ${
             mobileTab === 'list' ? 'block h-full' : 'hidden md:block'
           }`}
         >
+          <div className="lab-matrix">
           {perks.map((perk) => {
             const tier = unlockedPerks[perk.id] || 0;
             const max = perk.tiers.length;
@@ -203,7 +204,7 @@ export function TechAcademy() {
                   setSelectedPerkId(perk.id);
                   setMobileTab('detail');
                 }}
-                className={`lab-module ${isSelected ? 'is-on' : ''} p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 min-w-0 ${
+                className={`lab-module ${isSelected ? 'is-on' : ''} ${tier > 0 ? 'is-powered' : ''} p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 min-w-0 ${
                   isSelected
                     ? 'bg-gradient-to-r from-[#172554]/60 to-[#1e1b4b]/50 border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.15)]'
                     : 'bg-[#111726]/60 hover:bg-[#161f33]/80 border-white/10'
@@ -250,6 +251,7 @@ export function TechAcademy() {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Right Detail Inspection & Upgrade Terminal */}
