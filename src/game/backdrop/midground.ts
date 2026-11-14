@@ -9,6 +9,9 @@
 // (two drawImage calls, plus a few small animated accents). The bands sink more slowly than the
 // ground as the tower climbs, so they read as further away.
 
+import { worldArtLayer, drawArtBand } from './worldArt';
+import { setCritterAmbient } from '../themedObjects';
+
 type Ctx = CanvasRenderingContext2D;
 
 interface Look {
@@ -421,7 +424,7 @@ function paintMid(c: Ctx, W: number, H: number, L: Look, seed: number) {
 }
 
 // ---------- cache + draw ----------
-interface Cached { far: HTMLCanvasElement; mid: HTMLCanvasElement; W: number; FH: number; MH: number }
+interface Cached { far: HTMLCanvasElement; mid: HTMLCanvasElement; W: number; FH: number; MH: number; farFloor: string; midFloor: string }
 const cache = new Map<string, Cached>();
 
 function build(world: number, w: number, h: number): Cached | null {
@@ -443,7 +446,13 @@ function build(world: number, w: number, h: number): Cached | null {
   const sv = mc.createLinearGradient(0, MH * 0.7, 0, MH);
   sv.addColorStop(0, 'rgba(0,0,0,0)'); sv.addColorStop(1, 'rgba(10,14,24,0.22)');
   mc.fillStyle = sv; mc.fillRect(0, 0, W, MH);
-  return { far, mid, W, FH, MH };
+  // colour of each band's bottom edge: used to continue the band downward when the camera has climbed
+  // so far that the ground is off screen (otherwise the bands would end in a hard edge over bare sky)
+  const floor = (cx: CanvasRenderingContext2D, H: number) => {
+    try { const d = cx.getImageData(Math.floor(W / 2) - 20, H - 2, 40, 1).data; let r = 0, g = 0, b = 0, n = 0; for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; } if (n) return `rgb(${Math.round(r / n)},${Math.round(g / n)},${Math.round(b / n)})`; } catch { /* ignore */ }
+    return L.haze;
+  };
+  return { far, mid, W, FH, MH, farFloor: floor(fc, FH), midFloor: floor(mc, MH) };
 }
 
 /**
@@ -451,7 +460,12 @@ function build(world: number, w: number, h: number): Cached | null {
  * `groundY` is the y of the ground surface the plate stands on (same anchor as the foreground terrain).
  * `restGroundY` is where that ground sits before the tower grows, so the bands can sink more slowly.
  */
+/** Horizon haze colour of a world (also used as the critters' ambient light). */
+export function worldHaze(world: number) { return (LOOKS[world] || LOOKS[0]).haze; }
+
 export function drawMidground(ctx: Ctx, w: number, h: number, world: number, groundY: number, restGroundY: number, camX: number, time: number) {
+  // every view that shows a world draws these bands, so this is where critters pick up its ambient light
+  setCritterAmbient(worldHaze(world));
   const key = `${world}|${Math.round(w)}|${Math.round(h)}`;
   let c = cache.get(key);
   if (!c) {
@@ -467,9 +481,15 @@ export function drawMidground(ctx: Ctx, w: number, h: number, world: number, gro
   // far band reaches down behind the near band so there is never a gap of bare sky between them
   const midBottom = restGroundY + 8 + sink * 0.6;
   const farBottom = restGroundY + 8 + sink * 0.35;
-  if (farBottom - c.FH < h) ctx.drawImage(c.far, ox + camX * 0.06, 0, w, c.FH, 0, farBottom - c.FH, w, c.FH);
+  // painted artwork wins when a world ships it (public/world-art); otherwise the procedural bands
+  const artFar = worldArtLayer(world, 'far'), artMid = worldArtLayer(world, 'mid');
+  if (artFar) drawArtBand(ctx, artFar, w, farBottom, -camX * 0.06);
+  else if (farBottom - c.FH < h) ctx.drawImage(c.far, ox + camX * 0.06, 0, w, c.FH, 0, farBottom - c.FH, w, c.FH);
+  if (sink > 0 && farBottom < h) { ctx.fillStyle = c.farFloor; ctx.fillRect(0, farBottom - 1, w, h - farBottom + 1); }
   // near band
-  if (midBottom - c.MH < h) ctx.drawImage(c.mid, ox + camX * 0.14, 0, w, c.MH, 0, midBottom - c.MH, w, c.MH);
+  if (artMid) drawArtBand(ctx, artMid, w, midBottom, -camX * 0.14);
+  else if (midBottom - c.MH < h) ctx.drawImage(c.mid, ox + camX * 0.14, 0, w, c.MH, 0, midBottom - c.MH, w, c.MH);
+  if (sink > 0 && midBottom < h && !artMid) { ctx.fillStyle = c.midFloor; ctx.fillRect(0, midBottom - 1, w, h - midBottom + 1); }
   // live accents
   const L = LOOKS[world];
   if (L && L.accent && (L.kind === 'volcano' || L.kind === 'refinery')) {
@@ -484,4 +504,47 @@ export function drawMidground(ctx: Ctx, w: number, h: number, world: number, gro
     }
     ctx.restore();
   }
+}
+
+/**
+ * The same world scenery, re-inked for the Shift Odyssey parchment map: the far band becomes a pale
+ * wash in the region's tint and the landmark band becomes ink with a tinted base, so the map shows
+ * each world's actual landmarks (one art definition shared by gameplay, Home, Shop and the map).
+ */
+const vignetteCache = new Map<string, HTMLCanvasElement>();
+export function atlasVignette(world: number, w: number, h: number, tint: string, ink = '#283746'): HTMLCanvasElement | null {
+  if (typeof document === 'undefined') return null;
+  const key = `${world}|${Math.round(w)}|${Math.round(h)}|${tint}`;
+  const hit = vignetteCache.get(key);
+  if (hit) return hit;
+  // paint the bands for a portrait viewport whose bands come out roughly this vignette's height
+  const bands = build(world, w / 1.4, h / 0.34);
+  if (!bands) return null;
+  const out = document.createElement('canvas');
+  out.width = Math.round(w); out.height = Math.round(h);
+  const c = out.getContext('2d');
+  if (!c) return null;
+  const recolour = (src: HTMLCanvasElement, fill: string | CanvasGradient, alphaMul: number, dy: number) => {
+    const tmp = document.createElement('canvas'); tmp.width = out.width; tmp.height = out.height;
+    const t = tmp.getContext('2d')!;
+    t.drawImage(src, 0, 0, src.width, src.height, 0, dy, out.width, src.height * (out.width / src.width));
+    t.globalCompositeOperation = 'source-in';
+    t.fillStyle = fill; t.fillRect(0, 0, out.width, out.height);
+    c.globalAlpha = alphaMul; c.drawImage(tmp, 0, 0); c.globalAlpha = 1;
+  };
+  const sc = out.width / bands.W;
+  const farH = bands.FH * sc, midH = bands.MH * sc;
+  recolour(bands.far, tint, 0.28, out.height - farH);
+  const g = c.createLinearGradient(0, out.height - midH, 0, out.height);
+  g.addColorStop(0, ink); g.addColorStop(1, tint);
+  recolour(bands.mid, g, 0.78, out.height - midH);
+  // fade the bottom edge into the paper
+  c.globalCompositeOperation = 'destination-out';
+  const f = c.createLinearGradient(0, out.height * 0.78, 0, out.height);
+  f.addColorStop(0, 'rgba(0,0,0,0)'); f.addColorStop(1, 'rgba(0,0,0,1)');
+  c.fillStyle = f; c.fillRect(0, 0, out.width, out.height);
+  c.globalCompositeOperation = 'source-over';
+  if (vignetteCache.size > 8) vignetteCache.delete(vignetteCache.keys().next().value as string);
+  vignetteCache.set(key, out);
+  return out;
 }

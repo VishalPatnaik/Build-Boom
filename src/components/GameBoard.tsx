@@ -1,3 +1,4 @@
+import { TOWER_ANCHOR_Y } from '../game/framing';
 import { apiUrl } from '../native/platform';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +31,7 @@ import { useWorldAmbience } from '../hooks/useWorldAmbience';
 import { PerformanceMonitor } from './PerformanceMonitor';
 import { drawForegroundTerrain, worldIndexFromBg } from '../game/backdrop/foregroundTerrain';
 import { drawMidground } from '../game/backdrop/midground';
+import { worldArtLayer, drawArtBand } from '../game/backdrop/worldArt';
 import { LevelIntroBanner, LevelWarpCurtain, LevelStageShutter } from './campaign/LevelTransitions';
 import { screenFadeSlideVariants } from '../utils/screenTransitions';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -71,7 +73,7 @@ interface Debris {
 /** Big floating "N IN A ROW" cards covered the tower top; the HUD combo meter shows the same thing. */
 const SHOW_FLOATING_COMBO_CARDS = false;
 /** Top edge of the play arena: incoming objects start 120% of the arena radius from the landing point. */
-const arenaTopFor = (w: number, h: number) => h * 0.65 - Math.min(w, h) * 0.45 * 1.2 - 30;
+const arenaTopFor = (w: number, h: number) => h * TOWER_ANCHOR_Y - Math.min(w, h) * 0.45 * 1.2 - 30;
 /** Little cheers for a perfect landing, picked at random. */
 const PERFECT_CHEERS = ['PERFECT!', 'NAILED IT!', "CHEF'S KISS! 🤌", 'BULLSEYE! 🎯', 'BUTTERY SMOOTH!', 'TEXTBOOK!'];
 const SHOW_LANDING_RESONANCE = false;
@@ -952,7 +954,7 @@ export function GameBoard() {
         });
 
         const cx = w / 2;
-        const cy = h * 0.65;
+        const cy = h * TOWER_ANCHOR_Y;
         const px = cx + Math.cos(targetBlock.angle) * (targetBlock.distance / 100) * gameRadius;
         const py = cy + Math.sin(targetBlock.angle) * (targetBlock.distance / 100) * gameRadius;
 
@@ -1127,7 +1129,7 @@ export function GameBoard() {
     const w = canvasSizeRef.current.w || 400;
     const h = canvasSizeRef.current.h || 800;
     const whole = [...gs.physics.stack, ...fallen];
-    const pose = whole.length ? towerPose(whole, Math.min(Math.max(0, fromLevel), whole.length - 1), gs.physics.tiltAngle, w / 2, h * 0.65) : { x: w / 2, y: h * 0.65 };
+    const pose = whole.length ? towerPose(whole, Math.min(Math.max(0, fromLevel), whole.length - 1), gs.physics.tiltAngle, w / 2, h * TOWER_ANCHOR_Y) : { x: w / 2, y: h * TOWER_ANCHOR_Y };
     gs.floatTexts.push({ text: '⬇ GRAVITY SAYS HI', x: pose.x, y: pose.y - 10, life: 1.6, color: '#fb923c' });
     const dir = side < 0 ? 'left' : 'right';
     const piece = fromLevel <= 0 ? 'the bottom piece' : `piece ${fromLevel}`;
@@ -1217,7 +1219,7 @@ export function GameBoard() {
   const spawnDebris = (fallen: StackedBlock[], fromLevel: number, w: number, h: number) => {
     const gs = gameStateRef.current;
     const cx = w / 2;
-    const cy = h * 0.65;
+    const cy = h * TOWER_ANCHOR_Y;
     const whole = [...gs.physics.stack, ...fallen];
     const lean = gs.physics.tiltAngle >= 0 ? 1 : -1;
     fallen.forEach((b, k) => {
@@ -1241,7 +1243,7 @@ export function GameBoard() {
 
   const createExplosionAtDistance = (block: ActiveBlock, gameRadius: number, w: number, h: number, baseColor: string, celebrate = false) => {
       const px = w/2 + Math.cos(block.angle) * (block.distance / 100) * gameRadius;
-      const py = h * 0.65 + Math.sin(block.angle) * (block.distance / 100) * gameRadius;
+      const py = h * TOWER_ANCHOR_Y + Math.sin(block.angle) * (block.distance / 100) * gameRadius;
       const { activeBoom, activeWorldInfo } = activeCosmeticsRef.current;
       if (celebrate) {
         // A good landing: a light spark burst that keeps the swaying tower top visible
@@ -1922,7 +1924,7 @@ export function GameBoard() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const cx = w / 2;
-    const cy = h * 0.65;
+    const cy = h * TOWER_ANCHOR_Y;
     const gameRadius = Math.min(w, h) * 0.45;
     const gs = gameStateRef.current;
     const { activeSkin, activePlate, activeBoom, activeWorldInfo } = activeCosmeticsRef.current;
@@ -2095,6 +2097,7 @@ export function GameBoard() {
       if (plateY < h + 10) {
         // The ground the plate stands on, so the tower lives in the world instead of floating in the sky
         drawForegroundTerrain(ctx, w, h, worldIndexFromBg(activeWorldInfo.worldId), plateY + bounce + 24, cx - gs.camX, time, plateW);
+        { const fore = worldArtLayer(worldIndexFromBg(activeWorldInfo.worldId), 'fore'); if (fore) drawArtBand(ctx, fore, w, plateY + 24 + h * 0.08, -gs.camX * 0.3); }
         renderPlate(ctx, cx - gs.camX - plateW / 2, plateY + bounce, plateW, 28, activePlate, time);
       }
     }

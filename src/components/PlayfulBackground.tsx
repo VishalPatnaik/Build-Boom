@@ -1,6 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 import { useGameStore } from '../game/store';
 import { environmentRenderer, resolveActiveWorld } from '../game/EnvironmentRenderer';
+import { drawMidground } from '../game/backdrop/midground';
+import { worldArtLayer, worldArtGrade, drawArtSky } from '../game/backdrop/worldArt';
+import { worldIndexFromBg } from '../game/backdrop/foregroundTerrain';
+
+/** Screens that paint an opaque surface over the whole viewport: the shared world behind them is
+ *  invisible, so it is only refreshed twice a second (still picks up world changes) instead of every frame. */
+function backdropHidden(mode: string, state: string, replayOpen: boolean) {
+  if (replayOpen) return true;
+  if (mode === 'shop' || mode === 'academy' || mode === 'daily') return true;
+  if ((mode === 'campaign' || mode === 'tournament' || mode === 'workshop') && state === 'idle') return true;
+  return false;
+}
+/** Home lobby: where the hero tower's plate sits, so the horizon bands line up behind it. */
+const HOME_GROUND = 0.62;
 
 export function PlayfulBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -14,6 +28,7 @@ export function PlayfulBackground() {
 
     let animationFrameId: number = 0;
     let time = 0;
+    let lastHiddenDraw = 0;
 
     const resize = () => {
       const rawW = window.innerWidth || canvas.parentElement?.clientWidth || 300;
@@ -58,6 +73,11 @@ export function PlayfulBackground() {
 
       // 1. Resolve dynamic cinematic world based on active level, tournament, and mode
       const currentState = useGameStore.getState();
+      if (backdropHidden(currentState.mode, currentState.state, currentState.replayModalOpen) && now - lastHiddenDraw < 500) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+      lastHiddenDraw = now;
       const worldInfo = resolveActiveWorld({
         mode: currentState.mode,
         state: currentState.state,
@@ -80,6 +100,18 @@ export function PlayfulBackground() {
           currentState.state,
           currentState.towerTilt || 0
         );
+        // Painted sky + colour grade, when this world has artwork (falls back to the procedural scene)
+        const wIdx = worldIndexFromBg(worldInfo.worldId);
+        const sky = worldArtLayer(wIdx, 'sky');
+        if (sky) drawArtSky(ctx, sky, logicalW, logicalH, currentState.towerHeight || 0);
+        const grade = worldArtGrade(wIdx);
+        if (grade) { ctx.save(); ctx.globalAlpha = grade.alpha; ctx.fillStyle = grade.color; ctx.fillRect(0, 0, logicalW, logicalH); ctx.restore(); }
+        // Same horizon bands as gameplay (one implementation): on Home they sit behind the hero tower.
+        // During gameplay the game canvas draws them itself, anchored to the real plate.
+        if (currentState.mode === 'menu') {
+          const gy = logicalH * HOME_GROUND;
+          drawMidground(ctx, logicalW, logicalH, worldIndexFromBg(worldInfo.worldId), gy, gy, 0, time);
+        }
       } catch {
         // Prevent canvas transient sizing errors from interrupting frame loop
       }

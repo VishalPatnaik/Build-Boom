@@ -1898,15 +1898,43 @@ let archScratch: HTMLCanvasElement | null = null;
 let archScratchCtx: CanvasRenderingContext2D | null = null;
 const ARCH_PAD = 2.4; // art (wings, ears, shadows) can reach past the block box
 
+// Shared lighting for every critter: one key light from the upper left (matching the scenery bands
+// and terrain), a cool shade toward the lower right, and a faint wash of the world's ambient colour
+// so characters sit in their world instead of on top of it. Applied only to the critter's own pixels.
+let critterAmbient = '';
+export function setCritterAmbient(color: string) { critterAmbient = color || ''; }
+export function getCritterAmbient() { return critterAmbient; }
+let ambCacheKey = '', ambCacheVal = '';
+function ambientRGB() {
+  if (critterAmbient === ambCacheKey) return ambCacheVal;
+  ambCacheKey = critterAmbient;
+  const m = /^#([0-9a-f]{6})$/i.exec(critterAmbient);
+  ambCacheVal = m ? `${parseInt(m[1].slice(0, 2), 16)},${parseInt(m[1].slice(2, 4), 16)},${parseInt(m[1].slice(4, 6), 16)}` : '';
+  return ambCacheVal;
+}
+function lightCritter(s: Ctx, w: number, h: number, rw: number, rh: number, archetype: string | undefined) {
+  s.save();
+  s.globalCompositeOperation = 'source-atop';
+  // one gradient fill: key light → world ambient in the mid-tones → cool shade (cached per world)
+  const key = archetype === 'titan' ? 0.08 : 0.16;
+  const amb = ambientRGB();
+  const g = s.createLinearGradient(-w * 0.55, -h * 0.6, w * 0.55, h * 0.6);
+  g.addColorStop(0, `rgba(255,248,230,${key})`);
+  g.addColorStop(0.42, amb ? `rgba(${amb},0.07)` : 'rgba(255,255,255,0)');
+  g.addColorStop(0.7, amb ? `rgba(${amb},0.06)` : 'rgba(18,26,44,0.06)');
+  g.addColorStop(1, 'rgba(18,26,44,0.24)');
+  s.fillStyle = g;
+  s.fillRect(-rw / 2, -rh / 2, rw, rh);
+  s.restore();
+}
+
 export function drawWithArchetype(ctx: Ctx, w: number, h: number, archetype: string | undefined, time: number, drawArt: (c: Ctx) => void) {
   ctx.save();
   let filter = '';
   if (archetype === 'gold_ingot') filter = 'sepia(1) saturate(3.2) brightness(1.08)';
   else if (archetype === 'prism') filter = `hue-rotate(${Math.round(time / 8) % 360}deg) saturate(1.6) brightness(1.12)`;
   else if (archetype === 'titan') filter = 'saturate(0.75) contrast(1.15) brightness(0.92)';
-  if (!filter) {
-    drawArt(ctx);
-  } else {
+  {
     if (!archScratch && typeof document !== 'undefined') {
       archScratch = document.createElement('canvas');
       archScratchCtx = archScratch.getContext('2d');
@@ -1925,13 +1953,14 @@ export function drawWithArchetype(ctx: Ctx, w: number, h: number, archetype: str
       s.clearRect(0, 0, pw, ph);
       s.setTransform(sc, 0, 0, sc, (rw * sc) / 2, (rh * sc) / 2);
       drawArt(s);
-      ctx.filter = filter;
+      lightCritter(s, w, h, rw, rh, archetype);
+      if (filter) ctx.filter = filter;
       ctx.drawImage(archScratch, 0, 0, pw, ph, -rw / 2, -rh / 2, rw, rh);
-      ctx.filter = 'none';
+      if (filter) ctx.filter = 'none';
     } else {
-      ctx.filter = filter;
+      if (filter) ctx.filter = filter;
       drawArt(ctx);
-      ctx.filter = 'none';
+      if (filter) ctx.filter = 'none';
     }
   }
   archetypeOverlay(ctx, w / 2, h / 2, archetype, time);

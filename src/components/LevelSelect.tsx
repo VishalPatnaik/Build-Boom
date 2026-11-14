@@ -1,3 +1,4 @@
+import { atlasVignette } from '../game/backdrop/midground';
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -28,34 +29,26 @@ const SIGN_H = 270; // island sign at the bottom of the world
 const PAGE_H = HEADER_H + GATE_H + LEVELS_PER_WORLD * NODE_GAP + SIGN_H;
 const SEEN_KEY = 'ts_seen_world';
 
+function AtlasVignette({ world, width, height, tint, top, faint }: { world: number; width: number; height: number; tint: string; top: number; faint?: boolean }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current; const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(width * dpr); c.height = Math.round(height * dpr);
+    const v = atlasVignette(world, width * dpr, height * dpr, tint);
+    if (v) ctx.drawImage(v, 0, 0);
+  }, [world, width, height, tint]);
+  return <canvas ref={ref} aria-hidden="true" className="absolute left-0 pointer-events-none" style={{ top, width, height, opacity: faint ? 0.45 : 0.95 }} />;
+}
+
 // Expedition-atlas palette (Shift Odyssey map)
 const ATLAS = { paper: '#E9DDC5', paperDeep: '#DCCBAA', forest: '#456D57', ocean: '#4C7F9B', route: '#D5A653', ink: '#283746', ivory: '#F5F0E6', stone: '#CDBC9C' };
 /** Each world is a region of the atlas: land (forest) or sea (ocean) tint. */
 const REGION_TINT = (w: number) => (w % 3 === 1 ? ATLAS.ocean : ATLAS.forest);
 
 /** Little scenery that floats beside each world (pure emoji, so it costs nothing to draw). */
-const WORLD_DECOR: string[][] = [
-  ['🌼', '🐝', '🌷', '🍃'],
-  ['🌙', '⭐', '🛰️', '🪐'],
-  ['🪨', '🌵', '🔴', '☄️'],
-  ['🌌', '✨', '🪐', '🌠'],
-  ['🐠', '🫧', '🐚', '🪸'],
-  ['🌴', '🌅', '🥥', '🦀'],
-  ['🌋', '🔥', '🪨', '💥'],
-  ['🏛️', '⚱️', '🗿', '🕯️'],
-  ['🌲', '🍄', '🦉', '🌿'],
-  ['🐪', '🌵', '🏜️', '💧'],
-  ['❄️', '🐧', '🧊', '☃️'],
-  ['🏴‍☠️', '⚓', '🦜', '💰'],
-  ['🍭', '🧁', '🍬', '🍩'],
-  ['👑', '💎', '🏺', '🪙'],
-  ['🌃', '🤖', '💾', '⚡'],
-  ['☢️', '🛢️', '🧪', '⚙️'],
-  ['☁️', '🏝️', '🎈', '🕊️'],
-  ['⏰', '⚙️', '⌛', '🔩'],
-  ['🌸', '⛩️', '🎐', '🍡'],
-  ['💎', '🔮', '✨', '💠'],
-];
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
 
 const TWIST_BADGE: Partial<Record<LevelTwist, { icon: string; label: string }>> = {
   gusty: { icon: '💨', label: 'Gusty' },
@@ -416,24 +409,12 @@ export function LevelSelect() {
               </g>
             </svg>
 
-            {/* Landmarks of this region */}
-            {(WORLD_DECOR[view] || WORLD_DECOR[0]).map((emoji, k) => (
-              <span
-                key={`decor-${k}`}
-                className={`absolute pointer-events-none select-none ${k % 2 ? 'odys-spin3d' : 'odys-bob'}`}
-                style={{
-                  top: HEADER_H + GATE_H + 40 + k * ((LEVELS_PER_WORLD * NODE_GAP - 80) / 4),
-                  [k % 2 === 0 ? 'left' : 'right']: `${4 + ((k * 7) % 9)}%`,
-                  fontSize: 28 + (k % 3) * 8,
-                  opacity: 0.7,
-                  animationDelay: `${-k * 0.9}s`,
-                  filter: 'sepia(0.55) saturate(0.85) drop-shadow(0 3px 2px rgba(40,55,70,0.25))',
-                } as React.CSSProperties}
-                aria-hidden="true"
-              >
-                {emoji}
-              </span>
-            ))}
+            {/* Landmarks of this region: the world's own scenery, inked onto the map.
+                The next world's skyline shows faintly at the gate, so regions blend into each other. */}
+            {view + 1 < WORLDS && (
+              <AtlasVignette world={view + 1} width={width} height={170} tint={REGION_TINT(view + 1)} top={HEADER_H + 18} faint />
+            )}
+            <AtlasVignette world={view} width={width} height={210} tint={REGION_TINT(view)} top={PAGE_H - SIGN_H - 150} />
 
             {/* Trail */}
             <svg className="absolute top-0 left-0 pointer-events-none z-10" width={width} height={PAGE_H} aria-hidden="true">
@@ -657,7 +638,7 @@ export function LevelSelect() {
                       </motion.div>
                     )}
                     <div className="mt-6 atlas-eyebrow">
-                      World {String(view + 1).padStart(2, '0')} · Levels {first}–{last}
+                      Chapter {ROMAN[view] || view + 1} · Levels {first}–{last}
                     </div>
                     <div className="font-display text-xl leading-tight" style={{ color: ATLAS.ink }}>{col.name}</div>
                     <div className="mt-1 text-[11px] font-semibold" style={{ color: `${ATLAS.ink}c0` }}>

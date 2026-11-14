@@ -14,6 +14,7 @@ export interface PerformanceStats {
   budgetStatus: 'optimal' | 'stable' | 'strained';
   memoryBudgetStatus: 'healthy' | 'nominal' | 'high';
   history: number[]; // Last 24 frame times for sparkline
+  longFrames: number; // frames over 50 ms in the sampling window
 }
 
 export function PerformanceMonitor({ className = '' }: { className?: string }) {
@@ -31,6 +32,7 @@ export function PerformanceMonitor({ className = '' }: { className?: string }) {
     budgetStatus: 'optimal',
     memoryBudgetStatus: 'healthy',
     history: Array(24).fill(16.6),
+    longFrames: 0,
   });
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -51,8 +53,8 @@ export function PerformanceMonitor({ className = '' }: { className?: string }) {
       // Filter out anomaly frames (e.g. background tab switch)
       if (delta > 0 && delta < 500) {
         frameTimes.push(delta);
-        if (frameTimes.length > 45) {
-          frameTimes.shift();
+        if (frameTimes.length > 600) {
+          frameTimes.shift(); // ~10 s window at 60 fps
         }
       }
 
@@ -60,14 +62,17 @@ export function PerformanceMonitor({ className = '' }: { className?: string }) {
       if (now - lastUiUpdate > 280 && frameTimes.length > 0) {
         lastUiUpdate = now;
 
-        const sum = frameTimes.reduce((acc, val) => acc + val, 0);
-        const avgDelta = sum / frameTimes.length;
+        const recent = frameTimes.slice(-45);
+        const sum = recent.reduce((acc, val) => acc + val, 0);
+        const avgDelta = sum / recent.length;
         const currentFps = Math.min(120, Math.round(1000 / Math.max(1, avgDelta)));
 
         // Compute 1% lows
+        // true 1% low: average fps of the slowest 1% of frames over the last ~10 s
         const sorted = [...frameTimes].sort((a, b) => b - a);
-        const worstIndex = Math.floor(sorted.length * 0.1);
-        const onePercentLow = Math.round(1000 / Math.max(1, sorted[worstIndex] || avgDelta));
+        const worst = sorted.slice(0, Math.max(1, Math.floor(sorted.length * 0.01)));
+        const onePercentLow = Math.round(1000 / Math.max(1, worst.reduce((a, b) => a + b, 0) / worst.length));
+        const longFrames = frameTimes.filter((d) => d > 50).length;
 
         // Read Memory API if available in browser
         let usedMb: number | null = null;
@@ -98,6 +103,7 @@ export function PerformanceMonitor({ className = '' }: { className?: string }) {
           budgetStatus,
           memoryBudgetStatus,
           history: frameTimes.slice(-20),
+          longFrames,
         });
       }
 
@@ -107,8 +113,6 @@ export function PerformanceMonitor({ className = '' }: { className?: string }) {
     animId = requestAnimationFrame(sampleFrame);
     return () => cancelAnimationFrame(animId);
   }, [showFpsMonitor]);
-
-  if (!showFpsMonitor) return null;
 
   const palette = worldTheme.palette;
   const accentColor = palette.accent || '#06b6d4';
@@ -243,6 +247,14 @@ export function PerformanceMonitor({ className = '' }: { className?: string }) {
                   <div className="text-white font-bold tabular-nums">
                     {stats.onePercentLowFps} FPS
                   </div>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 uppercase">Long frames (10s)</div>
+                  <div className="text-white font-bold tabular-nums">{stats.longFrames}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] text-slate-400 uppercase">Screen</div>
+                  <div className="text-white font-bold truncate">{useGameStore.getState().mode}</div>
                 </div>
                 {stats.memoryUsedMb !== null && (
                   <>

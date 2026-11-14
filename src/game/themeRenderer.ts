@@ -1,4 +1,4 @@
-import { drawWithArchetype } from './themedObjects';
+import { drawWithArchetype, getCritterAmbient } from './themedObjects';
 import type { ObjectMood } from './themedObjects';
 import { renderCinematicWorld } from './cinematicWorlds/renderCinematicWorld';
 import { renderCinematicBlock } from './cinematicItems/renderCinematicBlock';
@@ -101,7 +101,7 @@ export function renderBlock(
 
   // Tower pieces are drawn many times per frame, so they come from a small cache of
   // pre-rendered animation frames instead of being redrawn from scratch every time.
-  if (!isCenter || !drawCachedObject(ctx, w, h, `${id}|${archetype || ''}`, time, draw)) {
+  if (!isCenter || !drawCachedObject(ctx, w, h, `${id}|${archetype || ''}|${getCritterAmbient()}`, time, draw)) {
     draw(ctx, time);
   }
 

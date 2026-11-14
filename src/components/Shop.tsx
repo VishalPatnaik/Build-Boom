@@ -19,6 +19,8 @@ import {
 import { COLLECTIONS, ALL_COSMETICS, CosmeticCategory, CosmeticDef } from '../game/collections';
 import { renderBlock, renderPlate, renderWorld, renderBoomParticle, getBoomColor } from '../game/themeRenderer';
 import { EnvironmentRenderer, environmentRenderer, ActiveWorldInfo, WORLD_NAMES } from '../game/EnvironmentRenderer';
+import { drawMidground } from '../game/backdrop/midground';
+import { worldIndexFromBg } from '../game/backdrop/foregroundTerrain';
 import { getThemePalette, applyThemeCSSVariables } from '../utils/themeAccents';
 import { useWorldTheme, WorldThemeResult } from '../hooks/useWorldTheme';
 import { POWERUP_CONFIG, PowerupType } from '../game/techTree';
@@ -151,6 +153,11 @@ function LivePreviewCanvas({ previewState, worldTheme }: { previewState: any; wo
       const blockS = 76 * stageScale;
       const groundY = logicalH - 34 - plateH; // stays clear of the loadout strip
       const cx = logicalW / 2;
+
+      // same horizon bands as Home and gameplay, sized to the stage, behind the pedestal
+      try {
+        drawMidground(ctx, logicalW, Math.max(logicalH, 420), worldIndexFromBg(worldInfo.worldId), groundY + plateH * 0.7, groundY + plateH * 0.7, 0, time);
+      } catch { /* preview only */ }
 
       // soft contact shadow
       ctx.save();

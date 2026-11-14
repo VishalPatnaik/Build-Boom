@@ -1,3 +1,4 @@
+import { TOWER_ANCHOR_Y } from '../game/framing';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../game/store';
@@ -44,6 +45,7 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
   const [isPlaying, setIsPlaying] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState<0.5 | 1 | 2>(1);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
+  const lastUiRef = useRef(0);
   const [isLooping, setIsLooping] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeEventBadge, setActiveEventBadge] = useState<ReplayEventMarker | null>(null);
@@ -122,7 +124,11 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
         }
       }
 
-      setCurrentTimeMs(localTime);
+      drawRef.current(localTime);
+      if (now - lastUiRef.current > 50 || localTime >= durationMs || localTime === 0) {
+        lastUiRef.current = now;
+        setCurrentTimeMs(localTime);
+      }
       animFrameRef.current = requestAnimationFrame(loop);
     };
 
@@ -166,7 +172,12 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
   }, [currentFrame?.event?.id, isPlaying, soundEnabled, currentFrame?.combo]);
 
   // Canvas render pass for current frame
-  useEffect(() => {
+  // Draws one replay frame. Called every animation frame by the playback loop (through drawRef), and
+  // from an effect when the playhead moves by scrubbing / stepping. Keeping the per-frame canvas work out
+  // of React state means the big component re-renders ~20x a second for the timeline, not 60x.
+  const drawFrameAt = (tMs: number) => {
+    const currentFrame = getFrameAtTime(tMs);
+    const currentTimeMs = tMs;
     if (!isOpen || !canvasRef.current || !containerRef.current || !currentFrame || !replay) return;
 
     const canvas = canvasRef.current;
@@ -175,13 +186,14 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
     if (!ctx) return;
 
     // Resize canvas if needed
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(2, window.devicePixelRatio || 1); // 3-4x phones would quadruple fill cost for no visible gain
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+    const pw = Math.round(width * dpr), ph = Math.round(height * dpr);
+    if (canvas.width !== pw || canvas.height !== ph) {
+      canvas.width = pw;
+      canvas.height = ph;
     }
 
     ctx.save();
@@ -190,7 +202,7 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
     const w = width;
     const h = height;
     const cx = w / 2;
-    const cy = h * 0.65;
+    const cy = h * TOWER_ANCHOR_Y;
     const gameRadius = Math.min(w, h) * 0.45;
     const time = currentFrame.rawTime || currentTimeMs;
 
@@ -330,7 +342,10 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
     ctx.restore();
 
     ctx.restore();
-  }, [isOpen, currentFrame, currentTimeMs, replay]);
+  };
+  const drawRef = useRef(drawFrameAt);
+  drawRef.current = drawFrameAt;
+  useEffect(() => { drawRef.current(currentTimeMs); }, [isOpen, currentTimeMs, replay]);
 
   if (!isOpen || !replay) return null;
 
@@ -354,7 +369,7 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-2xl bg-gradient-to-b from-[#0b1329] via-[#080d1a] to-[#04060d] border-t-2 sm:border-2 border-cyan-400/60 rounded-t-3xl sm:rounded-3xl shadow-[0_-12px_50px_rgba(6,182,212,0.35)] flex flex-col overflow-hidden pointer-events-auto z-10 max-h-[88vh]"
+          className="skin-replay relative w-full max-w-2xl rounded-t-[22px] sm:rounded-[22px] flex flex-col overflow-hidden pointer-events-auto z-10 h-[92vh] max-h-[92vh]"
         >
           {/* Top Grab Handle */}
           <div className="w-12 h-1 bg-white/25 rounded-full mx-auto mt-2 mb-1 shrink-0 cursor-pointer" onClick={onClose} />
@@ -642,18 +657,20 @@ export function ReplayViewer({ isOpen, onClose, replayData }: ReplayViewerProps)
                   +1s
                 </button>
 
-                {/* Speed Toggle (0.5x, 1x, 2x) */}
-                <button
-                  onClick={() => {
-                    const next = playbackSpeed === 0.5 ? 1 : playbackSpeed === 1 ? 2 : 0.5;
-                    setPlaybackSpeed(next);
-                    haptics.uiTap();
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-400/60 text-cyan-300 text-xs font-mono font-black transition-all cursor-pointer active:scale-95"
-                  title="Playback Speed"
-                >
-                  {playbackSpeed}x
-                </button>
+                {/* Speed: segmented 0.5× (slow motion) / 1× / 2× */}
+                <div className="replay-speed flex rounded-xl overflow-hidden" role="group" aria-label="Playback speed">
+                  {([0.5, 1, 2] as const).map((sp) => (
+                    <button
+                      key={sp}
+                      onClick={() => { setPlaybackSpeed(sp); haptics.uiTap(); }}
+                      className={`px-2 py-1.5 text-[11px] font-bold num cursor-pointer ${playbackSpeed === sp ? 'is-on' : ''}`}
+                      aria-pressed={playbackSpeed === sp}
+                      title={sp === 0.5 ? 'Slow motion' : `${sp}x speed`}
+                    >
+                      {sp === 0.5 ? '½×' : `${sp}×`}
+                    </button>
+                  ))}
+                </div>
 
                 {/* Loop Toggle */}
                 <button

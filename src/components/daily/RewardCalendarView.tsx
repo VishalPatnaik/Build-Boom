@@ -103,17 +103,17 @@ export const RewardCalendarView: React.FC<RewardCalendarViewProps> = ({
       <div>
         <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider mb-2 px-1">
           <div className="flex items-center gap-1.5 text-cyan-300">
-            <span>UPCOMING 7-DAY TIMELINE</span>
+            <span>This week</span>
             <span className="text-[9px] text-slate-400 font-sans normal-case">(Tap any day to inspect)</span>
           </div>
           <div className="text-amber-300 flex items-center gap-1 text-[10px]">
             <Sparkles className="w-3 h-3 text-amber-400" />
-            <span>MYSTERY CHESTS ON DAYS 3 & 7 (+SKINS)</span>
+            <span>Chests on days 3 and 7</span>
           </div>
         </div>
 
         {/* 7-Day Interactive Responsive Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+        <div className="daily-cal grid grid-cols-3 gap-2">
           {calendarDays.map((day) => {
             const isSelected = selectedDayOffset === day.offset;
             const hasChest = day.mysteryChest !== null;
@@ -126,6 +126,7 @@ export const RewardCalendarView: React.FC<RewardCalendarViewProps> = ({
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSelectDay(day.offset)}
                 className={`
+                  daily-day ${isToday ? 'is-today' : ''} ${hasChest ? 'has-chest' : ''} ${day.claimed ? 'is-claimed' : ''}
                   relative flex flex-col justify-between p-2.5 rounded-2xl border-2 cursor-pointer transition-all select-none overflow-hidden
                   ${isToday 
                     ? 'bg-gradient-to-b from-amber-950/70 via-slate-900 to-amber-950/80 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.4)] ring-2 ring-amber-400/50' 

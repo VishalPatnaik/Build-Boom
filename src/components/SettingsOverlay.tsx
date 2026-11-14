@@ -690,14 +690,14 @@ export function SettingsOverlay() {
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-black text-white uppercase tracking-wider">
-                            Frame-Rate & Telemetry Monitor
+                            Performance diagnostics
                           </span>
                           <span className="px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-400/40 text-cyan-300 text-[9px] font-black uppercase tracking-widest font-mono">
-                            60 FPS • MEM BUDGET
+                            For testing
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-300 font-sans mt-0.5">
-                          Displays real-time FPS, frame latency, memory heap consumption, and jitter graphs in the top corner during high-intensity sequences.
+                          Shows FPS, frame time, 1% lows, long frames and memory in the top corner. Tap it for details. Leave off for normal play.
                         </p>
                       </div>
                     </div>

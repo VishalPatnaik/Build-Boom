@@ -36,6 +36,7 @@ const AVATAR_OPTIONS = ['🧑‍🚀', '🤖', '🤺', '🦊', '🐧', '🌋', '
 const COUNTRY_OPTIONS = ['🌍', '🇺🇸', '🇯🇵', '🇩🇪', '🇧🇷', '🇬🇧', '🇰🇷', '🇨🇦', '🇦🇺', '🇮🇳', '🇫🇷', '🇪🇸', '🇮🇹', '🇲🇽'];
 
 export function TournamentHub() {
+  const arenaFrontier = useGameStore((st) => st.unlockedLevels);
   const { 
     setMode, 
     playerId, 
@@ -289,14 +290,32 @@ export function TournamentHub() {
 
       {/* TITLE & TACTICAL SWITCHBOARD TABS */}
       <div className="text-center shrink-0 mb-3 relative z-20">
-        <h1 
-          className="arena-title text-4xl md:text-5xl leading-none"
-        >
-          SHIFT ARENA
-        </h1>
-        <p className="text-white/80 font-bold text-xs uppercase tracking-wider mt-0.5 font-mono">
-          Climb the board, win cups and coins
-        </p>
+        {/* Championship hero banner: crest, title, and the player's real cup cabinet */}
+        <div className="arena-hero relative mx-auto rounded-[18px] px-4 pt-3 pb-3 overflow-hidden">
+          <svg className="absolute left-1/2 -translate-x-1/2 top-1 opacity-70" width="220" height="70" viewBox="0 0 220 70" aria-hidden="true">
+            {[-1, 1].map((sd) => (
+              <g key={sd} transform={`translate(110 62) scale(${sd} 1)`} fill="none" stroke="#EBC16F" strokeWidth="1.4" strokeLinecap="round">
+                <path d="M18 0 C 48 -6, 70 -26, 84 -54" />
+                {[0, 1, 2, 3, 4, 5].map((k) => (<ellipse key={k} cx={26 + k * 10} cy={-3 - k * 8.5} rx="6" ry="2.6" transform={`rotate(${-28 - k * 7} ${26 + k * 10} ${-3 - k * 8.5})`} fill="rgba(235,193,111,0.35)" />))}
+              </g>
+            ))}
+          </svg>
+          <div className="relative text-[10px] font-extrabold tracking-[0.28em] text-[#C8D5E2]">CHAMPIONSHIP</div>
+          <h1 className="arena-title relative text-4xl md:text-5xl leading-none mt-1">SHIFT ARENA</h1>
+          <div className="relative mt-2.5 grid grid-cols-4 gap-1.5 text-left">
+            {[
+              { k: 'Gold', v: trophies.gold, c: '#EBC16F' },
+              { k: 'Silver', v: trophies.silver, c: '#C8D5E2' },
+              { k: 'Bronze', v: trophies.bronze, c: '#C98B5B' },
+              { k: 'Frontier', v: `L${arenaFrontier}`, c: '#47DCE4' },
+            ].map((st) => (
+              <div key={st.k} className="arena-stat rounded-[10px] px-2 py-1.5">
+                <div className="num text-[15px] font-semibold leading-none" style={{ color: st.c }}>{st.v}</div>
+                <div className="text-[9.5px] font-bold mt-1 text-[#C8D5E2]/80">{st.k}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Tab Navigation Console */}
         <div className="relative flex items-center justify-center gap-1.5 mt-2.5 bg-black/60 p-1.5 rounded-2xl border-2 border-white/15 shadow-[inset_0_2px_6px_rgba(0,0,0,0.8),0_4px_15px_rgba(0,0,0,0.4)] max-w-md mx-auto backdrop-blur-md">

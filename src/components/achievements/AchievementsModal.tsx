@@ -146,7 +146,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
           </div>
 
           {/* Achievement Cards Scrollable List */}
-          <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1 z-10 custom-scrollbar">
+          <div className="archive-gallery p-4 sm:p-5 overflow-y-auto grid grid-cols-2 gap-x-3 gap-y-4 content-start flex-1 z-10 custom-scrollbar">
             {filteredAchievements.map((ach) => {
               const status = unlockedAchievements[ach.id];
               const isUnlocked = !!status?.unlocked;
@@ -164,7 +164,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
               return (
                 <div
                   key={ach.id}
-                  className={`archive-shelf ${isUnlocked ? 'is-earned' : ''} relative p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 overflow-hidden ${
+                  className={`archive-shelf trophy-${ach.tier} ${isUnlocked ? 'is-earned' : ''} relative p-3 pt-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-2 overflow-hidden ${
                     isUnlocked
                       ? 'bg-gradient-to-r from-[#17223b] to-[#121c2e] border-amber-400/60 shadow-[0_4px_15px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.15)]'
                       : 'bg-black/40 border-white/10'
@@ -185,9 +185,9 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
                   </div>
 
                   {/* Middle: Details & Progress Bar */}
-                  <div className="flex-1 min-w-0 relative z-10">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-xs font-black text-white uppercase tracking-wider truncate">
+                  <div className="w-full min-w-0 relative z-10">
+                    <div className="flex flex-col items-center gap-1 mb-1">
+                      <span className="text-[12.5px] font-extrabold text-white leading-tight">
                         {ach.title}
                       </span>
                       <span
@@ -223,7 +223,7 @@ export function AchievementsModal({ isOpen, onClose, selectedAchievementId }: Pr
                   </div>
 
                   {/* Right: Reward or Claim Button */}
-                  <div className="shrink-0 flex flex-col items-end gap-1.5 pl-1 relative z-10">
+                  <div className="shrink-0 flex flex-col items-center gap-1.5 relative z-10">
                     {/* Unlocked & Unclaimed: Actionable Claim Button */}
                     {isUnlocked && !isClaimed ? (
                       <motion.button
